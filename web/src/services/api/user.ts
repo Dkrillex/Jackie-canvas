@@ -57,7 +57,10 @@ const authClient = axios.create({
 
 authClient.interceptors.request.use((config) => {
     const userId = typeof window !== "undefined" ? window.localStorage.getItem("infinite-canvas:auth_user_id") : "";
-    if (userId) config.headers.set("New-Api-User", userId);
+    if (userId) {
+        config.headers = config.headers || {};
+        config.headers["New-Api-User"] = userId;
+    }
     return config;
 });
 
