@@ -82,5 +82,5 @@
 - Docker 静态资源路径目前仍是待办项，文档中不要过度承诺生产部署已经完全验证。
 - 对外文案与渠道配置界面不要暴露底层服务品牌、域名或内置 API Key（如 gravitex）；默认 OpenAI 兼容地址用同源 `/gw`。渠道 Base URL / API Key 表单项仅 `admin` 账号渲染，普通用户不显示。
 - 顶栏配置齿轮与导航「配置」仅登录后显示。
-- 部署到 Vercel 时必须在 `vercel.json` 把 `/gw/:path*` rewrite 到 `/api/gw/:path*` Serverless 代理（并转发 Set-Cookie）；仅外部 rewrite 或 SPA fallback 会导致登录 405/会话 401。
+- 部署到 Vercel 时 `/gw` 必须走外部 rewrite 或 Middleware 代理到上游，且 SPA fallback 不能匹配 `/gw`；不要依赖未部署成功的 `/api` Serverless 回退，否则登录会 405。
 - 画布功能暂时隐藏入口（导航与首页），默认落地页改为生图工作台；路由仍保留便于恢复。

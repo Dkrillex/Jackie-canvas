@@ -2,6 +2,7 @@
 
 ## Unreleased
 
++ [修复] Vercel `/gw` 恢复外部 rewrite，并排除 SPA 回退；补充 Middleware 代理以保留登录 Cookie，修复登录 405。
 + [修复] 移除与 antd 6 冲突的 `@ant-design/pro-components`，修复 Vercel/npm 安装 `ERESOLVE` 失败。
 + [调整] 暂时隐藏画布入口（导航「我的画布」、首页「打开画布」），默认进入生图工作台。
 + [修复] Vercel 登录会话：`/gw` 改为 Serverless 代理并转发/清洗 Set-Cookie，同时请求携带 `New-Api-User`，避免登录后 `/self` 一直 401。

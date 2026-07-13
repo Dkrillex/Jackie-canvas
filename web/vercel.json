@@ -6,10 +6,10 @@
   "rewrites": [
     {
       "source": "/gw/:path*",
-      "destination": "/api/gw/:path*"
+      "destination": "https://api.gravitex.ai/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!gw/).*)",
       "destination": "/index.html"
     }
   ]
