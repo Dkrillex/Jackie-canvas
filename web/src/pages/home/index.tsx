@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchPrompts, type Prompt } from "@/services/api/prompts";
 import { navigationTools } from "@/constant/navigation-tools";
 import { cn } from "@/lib/utils";
+import { useUserStore } from "@/stores/use-user-store";
 
 function Highlighter({ action, color, children }: { action: "highlight" | "underline"; color: string; children: ReactNode }) {
     return (
@@ -27,12 +28,23 @@ export default function IndexPage() {
     const [promptShowcase, setPromptShowcase] = useState<Prompt[]>([]);
     const [previewIndex, setPreviewIndex] = useState(0);
     const [previewOpen, setPreviewOpen] = useState(false);
+    const user = useUserStore((state) => state.user);
+    const openLoginModal = useUserStore((state) => state.openLoginModal);
 
     useEffect(() => {
         void fetchPrompts({ pageSize: 12 })
             .then((data) => setPromptShowcase(data.items))
             .catch((error) => message.error(error instanceof Error ? error.message : "获取提示词失败"));
     }, [message]);
+
+    const startUsing = () => {
+        const path = `/${primaryTool.slug}`;
+        if (user) {
+            navigate(path);
+            return;
+        }
+        openLoginModal(path);
+    };
 
     return (
         <main className="relative h-full overflow-y-auto bg-background bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] text-stone-950 dark:bg-[radial-gradient(rgba(245,245,244,.18)_1px,transparent_1px)] dark:text-stone-100">
@@ -41,11 +53,11 @@ export default function IndexPage() {
                 <div className="pointer-events-none absolute right-[23%] top-[48%] size-20 rounded-full border border-dashed border-stone-200 dark:border-stone-800" />
 
                 <div className="relative flex min-h-[620px] flex-col items-center justify-center pt-10 text-center">
-                    <h1 className="ai-title-aurora max-w-5xl text-balance text-5xl font-semibold tracking-normal sm:text-7xl lg:text-8xl">Jackie Canvas</h1>
+                    <h1 className="ai-title-aurora max-w-5xl text-balance text-5xl font-semibold tracking-normal sm:text-7xl lg:text-8xl">MPTECH AI</h1>
                     <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">
                         在
                         <Highlighter action="underline" color="#FF9800">
-                            Jackie Canvas
+                            MPTECH AI
                         </Highlighter>
                         中生成、连接和重组
                         <Highlighter action="highlight" color="#87CEFA">
@@ -54,7 +66,7 @@ export default function IndexPage() {
                         ，让创作从单次生成变成连续推演。
                     </p>
                     <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-                        <Button type="primary" size="large" onClick={() => navigate(`/${primaryTool.slug}`)} icon={<ArrowRight className="size-4" />} iconPlacement="end">
+                        <Button type="primary" size="large" onClick={startUsing} icon={<ArrowRight className="size-4" />} iconPlacement="end">
                             开始使用
                         </Button>
                         <Button size="large" onClick={() => navigate("/canvas")}>

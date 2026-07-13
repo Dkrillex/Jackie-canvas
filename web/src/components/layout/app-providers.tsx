@@ -8,6 +8,7 @@ import zhCN from "antd/locale/zh_CN";
 import { ClientRootInit } from "@/components/layout/client-root-init";
 import { getAntThemeConfig } from "@/lib/app-theme";
 import { useThemeStore } from "@/stores/use-theme-store";
+import { useUserStore } from "@/stores/use-user-store";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -22,11 +23,16 @@ const queryClient = new QueryClient({
 export function AppProviders({ children }: { children: ReactNode }) {
     const theme = useThemeStore((state) => state.theme);
     const dark = theme === "dark";
+    const hydrateFromServer = useUserStore((state) => state.hydrateFromServer);
 
     useEffect(() => {
         document.documentElement.classList.toggle("dark", dark);
         document.documentElement.style.colorScheme = theme;
     }, [dark, theme]);
+
+    useEffect(() => {
+        void hydrateFromServer();
+    }, [hydrateFromServer]);
 
     return (
         <ConfigProvider locale={zhCN} theme={getAntThemeConfig(dark)}>

@@ -6,26 +6,17 @@ import { AppConfigModal } from "@/components/layout/app-config-modal";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { UserStatusActions } from "@/components/layout/user-status-actions";
 import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
-import { useAgentStore } from "@/stores/use-agent-store";
+import { useUserStore } from "@/stores/use-user-store";
+import { useState } from "react";
 
 export function AppTopNav() {
     const { pathname } = useLocation();
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
-    const autoConnectRef = useRef(false);
-    const agentToken = useAgentStore((state) => state.token);
-    const agentEnabled = useAgentStore((state) => state.enabled);
-    const agentConnected = useAgentStore((state) => state.connected);
-    const connectAgent = useAgentStore((state) => state.connectAgent);
+    const user = useUserStore((state) => state.user);
     const hideHeader = /^\/canvas\/[^/]+/.test(pathname);
     const slug = pathname.split("/").filter(Boolean)[0];
-    const activeToolSlug = navigationTools.some((tool) => tool.slug === slug) ? (slug as NavigationToolSlug) : undefined;
-
-    useEffect(() => {
-        if (autoConnectRef.current || agentEnabled || agentConnected || !agentToken.trim()) return;
-        autoConnectRef.current = true;
-        connectAgent();
-    }, [agentConnected, agentEnabled, agentToken, connectAgent]);
+    const visibleTools = navigationTools.filter((tool) => tool.slug !== "config" || user);
+    const activeToolSlug = visibleTools.some((tool) => tool.slug === slug) ? (slug as NavigationToolSlug) : undefined;
 
     return (
         <>
@@ -34,7 +25,7 @@ export function AppTopNav() {
                     <div className="mx-auto flex h-full max-w-7xl items-stretch justify-between gap-5 px-6">
                         <div className="flex min-w-0 items-center">
                             <Link to="/" className="flex h-full shrink-0 items-center text-sm font-semibold leading-none tracking-tight text-stone-950 transition hover:text-stone-600 dark:text-stone-100 dark:hover:text-stone-300">
-                                <span className="text-base font-medium">Jackie Canvas</span>
+                                <span className="text-base font-medium">MPTECH AI</span>
                             </Link>
 
                             <button
@@ -48,7 +39,7 @@ export function AppTopNav() {
                             </button>
 
                             <nav className="hide-scrollbar ml-8 hidden h-14 min-w-0 items-center gap-7 overflow-x-auto md:flex">
-                                {navigationTools.map((tool) => {
+                                {visibleTools.map((tool) => {
                                     const Icon = tool.icon;
                                     const active = tool.slug === activeToolSlug;
                                     return (

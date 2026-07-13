@@ -12,8 +12,13 @@ export const useThemeStore = create<ThemeStore>()(
     persist(
         (set) => ({
             theme: "light",
-            setTheme: (theme) => set({ theme }),
+            setTheme: () => set({ theme: "light" }),
         }),
-        { name: "infinite-canvas:theme_store" },
+        {
+            name: "infinite-canvas:theme_store",
+            onRehydrateStorage: () => (state) => {
+                state?.setTheme("light");
+            },
+        },
     ),
 );

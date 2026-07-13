@@ -57,9 +57,10 @@ export type ConfigTabKey = "user" | "channels" | "models" | "preferences" | "web
 export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 export type ModelCapability = "image" | "video" | "text" | "audio";
 const CHANNEL_MODEL_SEPARATOR = "::";
-const OPENAI_BASE_URL = "https://api.gravitex.ai";
+const OPENAI_BASE_URL = "/gw";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
 const DEFAULT_API_KEY = "sk-tyr8QvmtqoQ8SInccJiLah3mmWqEF2K2GCpQxcI8csFpxmZy";
+const SYSTEM_BASE_URL_HOSTS = ["api.gravitex.ai", "gravitex.ai"];
 
 export const defaultConfig: AiConfig = {
     channelMode: "local",
@@ -212,6 +213,7 @@ export const useConfigStore = create<ConfigStore>()(
                     config: {
                         ...config,
                         channelMode: "local",
+                        baseUrl: normalizeOpenAiBaseUrl(config.baseUrl || defaultConfig.baseUrl),
                         apiFormat: normalizeApiFormat(config.apiFormat),
                         channels,
                         models,
@@ -253,14 +255,33 @@ export function useEffectiveConfig() {
 
 export function createModelChannel(channel?: Partial<ModelChannel>): ModelChannel {
     const apiFormat = normalizeApiFormat(channel?.apiFormat);
+    const rawBaseUrl = channel?.baseUrl;
+    const baseUrl =
+        rawBaseUrl !== undefined && !rawBaseUrl.trim()
+            ? ""
+            : normalizeOpenAiBaseUrl(rawBaseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat));
     return {
         id: channel?.id?.trim() || nanoid(),
         name: channel?.name?.trim() || "新渠道",
-        baseUrl: channel?.baseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat),
+        baseUrl,
         apiKey: channel?.apiKey || "",
         apiFormat,
         models: uniqueRawModels(channel?.models || []),
     };
+}
+
+export function isSystemOpenAiBaseUrl(baseUrl: string) {
+    return Boolean(baseUrl.trim()) && normalizeOpenAiBaseUrl(baseUrl) === OPENAI_BASE_URL;
+}
+
+export function normalizeOpenAiBaseUrl(baseUrl: string) {
+    const trimmed = baseUrl.trim().replace(/\/+$/, "");
+    if (!trimmed) return OPENAI_BASE_URL;
+    const lower = trimmed.toLowerCase();
+    if (lower === "/gw" || lower.startsWith("/gw/") || SYSTEM_BASE_URL_HOSTS.some((host) => lower.includes(host))) {
+        return OPENAI_BASE_URL;
+    }
+    return trimmed;
 }
 
 export function encodeChannelModel(channelId: string, model: string) {

@@ -1,15 +1,20 @@
 import { App, Button, Form, Input, Modal, Progress, Select, Switch, Tabs } from "antd";
-import { CircleAlert, Cloud, KeyRound, Link2, Plus, RefreshCw, ShieldCheck, Trash2, Wifi } from "lucide-react";
+import { CircleAlert, Cloud, KeyRound, Link2, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ModelPicker } from "@/components/model-picker";
 import { fetchChannelModels } from "@/services/api/image";
-import { fetchUserCenterInfo, formatQuotaCredits, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
+import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCredits, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
 import { useAgentStore } from "@/stores/use-agent-store";
-import { createModelChannel, defaultBaseUrlForApiFormat, filterModelsByCapability, modelOptionLabel, modelOptionsFromChannels, normalizeModelOptionValue, useConfigStore, type AiConfig, type ApiCallFormat, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
+import { createModelChannel, defaultBaseUrlForApiFormat, filterModelsByCapability, isSystemOpenAiBaseUrl, modelOptionLabel, modelOptionsFromChannels, normalizeModelOptionValue, normalizeOpenAiBaseUrl, useConfigStore, type AiConfig, type ApiCallFormat, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
+import { useUserStore } from "@/stores/use-user-store";
+
+function isAdminUser(username?: string | null) {
+    return (username || "").trim().toLowerCase() === "admin";
+}
 
 type ModelGroup = {
     capability: ModelCapability;
@@ -74,6 +79,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const [userInfo, setUserInfo] = useState<UserCenterInfo | null>(null);
     const [loadingUserInfo, setLoadingUserInfo] = useState(false);
     const [userInfoError, setUserInfoError] = useState("");
+    const [loggingOut, setLoggingOut] = useState(false);
     const config = useConfigStore((state) => state.config);
     const webdav = useConfigStore((state) => state.webdav);
     const updateConfig = useConfigStore((state) => state.updateConfig);
@@ -81,6 +87,11 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const shouldPromptContinue = useConfigStore((state) => state.shouldPromptContinue);
     const setConfigDialogOpen = useConfigStore((state) => state.setConfigDialogOpen);
     const clearPromptContinue = useConfigStore((state) => state.clearPromptContinue);
+    const sessionUser = useUserStore((state) => state.user);
+    const setUser = useUserStore((state) => state.setUser);
+    const logout = useUserStore((state) => state.logout);
+    const openLoginModal = useUserStore((state) => state.openLoginModal);
+    const showChannelSecrets = isAdminUser(sessionUser?.username);
     const agentUrl = useAgentStore((state) => state.url);
     const agentToken = useAgentStore((state) => state.token);
     const agentConnected = useAgentStore((state) => state.connected);
@@ -116,16 +127,29 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     };
 
     const updateChannel = (id: string, patch: Partial<ModelChannel>) => {
-        updateChannels(config.channels.map((channel) => (channel.id === id ? { ...channel, ...patch, models: patch.models ? uniqueModels(patch.models) : channel.models } : channel)));
+        updateChannels(
+            config.channels.map((channel) =>
+                channel.id === id
+                    ? {
+                          ...channel,
+                          ...patch,
+                          ...(patch.baseUrl !== undefined
+                              ? { baseUrl: patch.baseUrl.trim() ? normalizeOpenAiBaseUrl(patch.baseUrl) : "" }
+                              : {}),
+                          models: patch.models ? uniqueModels(patch.models) : channel.models,
+                      }
+                    : channel,
+            ),
+        );
     };
 
     const updateChannelApiFormat = (channel: ModelChannel, apiFormat: ApiCallFormat) => {
-        const baseUrl = !channel.baseUrl.trim() || channel.baseUrl.trim() === defaultBaseUrlForApiFormat(channel.apiFormat) ? defaultBaseUrlForApiFormat(apiFormat) : channel.baseUrl;
+        const baseUrl = !channel.baseUrl.trim() || isSystemOpenAiBaseUrl(channel.baseUrl) || channel.baseUrl.trim() === defaultBaseUrlForApiFormat(channel.apiFormat) ? defaultBaseUrlForApiFormat(apiFormat) : channel.baseUrl;
         updateChannel(channel.id, { apiFormat, baseUrl });
     };
 
     const addChannel = () => {
-        updateChannels([...config.channels, createModelChannel({ name: `渠道 ${config.channels.length + 1}` })]);
+        updateChannels([...config.channels, createModelChannel({ name: `渠道 ${config.channels.length + 1}`, baseUrl: "" })]);
     };
 
     const deleteChannel = (id: string) => {
@@ -238,28 +262,55 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const toggleAgentConnection = () => (agentEnabled ? disconnectAgent({ connectError: "" }) : connectAgent());
 
     const refreshUserInfo = async () => {
-        const channel = config.channels.find((item) => item.baseUrl.trim() && item.apiKey.trim()) || config.channels[0];
-        if (!channel?.baseUrl.trim() || !channel?.apiKey.trim()) {
-            setUserInfo(null);
-            setUserInfoError("请先在渠道里填写 Base URL 和 API Key");
-            return;
-        }
         setLoadingUserInfo(true);
         setUserInfoError("");
         try {
-            setUserInfo(await fetchUserCenterInfo({ baseUrl: channel.baseUrl, apiKey: channel.apiKey }));
-        } catch (error) {
-            setUserInfo(null);
-            setUserInfoError(error instanceof Error ? error.message : "获取用户信息失败");
+            const current = await fetchCurrentUser();
+            setUser(current);
+            setUserInfo({
+                username: current.displayName || current.username,
+                tokenName: current.username,
+                totalAvailable: Math.max(0, current.quota - current.usedQuota),
+                totalGranted: current.quota,
+                totalUsed: current.usedQuota,
+                unlimitedQuota: false,
+            });
+        } catch {
+            const channel = config.channels.find((item) => item.baseUrl.trim() && item.apiKey.trim()) || config.channels[0];
+            if (!channel?.baseUrl.trim() || !channel?.apiKey.trim()) {
+                setUserInfo(null);
+                setUserInfoError(sessionUser ? "会话已失效，请重新登录" : "请先登录，或在渠道里填写 Base URL 和 API Key");
+            } else {
+                try {
+                    setUserInfo(await fetchUserCenterInfo({ baseUrl: channel.baseUrl, apiKey: channel.apiKey }));
+                } catch (error) {
+                    setUserInfo(null);
+                    setUserInfoError(error instanceof Error ? error.message : "获取用户信息失败");
+                }
+            }
         } finally {
             setLoadingUserInfo(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        setLoggingOut(true);
+        try {
+            await logout();
+            setUserInfo(null);
+            setConfigDialogOpen(false);
+            message.success("已退出登录");
+        } catch (error) {
+            message.error(error instanceof Error ? error.message : "退出失败");
+        } finally {
+            setLoggingOut(false);
         }
     };
 
     useEffect(() => {
         if (activeTab !== "user") return;
         void refreshUserInfo();
-    }, [activeTab, config.channels]);
+    }, [activeTab, config.channels, sessionUser?.id]);
 
     return (
         <>
@@ -275,19 +326,36 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
                                     <div className="min-w-0">
                                         <div className="text-sm font-semibold">账户信息</div>
-                                        <div className="mt-1 text-xs text-stone-500">根据当前渠道的 API Key 查询用户名称和剩余积分。</div>
+                                        <div className="mt-1 text-xs text-stone-500">{sessionUser ? "已登录，可查看积分并退出。" : "登录后可查看用户名称与剩余积分。"}</div>
                                     </div>
-                                    <Button icon={<RefreshCw className="size-4" />} loading={loadingUserInfo} onClick={() => void refreshUserInfo()}>
-                                        刷新
-                                    </Button>
+                                    <div className="flex shrink-0 gap-2">
+                                        {sessionUser ? (
+                                            <Button danger icon={<LogOut className="size-4" />} loading={loggingOut} onClick={() => void handleLogout()}>
+                                                退出登录
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                type="primary"
+                                                onClick={() => {
+                                                    setConfigDialogOpen(false);
+                                                    openLoginModal("/canvas");
+                                                }}
+                                            >
+                                                去登录
+                                            </Button>
+                                        )}
+                                        <Button icon={<RefreshCw className="size-4" />} loading={loadingUserInfo} onClick={() => void refreshUserInfo()}>
+                                            刷新
+                                        </Button>
+                                    </div>
                                 </div>
                                 {userInfoError ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">{userInfoError}</div> : null}
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <Form.Item label="用户名称" className="mb-0">
-                                        <Input value={userInfo?.username || ""} readOnly placeholder={loadingUserInfo ? "加载中..." : "暂无"} />
+                                        <Input value={userInfo?.username || sessionUser?.displayName || sessionUser?.username || ""} readOnly placeholder={loadingUserInfo ? "加载中..." : "暂无"} />
                                     </Form.Item>
-                                    <Form.Item label="令牌名称" className="mb-0">
-                                        <Input value={userInfo?.tokenName || ""} readOnly placeholder={loadingUserInfo ? "加载中..." : "暂无"} />
+                                    <Form.Item label="登录账号" className="mb-0">
+                                        <Input value={sessionUser?.username || userInfo?.tokenName || ""} readOnly placeholder={loadingUserInfo ? "加载中..." : "暂无"} />
                                     </Form.Item>
                                     <Form.Item label="剩余积分" className="mb-0" extra={userInfo ? `约 ${formatQuotaCurrency(userInfo.totalAvailable)}` : undefined}>
                                         <Input value={userInfo ? (userInfo.unlimitedQuota ? "无限制" : formatQuotaCredits(userInfo.totalAvailable)) : ""} readOnly placeholder={loadingUserInfo ? "加载中..." : "暂无"} />
@@ -348,12 +416,16 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                                 <Form.Item label="调用格式" className="mb-0">
                                                     <Select value={channel.apiFormat} options={apiFormatOptions} onChange={(value: ApiCallFormat) => updateChannelApiFormat(channel, value)} />
                                                 </Form.Item>
-                                                <Form.Item label="Base URL" className="mb-0">
-                                                    <Input value={channel.baseUrl} onChange={(event) => updateChannel(channel.id, { baseUrl: event.target.value })} />
-                                                </Form.Item>
-                                                <Form.Item label="API Key" className="mb-0">
-                                                    <Input.Password value={channel.apiKey} onChange={(event) => updateChannel(channel.id, { apiKey: event.target.value })} />
-                                                </Form.Item>
+                                                {showChannelSecrets ? (
+                                                    <>
+                                                        <Form.Item label="Base URL" className="mb-0">
+                                                            <Input value={channel.baseUrl} onChange={(event) => updateChannel(channel.id, { baseUrl: event.target.value })} />
+                                                        </Form.Item>
+                                                        <Form.Item label="API Key" className="mb-0">
+                                                            <Input.Password value={channel.apiKey} onChange={(event) => updateChannel(channel.id, { apiKey: event.target.value })} />
+                                                        </Form.Item>
+                                                    </>
+                                                ) : null}
                                                 <Form.Item label="模型列表" className="mb-0 md:col-span-2">
                                                     <Select mode="tags" showSearch allowClear maxTagCount="responsive" placeholder="输入模型名，或点击拉取模型" value={channel.models} onChange={(models) => updateChannel(channel.id, { models })} />
                                                 </Form.Item>
@@ -569,7 +641,7 @@ export function AppConfigModal() {
             title={
                 <div>
                     <div className="text-lg font-semibold">配置与用户偏好</div>
-                    <div className="mt-1 text-xs font-normal text-stone-500">渠道聚合、模型选择和同步偏好</div>
+                    <div className="mt-1 text-xs font-normal text-stone-500">用户中心、渠道聚合与模型选择</div>
                 </div>
             }
             open={isConfigOpen}
