@@ -3,6 +3,7 @@
 ## Unreleased
 
 + [调整] 顶栏配置入口（齿轮与导航「配置」）仅登录后显示；渠道 Base URL / API Key 仅 `admin` 账号可见可编辑，普通用户界面不渲染这两项。
++ [修复] Vercel 部署为 `/gw` 增加外部反向代理 rewrite，避免登录 POST 落到静态页返回 405。
 + [优化] 本地 Agent 连接说明明确区分插件 / 手动 MCP 才会增加 Codex token 消耗，直接运行 Agent 不受影响。
 + [优化] 优化本地 Agent 连接说明，区分 Codex 插件启动和直接运行 Agent 两种方式。
 + [新增] Agent 对话消息改用 streamdown 流式渲染，提升长回复与 Markdown 内容展示效果。

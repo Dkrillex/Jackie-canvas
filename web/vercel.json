@@ -3,5 +3,14 @@
   "installCommand": "bun install",
   "buildCommand": "bun run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/gw/:path*",
+      "destination": "https://api.gravitex.ai/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
