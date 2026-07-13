@@ -2,6 +2,7 @@
 
 ## Unreleased
 
++ [调整] 暂时隐藏画布入口（导航「我的画布」、首页「打开画布」），默认进入生图工作台。
 + [修复] Vercel 登录会话：`/gw` 改为 Serverless 代理并转发/清洗 Set-Cookie，同时请求携带 `New-Api-User`，避免登录后 `/self` 一直 401。
 + [修复] Vercel 部署为 `/gw` 增加外部反向代理 rewrite，避免登录 POST 落到静态页返回 405。
 + [调整] 顶栏配置入口（齿轮与导航「配置」）仅登录后显示；渠道 Base URL / API Key 仅 `admin` 账号可见可编辑，普通用户界面不渲染这两项。

@@ -27,7 +27,7 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
                 type="button"
                 className={naturalIconClass}
                 style={iconStyle}
-                onClick={() => (user ? openConfigDialog(false, "user") : openLoginModal("/canvas"))}
+                onClick={() => (user ? openConfigDialog(false, "user") : openLoginModal("/image"))}
                 aria-label={user ? "用户中心" : "登录"}
                 title={user ? user.displayName || user.username : "登录"}
             >

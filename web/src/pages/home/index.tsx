@@ -69,9 +69,6 @@ export default function IndexPage() {
                         <Button type="primary" size="large" onClick={startUsing} icon={<ArrowRight className="size-4" />} iconPlacement="end">
                             开始使用
                         </Button>
-                        <Button size="large" onClick={() => navigate("/canvas")}>
-                            打开画布
-                        </Button>
                     </div>
                 </div>
 

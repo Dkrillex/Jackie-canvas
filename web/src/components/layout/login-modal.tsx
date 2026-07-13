@@ -25,7 +25,7 @@ export function LoginModal() {
             await login(username, password);
             message.success("登录成功");
             setPassword("");
-            navigate(redirectPath || "/canvas");
+            navigate(redirectPath || "/image");
         } catch (error) {
             message.error(error instanceof Error ? error.message : "登录失败");
         } finally {

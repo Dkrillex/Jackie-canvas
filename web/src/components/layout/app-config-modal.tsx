@@ -338,7 +338,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                                 type="primary"
                                                 onClick={() => {
                                                     setConfigDialogOpen(false);
-                                                    openLoginModal("/canvas");
+                                                    openLoginModal("/image");
                                                 }}
                                             >
                                                 去登录

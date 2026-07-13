@@ -1,11 +1,6 @@
-import { FileText, ImagePlus, Images, Maximize2, Settings2, Video } from "lucide-react";
+import { FileText, ImagePlus, Images, Settings2, Video } from "lucide-react";
 
 export const navigationTools = [
-    {
-        slug: "canvas",
-        label: "我的画布",
-        icon: Maximize2,
-    },
     {
         slug: "image",
         label: "生图工作台",
