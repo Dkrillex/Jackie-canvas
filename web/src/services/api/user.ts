@@ -55,21 +55,31 @@ const authClient = axios.create({
     headers: { "Content-Type": "application/json" },
 });
 
+authClient.interceptors.request.use((config) => {
+    const userId = typeof window !== "undefined" ? window.localStorage.getItem("infinite-canvas:auth_user_id") : "";
+    if (userId) config.headers.set("New-Api-User", userId);
+    return config;
+});
+
 export async function loginWithPassword(username: string, password: string): Promise<LocalUser> {
     const response = await authClient.post<AuthApiResponse<GravitexUser>>("/api/user/login", { username: username.trim(), password });
     if (!response.data?.success) throw new Error(response.data?.message || "登录失败");
-    if (response.data.data) return mapGravitexUser(response.data.data);
-    return fetchCurrentUser();
+    const user = response.data.data ? mapGravitexUser(response.data.data) : await fetchCurrentUser();
+    if (typeof window !== "undefined" && user.id) window.localStorage.setItem("infinite-canvas:auth_user_id", user.id);
+    return user;
 }
 
 export async function fetchCurrentUser(): Promise<LocalUser> {
     const response = await authClient.get<AuthApiResponse<GravitexUser>>("/api/user/self");
     if (!response.data?.success || !response.data.data) throw new Error(response.data?.message || "未登录或会话已失效");
-    return mapGravitexUser(response.data.data);
+    const user = mapGravitexUser(response.data.data);
+    if (typeof window !== "undefined" && user.id) window.localStorage.setItem("infinite-canvas:auth_user_id", user.id);
+    return user;
 }
 
 export async function logoutRemote(): Promise<void> {
     await authClient.get<AuthApiResponse>("/api/user/logout").catch(() => undefined);
+    if (typeof window !== "undefined") window.localStorage.removeItem("infinite-canvas:auth_user_id");
 }
 
 export async function fetchUserCenterInfo(config: Pick<AiConfig, "baseUrl" | "apiKey">): Promise<UserCenterInfo> {

@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/gw/:path*",
-      "destination": "https://api.gravitex.ai/:path*"
+      "destination": "/api/gw/:path*"
     },
     {
       "source": "/(.*)",
