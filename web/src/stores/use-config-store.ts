@@ -52,25 +52,26 @@ export type WebdavSyncConfig = {
     directory: string;
     lastSyncedAt: string;
 };
-export type ConfigTabKey = "channels" | "models" | "preferences" | "webdav" | "codex";
+export type ConfigTabKey = "user" | "channels" | "models" | "preferences" | "webdav" | "codex";
 
 export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 export type ModelCapability = "image" | "video" | "text" | "audio";
 const CHANNEL_MODEL_SEPARATOR = "::";
-const OPENAI_BASE_URL = "https://api.openai.com";
+const OPENAI_BASE_URL = "https://api.gravitex.ai";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
+const DEFAULT_API_KEY = "sk-8tyglcmlfeb0bw17b44mhv";
 
 export const defaultConfig: AiConfig = {
     channelMode: "local",
     baseUrl: OPENAI_BASE_URL,
-    apiKey: "",
+    apiKey: DEFAULT_API_KEY,
     apiFormat: "openai",
     channels: [
         {
             id: "default",
             name: "默认渠道",
             baseUrl: OPENAI_BASE_URL,
-            apiKey: "",
+            apiKey: DEFAULT_API_KEY,
             apiFormat: "openai",
             models: ["gpt-image-2", "grok-imagine-video", "gpt-5.5", "gpt-4o-mini-tts"],
         },

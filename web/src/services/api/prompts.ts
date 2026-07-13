@@ -34,7 +34,7 @@ const youMindGptImage2RawBase = "https://raw.githubusercontent.com/YouMind-OpenL
 const youMindNanoBananaProRawBase = "https://raw.githubusercontent.com/YouMind-OpenLab/awesome-nano-banana-pro-prompts/main";
 const davidWuGptImage2RawBase = "https://raw.githubusercontent.com/davidwuw0811-boop/awesome-gpt-image2-prompts/main";
 const cacheTtlMs = 1000 * 60 * 60;
-const promptCacheKey = "third-party-prompts";
+const promptCacheKey = "third-party-prompts-v2";
 const promptCacheStore = localforage.createInstance({ name: "infinite-canvas", storeName: "prompt_cache" });
 
 const categories: PromptCategory[] = [
@@ -53,7 +53,7 @@ export async function fetchPrompts({ keyword = "", tag = [], category = ALL_PROM
     const normalizedPage = Math.max(1, page);
     const normalizedPageSize = Math.max(1, Math.min(100, pageSize));
     const withoutTagFilter = filterPrompts(items, { keyword: normalizedKeyword, category, tags: [] });
-    const filtered = filterPrompts(items, { keyword: normalizedKeyword, category, tags: tag });
+    const filtered = sortPromptsByCover(filterPrompts(items, { keyword: normalizedKeyword, category, tags: tag }));
 
     return {
         items: filtered.slice((normalizedPage - 1) * normalizedPageSize, normalizedPage * normalizedPageSize),
@@ -107,7 +107,7 @@ async function buildAwesomeGptImagePrompts() {
             const title = firstMatch(block, /^###\s+(.+)$/m).replace(/\[([^\]]+)]\([^)]+\)/g, "$1").trim();
             const prompt = firstMatch(block, /\*\*提示词:\*\*\s*\r?\n\s*```[\w-]*\r?\n(.*?)\r?\n```/s).trim();
             if (!title || !prompt) continue;
-            const images = extractMarkdownImages(awesomeGptImageRawBase, block);
+            const images = extractCoverImages(awesomeGptImageRawBase, block);
             items.push(defaultPrompt(`awesome-gpt-image-${leftPad(items.length + 1)}`, title, prompt, images[0] || "", tags, markdownPreview(images)));
         }
     }
@@ -115,14 +115,16 @@ async function buildAwesomeGptImagePrompts() {
 }
 
 async function buildAwesomeGpt4oImagePrompts() {
-    const markdown = await fetchText(awesomeGpt4oImagePromptsBase, "README.zh-CN.md");
+    const [markdown, html] = await Promise.all([fetchText(awesomeGpt4oImagePromptsBase, "README.zh-CN.md"), fetchText(awesomeGpt4oImagePromptsBase, "Prompts.html").catch(() => "")]);
+    const coverByTitle = coversFromPromptsHtml(awesomeGpt4oImagePromptsBase, html);
     const items: Omit<Prompt, "category" | "githubUrl">[] = [];
     for (const block of splitBeforeHeading(markdown, "### ")) {
         const title = firstMatch(block, /^###\s+(.+)$/m).trim();
         const prompt = firstMatch(block, /- \*\*提示词文本：\*\*\s*`(.*?)`/s).trim();
         if (!title || !prompt) continue;
-        const images = extractMarkdownImages(awesomeGpt4oImagePromptsBase, block);
-        items.push(defaultPrompt(`awesome-gpt4o-image-prompts-${leftPad(items.length + 1)}`, title, prompt, images[0] || "", ["gpt4o"], markdownPreview(images)));
+        const images = extractCoverImages(awesomeGpt4oImagePromptsBase, block);
+        const cover = images[0] || coverByTitle.get(title) || "";
+        items.push(defaultPrompt(`awesome-gpt4o-image-prompts-${leftPad(items.length + 1)}`, title, prompt, cover, ["gpt4o"], markdownPreview(cover ? [cover, ...images] : images)));
     }
     return items;
 }
@@ -134,7 +136,7 @@ async function buildYouMindPrompts(baseUrl: string, idPrefix: string, modelTag: 
         const title = firstMatch(block, /^###\s+No\.\s*\d+:\s*(.+)$/m).trim();
         const prompt = firstMatch(block, /#### .*?提示词\s*\r?\n\s*```[\w-]*\r?\n(.*?)\r?\n```/s).trim();
         if (!title || !prompt) continue;
-        const images = extractMarkdownImages(baseUrl, block);
+        const images = extractCoverImages(baseUrl, block);
         items.push(defaultPrompt(`${idPrefix}-${leftPad(items.length + 1)}`, title, prompt, images[0] || "", youMindTags(title, modelTag), markdownPreview(images)));
     }
     return items;
@@ -186,14 +188,40 @@ function firstMatch(value: string, pattern: RegExp) {
     return pattern.exec(value)?.[1] || "";
 }
 
-function extractMarkdownImages(baseUrl: string, markdown: string) {
-    return Array.from(markdown.matchAll(/!\[[^\]]*]\(([^)]+)\)/g), (match) => absoluteImage(baseUrl, match[1])).filter(Boolean);
+function extractCoverImages(baseUrl: string, markdown: string) {
+    const fromMarkdown = Array.from(markdown.matchAll(/!\[[^\]]*]\(([^)]+)\)/g), (match) => absoluteImage(baseUrl, match[1]));
+    const fromHtml = Array.from(markdown.matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["']/gi), (match) => absoluteImage(baseUrl, match[1]));
+    return [...fromMarkdown, ...fromHtml].filter(isUsefulCoverImage);
+}
+
+function coversFromPromptsHtml(baseUrl: string, html: string) {
+    const covers = new Map<string, string>();
+    for (const article of html.split(/<article\b/i).slice(1)) {
+        const title = firstMatch(article, /<h3[^>]*>(.*?)<\/h3>/is)
+            .replace(/<[^>]+>/g, "")
+            .trim();
+        const cover = absoluteImage(baseUrl, firstMatch(article, /<img\b[^>]*\bsrc=["']([^"']+)["']/i));
+        if (title && isUsefulCoverImage(cover)) covers.set(title, cover);
+    }
+    return covers;
 }
 
 function absoluteImage(baseUrl: string, image: string) {
     if (!image) return "";
     if (/^https?:\/\//i.test(image)) return image;
     return `${baseUrl}/${image.replace(/^\.?\//, "")}`;
+}
+
+function isUsefulCoverImage(url: string) {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    if (lower.includes("img.shields.io") || lower.includes("awesome.re") || lower.includes("camo.githubusercontent.com")) return false;
+    if (/\.svg(?:$|\?)/i.test(url)) return false;
+    return true;
+}
+
+function sortPromptsByCover(items: Prompt[]) {
+    return items.slice().sort((left, right) => Number(Boolean(right.coverUrl)) - Number(Boolean(left.coverUrl)));
 }
 
 function tagsFromCategory(category: string) {

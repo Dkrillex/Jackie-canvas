@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { ModelPicker } from "@/components/model-picker";
 import { fetchChannelModels } from "@/services/api/image";
+import { fetchUserCenterInfo, formatQuotaCredits, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
@@ -70,6 +71,9 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const [syncingWebdav, setSyncingWebdav] = useState(false);
     const [webdavSyncStatus, setWebdavSyncStatus] = useState("");
     const [webdavDomainProgress, setWebdavDomainProgress] = useState(createWebdavDomainProgress);
+    const [userInfo, setUserInfo] = useState<UserCenterInfo | null>(null);
+    const [loadingUserInfo, setLoadingUserInfo] = useState(false);
+    const [userInfoError, setUserInfoError] = useState("");
     const config = useConfigStore((state) => state.config);
     const webdav = useConfigStore((state) => state.webdav);
     const updateConfig = useConfigStore((state) => state.updateConfig);
@@ -230,12 +234,68 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
 
     const toggleAgentConnection = () => (agentEnabled ? disconnectAgent({ connectError: "" }) : connectAgent());
 
+    const refreshUserInfo = async () => {
+        const channel = config.channels.find((item) => item.baseUrl.trim() && item.apiKey.trim()) || config.channels[0];
+        if (!channel?.baseUrl.trim() || !channel?.apiKey.trim()) {
+            setUserInfo(null);
+            setUserInfoError("请先在渠道里填写 Base URL 和 API Key");
+            return;
+        }
+        setLoadingUserInfo(true);
+        setUserInfoError("");
+        try {
+            setUserInfo(await fetchUserCenterInfo({ baseUrl: channel.baseUrl, apiKey: channel.apiKey }));
+        } catch (error) {
+            setUserInfo(null);
+            setUserInfoError(error instanceof Error ? error.message : "获取用户信息失败");
+        } finally {
+            setLoadingUserInfo(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab !== "user") return;
+        void refreshUserInfo();
+    }, [activeTab, config.channels]);
+
     return (
         <>
             <Tabs
                 activeKey={activeTab}
                 onChange={(key) => setActiveTab(key as ConfigTabKey)}
                 items={[
+                    {
+                        key: "user",
+                        label: "用户中心",
+                        children: (
+                            <Form layout="vertical" requiredMark={false}>
+                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
+                                    <div className="min-w-0">
+                                        <div className="text-sm font-semibold">账户信息</div>
+                                        <div className="mt-1 text-xs text-stone-500">根据当前渠道的 API Key 查询用户名称和剩余积分。</div>
+                                    </div>
+                                    <Button icon={<RefreshCw className="size-4" />} loading={loadingUserInfo} onClick={() => void refreshUserInfo()}>
+                                        刷新
+                                    </Button>
+                                </div>
+                                {userInfoError ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">{userInfoError}</div> : null}
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <Form.Item label="用户名称" className="mb-0">
+                                        <Input value={userInfo?.username || ""} readOnly placeholder={loadingUserInfo ? "加载中..." : "暂无"} />
+                                    </Form.Item>
+                                    <Form.Item label="令牌名称" className="mb-0">
+                                        <Input value={userInfo?.tokenName || ""} readOnly placeholder={loadingUserInfo ? "加载中..." : "暂无"} />
+                                    </Form.Item>
+                                    <Form.Item label="剩余积分" className="mb-0" extra={userInfo ? `约 ${formatQuotaCurrency(userInfo.totalAvailable)}` : undefined}>
+                                        <Input value={userInfo ? (userInfo.unlimitedQuota ? "无限制" : formatQuotaCredits(userInfo.totalAvailable)) : ""} readOnly placeholder={loadingUserInfo ? "加载中..." : "暂无"} />
+                                    </Form.Item>
+                                    <Form.Item label="已用积分" className="mb-0" extra={userInfo ? `总额 ${formatQuotaCredits(userInfo.totalGranted)}` : undefined}>
+                                        <Input value={userInfo ? formatQuotaCredits(userInfo.totalUsed) : ""} readOnly placeholder={loadingUserInfo ? "加载中..." : "暂无"} />
+                                    </Form.Item>
+                                </div>
+                            </Form>
+                        ),
+                    },
                     {
                         key: "channels",
                         label: "渠道",

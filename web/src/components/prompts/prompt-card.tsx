@@ -1,5 +1,5 @@
-import { Copy } from "lucide-react";
-import type { ReactNode } from "react";
+import { Copy, ImageOff } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { Button, Card, Tag } from "antd";
 
 import { formatPromptDate, type Prompt } from "@/services/api/prompts";
@@ -21,6 +21,8 @@ export function PromptCard({
     actionType?: "text" | "primary";
     extraAction?: ReactNode;
 }) {
+    const [broken, setBroken] = useState(!item.coverUrl);
+
     return (
         <Card
             hoverable
@@ -28,7 +30,14 @@ export function PromptCard({
             styles={{ body: { padding: 0 } }}
             cover={
                 <button type="button" className="block w-full text-left" onClick={onOpen}>
-                    <img src={item.coverUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" />
+                    {!broken ? (
+                        <img src={item.coverUrl} alt={item.title} className="aspect-[4/3] w-full object-cover" onError={() => setBroken(true)} />
+                    ) : (
+                        <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 bg-stone-100 text-stone-400 dark:bg-stone-900 dark:text-stone-500">
+                            <ImageOff className="size-6" />
+                            <span className="text-xs">暂无封面</span>
+                        </div>
+                    )}
                 </button>
             }
         >
