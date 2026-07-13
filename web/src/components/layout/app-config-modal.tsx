@@ -93,7 +93,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const disconnectAgent = useAgentStore((state) => state.disconnectAgent);
     const modelOptions = config.models.map((model) => ({ label: modelOptionLabel(config, model), value: model }));
     const webdavReady = Boolean(webdav.url.trim());
-    useEffect(() => setActiveTab(initialTab), [initialTab]);
+    useEffect(() => {
+        const nextTab = initialTab === "preferences" || initialTab === "webdav" || initialTab === "codex" ? "channels" : initialTab;
+        setActiveTab(nextTab);
+    }, [initialTab]);
 
     const saveConfig = (nextConfig: AiConfig) => {
         (Object.keys(nextConfig) as Array<keyof AiConfig>).forEach((key) => updateConfig(key, nextConfig[key]));
@@ -544,7 +547,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                             </Form>
                         ),
                     },
-                ]}
+                ].filter((item) => item.key !== "preferences" && item.key !== "webdav" && item.key !== "codex")}
             />
             {showDoneButton ? (
                 <div className="mt-4 flex justify-end">
