@@ -1,16 +1,18 @@
 import { Menu } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 
 import { navigationTools, type NavigationToolSlug } from "@/constant/navigation-tools";
 import { AppConfigModal } from "@/components/layout/app-config-modal";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { UserStatusActions } from "@/components/layout/user-status-actions";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
-import { useState } from "react";
 
 export function AppTopNav() {
     const { pathname } = useLocation();
+    const { t } = useI18n();
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const user = useUserStore((state) => state.user);
     const hideHeader = /^\/canvas\/[^/]+/.test(pathname);
@@ -32,8 +34,8 @@ export function AppTopNav() {
                                 type="button"
                                 className="ml-3 inline-flex size-8 shrink-0 items-center justify-center text-stone-600 transition hover:text-stone-950 md:hidden dark:text-stone-300 dark:hover:text-white"
                                 onClick={() => setMobileNavOpen(true)}
-                                aria-label="打开导航菜单"
-                                title="导航菜单"
+                                aria-label={t("nav.menu")}
+                                title={t("nav.drawer")}
                             >
                                 <Menu className="size-5" />
                             </button>
@@ -54,7 +56,7 @@ export function AppTopNav() {
                                             )}
                                         >
                                             <Icon className="size-4" />
-                                            <span className="truncate">{tool.label}</span>
+                                            <span className="truncate">{t(tool.labelKey)}</span>
                                         </Link>
                                     );
                                 })}

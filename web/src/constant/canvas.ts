@@ -1,5 +1,7 @@
 import { CanvasNodeType } from "@/types/canvas";
 import type { CanvasNodeMetadata } from "@/types/canvas";
+import { useLocaleStore } from "@/stores/use-locale-store";
+import type { MessageKey } from "@/i18n";
 
 type CanvasNodeSpec = {
     width: number;
@@ -43,6 +45,19 @@ export const NODE_SPECS = {
         metadata: { status: "idle" },
     },
 } satisfies Record<CanvasNodeType, CanvasNodeSpec>;
+
+const NODE_TITLE_KEYS: Record<CanvasNodeType, MessageKey> = {
+    [CanvasNodeType.Image]: "common.image",
+    [CanvasNodeType.Text]: "common.text",
+    [CanvasNodeType.Config]: "canvas.tool.config",
+    [CanvasNodeType.Video]: "common.video",
+    [CanvasNodeType.Audio]: "common.audio",
+    [CanvasNodeType.Group]: "canvas.tool.group",
+};
+
+export function nodeDefaultTitle(type: CanvasNodeType) {
+    return useLocaleStore.getState().t(NODE_TITLE_KEYS[type]);
+}
 
 export function getNodeSpec(type: CanvasNodeType) {
     return NODE_SPECS[type];

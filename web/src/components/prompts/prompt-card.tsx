@@ -3,12 +3,13 @@ import { type ReactNode, useState } from "react";
 import { Button, Card, Tag } from "antd";
 
 import { formatPromptDate, type Prompt } from "@/services/api/prompts";
+import { useI18n } from "@/stores/use-locale-store";
 
 export function PromptCard({
     item,
     onOpen,
     onCopy,
-    actionLabel = "复制",
+    actionLabel,
     actionIcon = <Copy className="size-3.5" />,
     actionType = "text",
     extraAction,
@@ -21,6 +22,8 @@ export function PromptCard({
     actionType?: "text" | "primary";
     extraAction?: ReactNode;
 }) {
+    const { t } = useI18n();
+    const resolvedActionLabel = actionLabel ?? t("action.copy");
     const [broken, setBroken] = useState(!item.coverUrl);
 
     return (
@@ -35,7 +38,7 @@ export function PromptCard({
                     ) : (
                         <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 bg-stone-100 text-stone-400 dark:bg-stone-900 dark:text-stone-500">
                             <ImageOff className="size-6" />
-                            <span className="text-xs">暂无封面</span>
+                            <span className="text-xs">{t("common.noCover")}</span>
                         </div>
                     )}
                 </button>
@@ -59,7 +62,7 @@ export function PromptCard({
             </button>
             <div className="flex items-center gap-2 px-4 pb-4">
                 <Button block={actionType === "primary"} type={actionType} size="small" icon={actionIcon} onClick={onCopy}>
-                    {actionLabel}
+                    {resolvedActionLabel}
                 </Button>
                 {extraAction}
             </div>

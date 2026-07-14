@@ -3,10 +3,11 @@ import { LoaderCircle } from "lucide-react";
 
 import { formatDuration } from "@/lib/image-utils";
 import { cn } from "@/lib/utils";
-
-const pendingMessages = ["正在创建图片", "马上就好了", "再等等", "正在整理细节"];
+import { useI18n } from "@/stores/use-locale-store";
 
 export function ImageGenerationPending({ className, label, compact = false }: { className?: string; label?: string; compact?: boolean }) {
+    const { t } = useI18n();
+    const pendingMessages = [t("image.pending1"), t("image.pending2"), t("image.pending3"), t("image.pending4")];
     const [tick, setTick] = useState(0);
 
     useEffect(() => {

@@ -3,8 +3,10 @@ import { Button, Modal } from "antd";
 import { useAssetStore } from "@/stores/use-asset-store";
 import { useCanvasStore } from "@/stores/canvas/use-canvas-store";
 import { useCanvasUiStore } from "@/stores/canvas/use-canvas-ui-store";
+import { useI18n } from "@/stores/use-locale-store";
 
 export function CanvasDeleteProjectsDialog() {
+    const { t } = useI18n();
     const ids = useCanvasUiStore((state) => state.deleteProjectIds);
     const setDeleteIds = useCanvasUiStore((state) => state.setDeleteProjectIds);
     const removeSelectedIds = useCanvasUiStore((state) => state.removeSelectedProjectIds);
@@ -19,20 +21,20 @@ export function CanvasDeleteProjectsDialog() {
 
     return (
         <Modal
-            title="删除画布？"
+            title={t("canvas.deleteTitle")}
             open={ids.length > 0}
             centered
             onCancel={() => setDeleteIds([])}
             footer={
                 <>
-                    <Button onClick={() => setDeleteIds([])}>取消</Button>
+                    <Button onClick={() => setDeleteIds([])}>{t("action.cancel")}</Button>
                     <Button danger type="primary" onClick={confirm}>
-                        删除
+                        {t("action.delete")}
                     </Button>
                 </>
             }
         >
-            <p className="text-sm text-stone-500">将删除 {ids.length} 个画布，里面的节点和连线也会一起移除。</p>
+            <p className="text-sm text-stone-500">{t("canvas.deleteConfirm", { n: ids.length })}</p>
         </Modal>
     );
 }

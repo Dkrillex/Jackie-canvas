@@ -1,29 +1,31 @@
 import { FileText, ImagePlus, Images, Settings2, Video } from "lucide-react";
 
+import type { MessageKey } from "@/i18n";
+
 export const navigationTools = [
     {
         slug: "image",
-        label: "生图工作台",
+        labelKey: "nav.image" as MessageKey,
         icon: ImagePlus,
     },
     {
         slug: "video",
-        label: "视频创作台",
+        labelKey: "nav.video" as MessageKey,
         icon: Video,
     },
     {
         slug: "prompts",
-        label: "提示词库",
+        labelKey: "nav.prompts" as MessageKey,
         icon: FileText,
     },
     {
         slug: "assets",
-        label: "我的素材",
+        labelKey: "nav.assets" as MessageKey,
         icon: Images,
     },
     {
         slug: "config",
-        label: "配置",
+        labelKey: "nav.config" as MessageKey,
         icon: Settings2,
     },
 ] as const;

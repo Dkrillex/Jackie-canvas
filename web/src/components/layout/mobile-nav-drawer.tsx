@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { navigationTools, type NavigationToolSlug } from "@/constant/navigation-tools";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 
 type MobileNavDrawerProps = {
@@ -12,11 +13,12 @@ type MobileNavDrawerProps = {
 };
 
 export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDrawerProps) {
+    const { t } = useI18n();
     const user = useUserStore((state) => state.user);
     const visibleTools = navigationTools.filter((tool) => tool.slug !== "config" || user);
 
     return (
-        <Drawer title="导航" placement="left" size={280} open={open} onClose={onClose} className="md:hidden">
+        <Drawer title={t("nav.drawer")} placement="left" size={280} open={open} onClose={onClose} className="md:hidden">
             <div className="space-y-1">
                 {visibleTools.map((tool) => {
                     const Icon = tool.icon;
@@ -32,7 +34,7 @@ export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDraw
                             )}
                         >
                             <Icon className="size-5" />
-                            <span>{tool.label}</span>
+                            <span>{t(tool.labelKey)}</span>
                         </Link>
                     );
                 })}

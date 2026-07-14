@@ -2,10 +2,12 @@ import { App, Button, Form, Input, Modal } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 
 export function LoginModal() {
     const { message } = App.useApp();
+    const { t } = useI18n();
     const navigate = useNavigate();
     const open = useUserStore((state) => state.isLoginOpen);
     const redirectPath = useUserStore((state) => state.loginRedirectPath);
@@ -17,33 +19,33 @@ export function LoginModal() {
 
     const handleSubmit = async () => {
         if (!username.trim() || !password) {
-            message.error("请输入用户名和密码");
+            message.error(t("login.required"));
             return;
         }
         setSubmitting(true);
         try {
             await login(username, password);
-            message.success("登录成功");
+            message.success(t("login.success"));
             setPassword("");
             navigate(redirectPath || "/image");
         } catch (error) {
-            message.error(error instanceof Error ? error.message : "登录失败");
+            message.error(error instanceof Error ? error.message : t("login.failed"));
         } finally {
             setSubmitting(false);
         }
     };
 
     return (
-        <Modal title="登录 MPTECH AI" open={open} onCancel={closeLoginModal} footer={null} centered destroyOnHidden>
+        <Modal title={t("login.title")} open={open} onCancel={closeLoginModal} footer={null} centered destroyOnHidden>
             <Form layout="vertical" requiredMark={false} onFinish={() => void handleSubmit()}>
-                <Form.Item label="用户名" required>
-                    <Input value={username} autoComplete="username" placeholder="请输入用户名" onChange={(event) => setUsername(event.target.value)} />
+                <Form.Item label={t("login.username")} required>
+                    <Input value={username} autoComplete="username" placeholder={t("login.usernamePlaceholder")} onChange={(event) => setUsername(event.target.value)} />
                 </Form.Item>
-                <Form.Item label="密码" required>
-                    <Input.Password value={password} autoComplete="current-password" placeholder="请输入密码" onChange={(event) => setPassword(event.target.value)} />
+                <Form.Item label={t("login.password")} required>
+                    <Input.Password value={password} autoComplete="current-password" placeholder={t("login.passwordPlaceholder")} onChange={(event) => setPassword(event.target.value)} />
                 </Form.Item>
                 <Button type="primary" htmlType="submit" block loading={submitting}>
-                    登录
+                    {t("login.submit")}
                 </Button>
             </Form>
         </Modal>

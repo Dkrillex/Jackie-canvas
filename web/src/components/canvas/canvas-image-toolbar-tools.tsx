@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Brush, Camera, Copy, FileText, Grid2x2, Lock, LockOpen, Maximize2, Scissors, Sparkles, Upload, ZoomIn } from "lucide-react";
 
+import type { MessageKey } from "@/i18n";
+import { useLocaleStore } from "@/stores/use-locale-store";
 import type { CanvasNodeData } from "@/types/canvas";
 
 export type ImageNodeActionToolId = "copyPrompt" | "reversePrompt" | "replace" | "resize" | "maskEdit" | "crop" | "split" | "upscale" | "superResolve" | "angle" | "view";
@@ -23,9 +25,9 @@ export type ImageToolHandlers = {
 export type ImageToolDefinition = {
     id: ImageNodeActionToolId;
     defaultVisible: boolean;
-    panelLabel: string;
-    label: string | ((node: CanvasNodeData) => string);
-    title: string | ((node: CanvasNodeData) => string);
+    panelLabelKey: MessageKey;
+    label: MessageKey | ((node: CanvasNodeData) => string);
+    title: MessageKey | ((node: CanvasNodeData) => string);
     icon: (node: CanvasNodeData) => ReactNode;
     active?: (node: CanvasNodeData) => boolean;
     run: (node: CanvasNodeData, handlers: ImageToolHandlers) => void;
@@ -40,40 +42,44 @@ export const IMAGE_QUICK_TOOLS_STORAGE_KEY = "canvas-image-quick-tools-v6";
 
 const defaultBaseToolIds: ImageQuickToolId[] = ["info", "delete", "saveAsset", "download", "edit"];
 
+function t(key: MessageKey) {
+    return useLocaleStore.getState().t(key);
+}
+
 export const imageToolDefinitions: ImageToolDefinition[] = [
     {
         id: "copyPrompt",
         defaultVisible: true,
-        panelLabel: "复制提示词",
-        label: "复制提示词",
-        title: "复制生成该图片的提示词",
+        panelLabelKey: "canvas.tool.copyPrompt",
+        label: "canvas.tool.copyPrompt",
+        title: "canvas.tool.copyPromptDesc",
         icon: () => <Copy className="size-4" />,
         run: (node, handlers) => handlers.onCopyPrompt(node),
     },
     {
         id: "reversePrompt",
         defaultVisible: true,
-        panelLabel: "反推提示词",
-        label: "反推提示词",
-        title: "创建反推提示词的文本和配置节点",
+        panelLabelKey: "canvas.tool.reversePrompt",
+        label: "canvas.tool.reversePrompt",
+        title: "canvas.tool.reversePromptDesc",
         icon: () => <FileText className="size-4" />,
         run: (node, handlers) => handlers.onReversePrompt(node),
     },
     {
         id: "replace",
         defaultVisible: true,
-        panelLabel: "替换图片",
-        label: "替换图片",
-        title: "替换图片",
+        panelLabelKey: "canvas.node.replaceImage",
+        label: "canvas.node.replaceImage",
+        title: "canvas.node.replaceImage",
         icon: () => <Upload className="size-4" />,
         run: (node, handlers) => handlers.onUpload(node),
     },
     {
         id: "resize",
         defaultVisible: false,
-        panelLabel: "锁比例",
-        label: (node) => (node.metadata?.freeResize ? "自由比例" : "锁比例"),
-        title: (node) => (node.metadata?.freeResize ? "切换为等比缩放" : "切换为自由比例"),
+        panelLabelKey: "canvas.tool.lockRatio",
+        label: (node) => t(node.metadata?.freeResize ? "canvas.tool.freeRatio" : "canvas.tool.lockRatio"),
+        title: (node) => t(node.metadata?.freeResize ? "canvas.tool.toLockRatio" : "canvas.tool.toFreeRatio"),
         icon: (node) => (node.metadata?.freeResize ? <LockOpen className="size-4" /> : <Lock className="size-4" />),
         active: (node) => Boolean(node.metadata?.freeResize),
         run: (node, handlers) => handlers.onToggleFreeResize(node),
@@ -81,63 +87,63 @@ export const imageToolDefinitions: ImageToolDefinition[] = [
     {
         id: "maskEdit",
         defaultVisible: true,
-        panelLabel: "局部编辑",
-        label: "局部编辑",
-        title: "添加蒙版遮罩后局部修改",
+        panelLabelKey: "canvas.tool.mask",
+        label: "canvas.tool.mask",
+        title: "canvas.tool.maskDesc",
         icon: () => <Brush className="size-4" />,
         run: (node, handlers) => handlers.onMaskEdit(node),
     },
     {
         id: "crop",
         defaultVisible: true,
-        panelLabel: "裁剪",
-        label: "裁剪",
-        title: "裁剪并生成新节点",
+        panelLabelKey: "canvas.tool.crop",
+        label: "canvas.tool.crop",
+        title: "canvas.tool.cropDesc",
         icon: () => <Scissors className="size-4" />,
         run: (node, handlers) => handlers.onCrop(node),
     },
     {
         id: "split",
         defaultVisible: true,
-        panelLabel: "切图",
-        label: "切图",
-        title: "按行列切分图片",
+        panelLabelKey: "canvas.tool.split",
+        label: "canvas.tool.split",
+        title: "canvas.tool.splitDesc",
         icon: () => <Grid2x2 className="size-4" />,
         run: (node, handlers) => handlers.onSplit(node),
     },
     {
         id: "upscale",
         defaultVisible: true,
-        panelLabel: "放大",
-        label: "放大",
-        title: "放大图片分辨率",
+        panelLabelKey: "canvas.node.zoomIn",
+        label: "canvas.node.zoomIn",
+        title: "canvas.tool.upscaleDesc",
         icon: () => <ZoomIn className="size-4" />,
         run: (node, handlers) => handlers.onUpscale(node),
     },
     {
         id: "superResolve",
         defaultVisible: false,
-        panelLabel: "超分",
-        label: "超分",
-        title: "AI 超分",
+        panelLabelKey: "canvas.tool.upscale",
+        label: "canvas.tool.upscale",
+        title: "canvas.tool.upscaleShort",
         icon: () => <Sparkles className="size-4" />,
         run: (node, handlers) => handlers.onSuperResolve(node),
     },
     {
         id: "angle",
         defaultVisible: false,
-        panelLabel: "多角度",
-        label: "多角度",
-        title: "生成角度",
+        panelLabelKey: "canvas.tool.angle",
+        label: "canvas.tool.angle",
+        title: "canvas.tool.angleDesc",
         icon: () => <Camera className="size-4" />,
         run: (node, handlers) => handlers.onAngle(node),
     },
     {
         id: "view",
         defaultVisible: true,
-        panelLabel: "查看大图",
-        label: "查看大图",
-        title: "查看图片详情",
+        panelLabelKey: "canvas.tool.viewLarge",
+        label: "canvas.tool.viewLarge",
+        title: "canvas.tool.viewDetail",
         icon: () => <Maximize2 className="size-4" />,
         run: (node, handlers) => handlers.onViewImage(node),
     },
@@ -156,6 +162,10 @@ export function buildImageToolbarTools(node: CanvasNodeData, handlers: ImageTool
     }));
 }
 
+export function imageToolPanelLabel(tool: ImageToolDefinition) {
+    return t(tool.panelLabelKey);
+}
+
 export function normalizeImageQuickToolIds(value: unknown[]) {
     const allIds: ImageQuickToolId[] = [...defaultBaseToolIds, ...imageToolDefinitions.map((tool) => tool.id)];
     const ids = new Set(allIds);
@@ -172,6 +182,6 @@ export function readImageQuickToolsConfig(value: unknown): ImageQuickToolsConfig
     };
 }
 
-function resolveToolText(value: string | ((node: CanvasNodeData) => string), node: CanvasNodeData) {
-    return typeof value === "function" ? value(node) : value;
+function resolveToolText(value: MessageKey | ((node: CanvasNodeData) => string), node: CanvasNodeData) {
+    return typeof value === "function" ? value(node) : t(value);
 }

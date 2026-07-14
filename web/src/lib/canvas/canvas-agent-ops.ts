@@ -1,6 +1,8 @@
 import { nanoid } from "nanoid";
 
-import { getNodeSpec } from "@/constant/canvas";
+import { getNodeSpec, nodeDefaultTitle } from "@/constant/canvas";
+import { useLocaleStore } from "@/stores/use-locale-store";
+import type { MessageKey } from "@/i18n";
 import { CanvasNodeType, type CanvasConnection, type CanvasNodeData, type CanvasNodeMetadata, type ViewportTransform } from "@/types/canvas";
 
 export type CanvasAgentOp =
@@ -47,7 +49,7 @@ export function applyCanvasAgentOps(snapshot: CanvasAgentSnapshot, ops?: CanvasA
             const node: CanvasNodeData = {
                 id: op.id || `${nodeType}-${Date.now()}-${index}`,
                 type: nodeType,
-                title: op.title || spec.title,
+                title: op.title || nodeDefaultTitle(nodeType),
                 position: op.position || { x: op.x ?? index * 36, y: op.y ?? index * 36 },
                 width: op.width || spec.width,
                 height: op.height || spec.height,
@@ -83,14 +85,18 @@ export function applyCanvasAgentOps(snapshot: CanvasAgentSnapshot, ops?: CanvasA
     return { ...snapshot, nodes, connections, selectedNodeIds, viewport };
 }
 
+const OP_LABEL_KEYS: Record<string, MessageKey> = {
+    add_node: "agent.op.addNode",
+    update_node: "agent.op.updateNode",
+    delete_node: "agent.op.deleteNode",
+    delete_connections: "agent.op.deleteConnections",
+    connect_nodes: "agent.op.connect",
+    set_viewport: "agent.op.setViewport",
+    select_nodes: "agent.op.selectNodes",
+    run_generation: "agent.op.runGeneration",
+};
+
 function opLabel(type: string) {
-    if (type === "add_node") return "新增节点";
-    if (type === "update_node") return "更新节点";
-    if (type === "delete_node") return "删除节点";
-    if (type === "delete_connections") return "删除连线";
-    if (type === "connect_nodes") return "连接";
-    if (type === "set_viewport") return "调整视图";
-    if (type === "select_nodes") return "选择节点";
-    if (type === "run_generation") return "触发生成";
-    return type;
+    const key = OP_LABEL_KEYS[type];
+    return key ? useLocaleStore.getState().t(key) : type;
 }

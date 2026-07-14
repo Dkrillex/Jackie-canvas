@@ -1,4 +1,5 @@
 import type { ReferenceImage } from "@/types/image";
+import { useLocaleStore } from "@/stores/use-locale-store";
 
 export function formatBytes(bytes: number) {
     if (!Number.isFinite(bytes) || bytes <= 0) {
@@ -18,7 +19,8 @@ export function formatDuration(ms: number) {
     const value = Math.max(0, Math.floor(ms / 1000));
     const minutes = Math.floor(value / 60);
     const seconds = value % 60;
-    return minutes ? `${minutes}分${String(seconds).padStart(2, "0")}秒` : `${seconds}秒`;
+    const t = useLocaleStore.getState().t;
+    return minutes ? t("common.durationMinSec", { m: minutes, s: String(seconds).padStart(2, "0") }) : t("common.durationSec", { s: seconds });
 }
 
 export function getDataUrlByteSize(dataUrl: string) {
@@ -34,7 +36,7 @@ export function readFileAsDataUrl(file: File) {
     return new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("读取图片失败"));
+        reader.onerror = () => reject(new Error(useLocaleStore.getState().t("common.readImageFailed")));
         reader.readAsDataURL(file);
     });
 }

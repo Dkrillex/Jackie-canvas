@@ -5,6 +5,8 @@ import copyToClipboard from "copy-to-clipboard";
 import { Copy, FolderOpen, History, KeyRound, Link2, LoaderCircle, PlugZap, Plus, RefreshCw, RotateCcw, Square, Terminal, Trash2 } from "lucide-react";
 
 import { canvasThemes } from "@/lib/canvas-theme";
+import { useI18n, useLocaleStore } from "@/stores/use-locale-store";
+import type { MessageKey } from "@/i18n";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { useUserStore } from "@/stores/use-user-store";
 import { useAgentStore, type AgentAttachment, type AgentChatItem, type AgentEventLog, type AgentPanelTab, type AgentPendingToolCall, type AgentThreadSummary } from "@/stores/use-agent-store";
@@ -15,9 +17,9 @@ import { AgentChatComposer, AgentChatMessage, AgentPanelTabs, AgentPendingToolCa
 const MAX_ATTACHMENTS = 6;
 const MAX_ATTACHMENT_PAYLOAD_BYTES = 28 * 1024 * 1024;
 const DEFAULT_AGENT_URL = "http://127.0.0.1:17371";
-const AGENT_CONNECT_STEPS = [
-    { title: "方式一：在 Codex 中使用插件", text: "在 Codex app 安装 Infinite Canvas 插件后，通过插件启动画布，插件会自动启动本地 Agent 并带上连接信息。" },
-    { title: "方式二：直接运行 Agent", text: "不使用 Codex 插件时，在终端运行下面命令，再回到网页里连接或手动填入 Local URL 和 Connect token。", command: "npx -y @basketikun/canvas-agent" },
+const AGENT_CONNECT_STEPS: Array<{ titleKey: MessageKey; textKey: MessageKey; command?: string }> = [
+    { titleKey: "agent.step1.title", textKey: "agent.step1.text" },
+    { titleKey: "agent.step2.title", textKey: "agent.step2.text", command: "npx -y @basketikun/canvas-agent" },
 ];
 const AGENT_PLUGIN_REMOVE_COMMAND = "codex plugin remove infinite-canvas";
 const AGENT_MCP_REMOVE_COMMAND = "codex mcp remove infinite-canvas";
@@ -42,6 +44,7 @@ type AgentConfigResponse = { ok?: boolean; url?: string; token?: string; hasToke
 export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { embedded?: boolean; headless?: boolean; autoConnect?: boolean }) {
     const theme = canvasThemes[useThemeStore((state) => state.theme)];
     const user = useUserStore((state) => state.user);
+    const { t } = useI18n();
     const { message, modal } = App.useApp();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -74,7 +77,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                 setAgentState({ messages: normalizeHistoryMessages(thread.messages || []) });
             }
         } catch (error) {
-            addEventLog("读取历史失败", error);
+            addEventLog(t("agent.loadHistoryFailed"), error);
         } finally {
             setAgentState({ loadingThreads: false });
         }
@@ -103,8 +106,8 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         source.addEventListener("hello", () => {
             errorLoggedRef.current = false;
             connectedRef.current = true;
-            setAgentState({ connected: true, activity: "已连接", connectError: "", messages: useAgentStore.getState().messages.filter((item) => !isConnectionErrorMessage(item)) });
-            if (!headless) message.success("本地 Agent 已连接");
+            setAgentState({ connected: true, activity: t("agent.connected"), connectError: "", messages: useAgentStore.getState().messages.filter((item) => !isConnectionErrorMessage(item)) });
+            if (!headless) message.success(t("agent.connectedToast"));
             void postState(endpoint, token, clientId, canvasContextRef.current?.snapshot || null);
         });
         source.addEventListener("tool_call", (event) => {
@@ -117,28 +120,28 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         });
         source.addEventListener("agent_log", (event) => {
             const text = parseEventData<{ text?: unknown }>(event)?.text;
-            addEventLog("日志", text, text);
+            addEventLog(t("agent.log"), text, text);
         });
         source.addEventListener("agent_error", (event) => {
             const message = parseEventData<{ message?: unknown }>(event)?.message;
-            setAgentState({ activity: "出错", waiting: false });
-            addMessage({ role: "error", title: "错误", text: normalizeText(message) });
-            addEventLog("错误", message, message);
+            setAgentState({ activity: t("agent.errored"), waiting: false });
+            addMessage({ role: "error", title: t("agent.error"), text: normalizeText(message) });
+            addEventLog(t("agent.error"), message, message);
         });
         source.addEventListener("agent_done", () => {
-            setAgentState({ activity: "完成", waiting: false, sending: false });
+            setAgentState({ activity: t("agent.done"), waiting: false, sending: false });
             void loadThreads();
         });
         source.onerror = () => {
             const wasConnected = connectedRef.current;
-            const text = wasConnected ? "本地 Agent 连接失败或已断开" : "连接失败，请检查地址和 token";
+            const text = wasConnected ? t("agent.disconnectedOrFailed") : t("agent.connectFailedCheck");
             if (!errorLoggedRef.current || wasConnected) {
-                addEventLog(wasConnected ? "连接断开" : "连接失败", { endpoint, error: text });
+                addEventLog(wasConnected ? t("agent.disconnected") : t("agent.connectFailed"), { endpoint, error: text });
                 if (!headless) message.error(text);
             }
             errorLoggedRef.current = true;
             connectedRef.current = false;
-            clearAgentSession({ activity: wasConnected ? "连接断开" : "连接失败", connected: false, connectError: text });
+            clearAgentSession({ activity: wasConnected ? t("agent.disconnected") : t("agent.connectFailed"), connected: false, connectError: text });
             if (!wasConnected) {
                 source.close();
                 setAgentState({ enabled: false });
@@ -166,27 +169,27 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         const requestPrompt = promptWithAttachments(text, files);
         if (!connected || !requestPrompt || sending || waiting) return;
         if (attachmentPayloadBytes(files) > MAX_ATTACHMENT_PAYLOAD_BYTES) {
-            addMessage({ role: "error", title: "图片过大", text: "图片附件超过 30MB，请删减后再发送。" });
+            addMessage({ role: "error", title: t("agent.imageTooLarge"), text: t("agent.imageTooLargeSend") });
             return;
         }
-        setAgentState({ activity: "发送中", sending: true, waiting: true });
-        addMessage({ role: "user", text: text || "发送了图片", attachments: files });
-        addEventLog("用户发送", { text, attachments: files.map(({ name, type, size }) => ({ name, type, size })) });
+        setAgentState({ activity: t("agent.sending"), sending: true, waiting: true });
+        addMessage({ role: "user", text: text || t("agent.sentImage"), attachments: files });
+        addEventLog(t("agent.userSent"), { text, attachments: files.map(({ name, type, size }) => ({ name, type, size })) });
         try {
             const res = await fetch(`${endpoint}/agent/codex/turn?token=${encodeURIComponent(token)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt: requestPrompt, threadId: useAgentStore.getState().activeThreadId || undefined, attachments: files.map(({ name, type, dataUrl }) => ({ name, type, dataUrl })) }) });
-            if (!res.ok) throw new Error("本地 Agent 拒绝了请求");
+            if (!res.ok) throw new Error(t("agent.rejectedRequest"));
             const data = (await res.json()) as { threadId?: string };
             if (data.threadId) setAgentState({ activeThreadId: data.threadId });
-            addEventLog("本地 Agent 已接收", { status: res.status });
+            addEventLog(t("agent.received"), { status: res.status });
             files.forEach((item) => {
                 URL.revokeObjectURL(item.url);
                 attachmentUrlsRef.current.delete(item.url);
             });
             setAgentState({ prompt: "", attachments: [] });
         } catch (error) {
-            setAgentState({ activity: "发送失败", waiting: false });
-            addMessage({ role: "error", title: "发送失败", text: error instanceof Error ? error.message : "发送失败" });
-            addEventLog("发送失败", error);
+            setAgentState({ activity: t("agent.sendFailed"), waiting: false });
+            addMessage({ role: "error", title: t("agent.sendFailed"), text: error instanceof Error ? error.message : t("agent.sendFailed") });
+            addEventLog(t("agent.sendFailed"), error);
         } finally {
             setAgentState({ sending: false });
         }
@@ -194,13 +197,13 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
 
     const stopTurn = async () => {
         if (!connected || (!sending && !waiting)) return;
-        setAgentState({ activity: "停止中" });
+        setAgentState({ activity: t("agent.stopping") });
         try {
             await fetch(`${endpoint}/agent/codex/interrupt?token=${encodeURIComponent(token)}`, { method: "POST", headers: { "content-type": "application/json" } });
-            setAgentState({ activity: "已停止", sending: false, waiting: false });
-            addEventLog("用户停止", {});
+            setAgentState({ activity: t("agent.stopped"), sending: false, waiting: false });
+            addEventLog(t("agent.userStopped"), {});
         } catch {
-            setAgentState({ activity: "就绪", sending: false, waiting: false });
+            setAgentState({ activity: t("agent.ready"), sending: false, waiting: false });
         }
     };
 
@@ -221,12 +224,12 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                     URL.revokeObjectURL(item.url);
                     attachmentUrlsRef.current.delete(item.url);
                 });
-                addMessage({ role: "error", title: "图片过大", text: "图片附件最多约 30MB。" });
+                addMessage({ role: "error", title: t("agent.imageTooLarge"), text: t("agent.imageTooLargeMax") });
                 return;
             }
             if (next.length) setAgentState({ attachments: merged });
         } catch (error) {
-            addMessage({ role: "error", title: "图片读取失败", text: error instanceof Error ? error.message : "图片读取失败" });
+            addMessage({ role: "error", title: t("agent.imageReadFailed"), text: error instanceof Error ? error.message : t("agent.imageReadFailed") });
         }
     };
 
@@ -242,12 +245,12 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
     const handleToolCall = async (endpoint: string, token: string, payload: AgentPendingToolCall) => {
         if (confirmToolsRef.current && payload.name === "canvas_apply_ops") {
             if (pendingToolRef.current) {
-                await postToolResult(endpoint, token, clientIdRef.current, { requestId: payload.requestId, error: "仍有待确认的画布工具调用" });
+                await postToolResult(endpoint, token, clientIdRef.current, { requestId: payload.requestId, error: t("agent.pendingToolExists") });
                 return;
             }
             pendingToolRef.current = payload;
-            setAgentState({ pendingTool: payload, activity: "等待确认", waiting: false });
-            addEventLog("等待确认", payload, payload);
+            setAgentState({ pendingTool: payload, activity: t("agent.waitConfirm"), waiting: false });
+            addEventLog(t("agent.waitConfirm"), payload, payload);
             return;
         }
         await runToolCall(endpoint, token, payload);
@@ -260,20 +263,20 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                 addEventLog(toolName(payload.name), payload, payload);
                 const result = await runSiteTool(payload.name, payload.input || {}, navigate);
                 await postToolResult(endpoint, token, clientIdRef.current, { requestId: payload.requestId, result });
-                setAgentState({ activity: "工具完成", waiting: true });
-                addEventLog(`${toolName(payload.name)}完成`, result, result);
-                addMessage({ role: "tool", title: `${toolName(payload.name)}完成`, text: siteToolSummary(payload.name, result), detail: { requestId: payload.requestId, name: payload.name, input: payload.input, result } });
+                setAgentState({ activity: t("agent.toolCompleted"), waiting: true });
+                addEventLog(t("agent.toolDone", { name: toolName(payload.name) }), result, result);
+                addMessage({ role: "tool", title: t("agent.toolDone", { name: toolName(payload.name) }), text: siteToolSummary(payload.name, result), detail: { requestId: payload.requestId, name: payload.name, input: payload.input, result } });
             } catch (error) {
-                const message = error instanceof Error ? error.message : "工具执行失败";
-                setAgentState({ activity: "工具失败", waiting: false });
-                addMessage({ role: "tool", title: "工具失败", text: message, detail: payload });
+                const message = error instanceof Error ? error.message : t("agent.toolExecFailed");
+                setAgentState({ activity: t("agent.toolFailed"), waiting: false });
+                addMessage({ role: "tool", title: t("agent.toolFailed"), text: message, detail: payload });
                 await postToolResult(endpoint, token, clientIdRef.current, { requestId: payload.requestId, error: message });
             }
             return;
         }
         try {
             const input: { ops?: CanvasAgentOp[]; path?: string } = payload.input || {};
-            setAgentState({ activity: payload.name === "canvas_apply_ops" ? "执行画布操作" : payload.name === "site_navigate" ? "跳转页面" : "读取画布", waiting: true });
+            setAgentState({ activity: payload.name === "canvas_apply_ops" ? t("agent.applyingOps") : payload.name === "site_navigate" ? t("agent.navigating") : t("agent.readingCanvas"), waiting: true });
             addEventLog(toolName(payload.name), payload, payload);
             let result: unknown;
             if (payload.name === "site_navigate") {
@@ -282,31 +285,31 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                 result = { ok: true, path };
             } else if (payload.name === "canvas_apply_ops") {
                 const context = canvasContextRef.current;
-                if (!context) throw new Error("当前不在画布页，请先用 site_navigate 打开画布");
+                if (!context) throw new Error(t("agent.notOnCanvas"));
                 result = context.applyOps(input.ops || []);
                 void postState(endpoint, token, clientIdRef.current, result as CanvasAgentSnapshot);
             } else {
                 const snapshot = canvasContextRef.current?.snapshot;
-                if (!snapshot) throw new Error("当前不在画布页，请先用 site_navigate 打开画布");
+                if (!snapshot) throw new Error(t("agent.notOnCanvas"));
                 result = snapshot;
             }
             await postToolResult(endpoint, token, clientIdRef.current, { requestId: payload.requestId, result });
-            setAgentState({ activity: "工具完成", waiting: true });
-            addEventLog(`${toolName(payload.name)}完成`, result, result);
-            addMessage({ role: "tool", title: `${toolName(payload.name)}完成`, text: payload.name === "canvas_apply_ops" ? summarizeCanvasAgentOps(input.ops || []) || "画布操作" : payload.name === "site_navigate" ? `已跳转到 ${input.path || "/"}` : "已完成", detail: { requestId: payload.requestId, name: payload.name, input, result } });
+            setAgentState({ activity: t("agent.toolCompleted"), waiting: true });
+            addEventLog(t("agent.toolDone", { name: toolName(payload.name) }), result, result);
+            addMessage({ role: "tool", title: t("agent.toolDone", { name: toolName(payload.name) }), text: payload.name === "canvas_apply_ops" ? summarizeCanvasAgentOps(input.ops || []) || t("agent.canvasOp") : payload.name === "site_navigate" ? t("agent.navigatedTo", { path: input.path || "/" }) : t("agent.completed"), detail: { requestId: payload.requestId, name: payload.name, input, result } });
         } catch (error) {
-            const message = error instanceof Error ? error.message : "画布操作失败";
-            setAgentState({ activity: "工具失败", waiting: false });
-            addMessage({ role: "tool", title: "工具失败", text: message, detail: payload });
+            const message = error instanceof Error ? error.message : t("agent.canvasOpFailed");
+            setAgentState({ activity: t("agent.toolFailed"), waiting: false });
+            addMessage({ role: "tool", title: t("agent.toolFailed"), text: message, detail: payload });
             await postToolResult(endpoint, token, clientIdRef.current, { requestId: payload.requestId, error: message });
         }
     };
 
     const rejectPendingTool = async () => {
         if (!pendingTool) return;
-        await postToolResult(endpoint, token, clientIdRef.current, { requestId: pendingTool.requestId, error: "用户取消了画布工具调用" });
-        setAgentState({ activity: "已取消", waiting: false });
-        addMessage({ role: "tool", title: "拒绝执行", text: toolName(pendingTool.name), detail: { requestId: pendingTool.requestId, name: pendingTool.name, input: pendingTool.input } });
+        await postToolResult(endpoint, token, clientIdRef.current, { requestId: pendingTool.requestId, error: t("agent.userCancelledTool") });
+        setAgentState({ activity: t("agent.cancelled"), waiting: false });
+        addMessage({ role: "tool", title: t("agent.rejectExec"), text: toolName(pendingTool.name), detail: { requestId: pendingTool.requestId, name: pendingTool.name, input: pendingTool.input } });
         pendingToolRef.current = null;
         setAgentState({ pendingTool: null });
     };
@@ -322,14 +325,14 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
     const undoLastTool = () => {
         const restored = canvasContextRef.current?.undoOps() || null;
         if (!restored) return;
-        setAgentState({ activity: "已撤销" });
-        addMessage({ role: "tool", title: "已撤销", text: "上一次工具操作", detail: restored });
+        setAgentState({ activity: t("agent.undone") });
+        addMessage({ role: "tool", title: t("agent.undone"), text: t("agent.lastToolOp"), detail: restored });
         if (connected) void postState(endpoint, token, clientIdRef.current, restored);
     };
 
     const toggleAgentConnection = async () => {
         if (enabled) {
-            clearAgentSession({ enabled: false, connected: false, activity: "离线", connectError: "" });
+            clearAgentSession({ enabled: false, connected: false, activity: t("agent.offline"), connectError: "" });
             return;
         }
         const urlToken = searchParams.get("agentToken") || "";
@@ -338,13 +341,13 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         const nextEndpoint = (urlEndpoint || discovered?.url || endpoint || DEFAULT_AGENT_URL).trim().replace(/\/$/, "");
         const nextToken = (urlToken || token.trim() || discovered?.token || "").trim();
         if (!nextEndpoint) {
-            const text = "请填写本地 Agent 地址";
+            const text = t("agent.fillAddress");
             setAgentState({ connectError: text });
             if (!headless) message.warning(text);
             return;
         }
         if (!nextToken) {
-            const text = "没有发现本地 Agent，请先在 Codex 使用插件或手动启动 Canvas Agent";
+            const text = t("agent.notFound");
             setAgentState({ connectError: text });
             if (!headless) message.warning(text);
             return;
@@ -353,13 +356,13 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
             const parsed = new URL(nextEndpoint);
             if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("invalid protocol");
         } catch {
-            const text = "本地 Agent 地址格式不正确";
+            const text = t("agent.badAddress");
             setAgentState({ connectError: text });
             if (!headless) message.warning(text);
             return;
         }
         errorLoggedRef.current = false;
-        setAgentState({ url: nextEndpoint, token: nextToken, enabled: true, connected: false, activity: "连接中", connectError: "", activeTab: "setup" });
+        setAgentState({ url: nextEndpoint, token: nextToken, enabled: true, connected: false, activity: t("agent.connecting"), connectError: "", activeTab: "setup" });
     };
 
     useEffect(() => {
@@ -392,11 +395,11 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         setAgentState({ loadingThreads: true });
         try {
             const data = await fetchAgentJson<AgentThreadResponse>(endpoint, token, "/agent/codex/threads/new", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
-            setAgentState({ activeThreadId: data.thread?.id || data.workspace?.activeThreadId || "", messages: [], activeTab: "chat", activity: "新对话" });
+            setAgentState({ activeThreadId: data.thread?.id || data.workspace?.activeThreadId || "", messages: [], activeTab: "chat", activity: t("agent.newThread") });
             await loadThreads();
         } catch (error) {
-            addEventLog("新建对话失败", error);
-            message.error(error instanceof Error ? error.message : "新建对话失败");
+            addEventLog(t("agent.newThreadFailed"), error);
+            message.error(error instanceof Error ? error.message : t("agent.newThreadFailed"));
         } finally {
             setAgentState({ loadingThreads: false });
         }
@@ -407,11 +410,11 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         setAgentState({ loadingThreads: true });
         try {
             const data = await fetchAgentJson<AgentThreadResponse>(endpoint, token, `/agent/codex/threads/${encodeURIComponent(threadId)}/resume`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({}) });
-            setAgentState({ activeThreadId: data.thread?.id || threadId, messages: normalizeHistoryMessages(data.messages || []), activeTab: "chat", activity: "已恢复会话" });
+            setAgentState({ activeThreadId: data.thread?.id || threadId, messages: normalizeHistoryMessages(data.messages || []), activeTab: "chat", activity: t("agent.resumed") });
             await loadThreads();
         } catch (error) {
-            addEventLog("恢复对话失败", error);
-            message.error(error instanceof Error ? error.message : "恢复对话失败");
+            addEventLog(t("agent.resumeFailed"), error);
+            message.error(error instanceof Error ? error.message : t("agent.resumeFailed"));
         } finally {
             setAgentState({ loadingThreads: false });
         }
@@ -428,23 +431,23 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                 activeThreadId: current.activeThreadId === threadId ? "" : current.activeThreadId,
                 messages: current.activeThreadId === threadId ? [] : current.messages,
             });
-            message.success("记录已删除");
+            message.success(t("agent.recordDeleted"));
         } catch (error) {
-            addEventLog("删除对话失败", error);
-            message.error(error instanceof Error ? error.message : "删除对话失败");
+            addEventLog(t("agent.deleteThreadFailed"), error);
+            message.error(error instanceof Error ? error.message : t("agent.deleteThreadFailed"));
         } finally {
             setAgentState({ loadingThreads: false });
         }
     };
 
     const confirmDeleteThread = (thread: AgentThreadSummary) => {
-        const label = thread.name || thread.preview || "未命名对话";
+        const label = thread.name || thread.preview || t("agent.untitledThread");
         modal.confirm({
-            title: "删除对话记录",
-            content: `确定删除「${label.length > 48 ? `${label.slice(0, 48)}...` : label}」吗？`,
-            okText: "删除",
+            title: t("agent.deleteThreadTitle"),
+            content: t("agent.deleteThreadConfirm", { label: label.length > 48 ? `${label.slice(0, 48)}...` : label }),
+            okText: t("common.delete"),
             okType: "danger",
-            cancelText: "取消",
+            cancelText: t("common.cancel"),
             onOk: () => deleteThread(thread.id),
         });
     };
@@ -495,10 +498,10 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                 value={activeTab}
                 theme={theme}
                 items={[
-                    { value: "setup", label: "连接", icon: <PlugZap className="size-3.5" /> },
-                    { value: "chat", label: "对话" },
-                    { value: "history", label: "历史", icon: <History className="size-3.5" />, count: threads.length },
-                    { value: "log", label: "日志", icon: <Terminal className="size-3.5" />, count: eventLogs.length },
+                    { value: "setup", label: t("agent.tab.setup"), icon: <PlugZap className="size-3.5" /> },
+                    { value: "chat", label: t("agent.tab.chat") },
+                    { value: "history", label: t("agent.tab.history"), icon: <History className="size-3.5" />, count: threads.length },
+                    { value: "log", label: t("agent.tab.log"), icon: <Terminal className="size-3.5" />, count: eventLogs.length },
                 ]}
                 onChange={(activeTab) => {
                     setAgentState({ activeTab });
@@ -507,7 +510,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                 right={
                     <>
                         <Button size="small" type="text" disabled={!canvasContext?.canUndo} icon={<RotateCcw className="size-3.5" />} onClick={undoLastTool}>
-                            撤销
+                            {t("agent.undo")}
                         </Button>
                     </>
                 }
@@ -562,7 +565,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                         attachments={attachments.map(agentAttachmentToChatAttachment)}
                         disabled={!connected}
                         sending={sending || waiting}
-                        placeholder="询问 Codex，或让它操作网站/画布"
+                        placeholder={t("agent.chatPlaceholder")}
                         theme={theme}
                         onPromptChange={(prompt) => setAgentState({ prompt })}
                         onSubmit={sendPrompt}
@@ -581,32 +584,33 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
 }
 
 function AgentLogView({ logs, theme, context, onClear, onCopied, onCopyBlocked }: { logs: AgentEventLog[]; theme: (typeof canvasThemes)[keyof typeof canvasThemes]; context: AgentLogContext; onClear: () => void; onCopied: (text: string) => void; onCopyBlocked: (text: string) => void }) {
+    const { t } = useI18n();
     const [mode, setMode] = useState<"text" | "json">("text");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const content = mode === "text" ? formatLogText(logs, context) : formatLogJson(logs, context);
-    const lastError = [...logs].reverse().find((item) => /错误|失败|error/i.test(`${item.title}\n${item.text}`));
-    const copy = async (value = content, tip = "日志已复制") => {
+    const lastError = [...logs].reverse().find((item) => /错误|失败|error|fail/i.test(`${item.title}\n${item.text}`));
+    const copy = async (value = content, tip = t("agent.logCopied")) => {
         if (await copyToClipboard(value)) {
             onCopied(tip);
             return;
         }
         textareaRef.current?.focus();
         textareaRef.current?.select();
-        onCopyBlocked("已选中日志，请手动复制");
+        onCopyBlocked(t("agent.logSelected"));
     };
     return (
         <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
             <div className="flex min-h-full flex-col gap-3">
                 <div>
-                    <div className="text-base font-semibold leading-6">运行日志</div>
+                    <div className="text-base font-semibold leading-6">{t("agent.runLog")}</div>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Segmented size="small" value={mode} onChange={(value) => setMode(value as "text" | "json")} options={[{ label: "排查日志", value: "text" }, { label: "原始 JSON", value: "json" }]} />
+                    <Segmented size="small" value={mode} onChange={(value) => setMode(value as "text" | "json")} options={[{ label: t("agent.logText"), value: "text" }, { label: t("agent.logJson"), value: "json" }]} />
                     <div className="flex items-center gap-2">
-                        <span className="text-xs" style={{ color: theme.node.muted }}>{logs.length} 条</span>
-                        <Button size="small" icon={<Copy className="size-3.5" />} onClick={() => void copy()}>复制</Button>
-                        <Button size="small" disabled={!lastError} onClick={() => lastError && void copy(formatLogText([lastError], context), "最近错误已复制")}>最近错误</Button>
-                        <Button size="small" danger type="text" icon={<Trash2 className="size-3.5" />} disabled={!logs.length} onClick={onClear}>清空</Button>
+                        <span className="text-xs" style={{ color: theme.node.muted }}>{t("agent.logCount", { n: logs.length })}</span>
+                        <Button size="small" icon={<Copy className="size-3.5" />} onClick={() => void copy()}>{t("agent.copy")}</Button>
+                        <Button size="small" disabled={!lastError} onClick={() => lastError && void copy(formatLogText([lastError], context), t("agent.recentErrorCopied"))}>{t("agent.recentError")}</Button>
+                        <Button size="small" danger type="text" icon={<Trash2 className="size-3.5" />} disabled={!logs.length} onClick={onClear}>{t("agent.clear")}</Button>
                     </div>
                 </div>
                 <textarea
@@ -623,33 +627,34 @@ function AgentLogView({ logs, theme, context, onClear, onCopied, onCopyBlocked }
 }
 
 function AgentConnectView({ theme, url, token, enabled, connected, activity, connectError, onUrlChange, onTokenChange, onToggleEnabled }: { theme: (typeof canvasThemes)[keyof typeof canvasThemes]; url: string; token: string; enabled: boolean; connected: boolean; activity: string; connectError: string; onUrlChange: (value: string) => void; onTokenChange: (value: string) => void; onToggleEnabled: () => void }) {
+    const { t } = useI18n();
     const { message } = App.useApp();
-    const statusText = connectError ? "连接失败" : connected ? activity : enabled ? "连接中" : "未连接";
+    const statusText = connectError ? t("agent.connectFailed") : connected ? activity : enabled ? t("agent.connecting") : t("agent.notConnected");
     const statusColor = connectError ? "#dc2626" : connected ? "#16a34a" : enabled ? "#d97706" : theme.node.muted;
     const copyCommand = (command: string) => {
         copyToClipboard(command);
-        message.success("命令已复制");
+        message.success(t("agent.commandCopied"));
     };
     return (
         <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
             <div className="space-y-4">
                 <div>
-                    <div className="text-base font-semibold leading-6">连接本地 Agent</div>
+                    <div className="text-base font-semibold leading-6">{t("agent.connectTitle")}</div>
                     <div className="mt-1 text-xs leading-5" style={{ color: theme.node.muted }}>
-                        按使用场景选择一种连接方式。
+                        {t("agent.connectHint")}
                     </div>
                 </div>
                 <div className="space-y-2">
                     {AGENT_CONNECT_STEPS.map((step) => {
-                        const command = "command" in step ? step.command : "";
+                        const command = step.command || "";
                         return (
-                            <div key={step.title} className="rounded-lg px-3 py-2.5">
-                                <div className="text-sm font-medium leading-5">{step.title}</div>
-                                <div className="mt-1 text-xs leading-5" style={{ color: theme.node.muted }}>{step.text}</div>
+                            <div key={step.titleKey} className="rounded-lg px-3 py-2.5">
+                                <div className="text-sm font-medium leading-5">{t(step.titleKey)}</div>
+                                <div className="mt-1 text-xs leading-5" style={{ color: theme.node.muted }}>{t(step.textKey)}</div>
                                 {command ? (
                                     <div className="mt-2 flex items-center gap-2 rounded-md border bg-transparent px-2 py-1.5" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
                                         <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[11px] leading-5">{command}</code>
-                                        <Tooltip title="复制命令">
+                                        <Tooltip title={t("agent.copyCommand")}>
                                             <Button size="small" type="text" className="!h-6 !w-6 !min-w-6" icon={<Copy className="size-3.5" />} onClick={() => copyCommand(command)} />
                                         </Tooltip>
                                     </div>
@@ -660,17 +665,17 @@ function AgentConnectView({ theme, url, token, enabled, connected, activity, con
                 </div>
 
                 <div className="rounded-lg border px-3 py-2.5 text-xs leading-5" style={{ borderColor: theme.node.stroke, color: theme.node.muted }}>
-                    <div className="font-medium" style={{ color: theme.node.text }}>Codex 插件提醒</div>
-                    <div className="mt-1">只有安装 Codex 插件或手动添加 MCP 后，工具列表才会进入 Codex 上下文并增加 token 消耗；仅运行 `npx -y @basketikun/canvas-agent` 启动本地 Agent 不会安装 MCP。</div>
+                    <div className="font-medium" style={{ color: theme.node.text }}>{t("agent.pluginReminderTitle")}</div>
+                    <div className="mt-1">{t("agent.pluginReminderText")}</div>
                     <div className="mt-2 grid gap-1.5">
                         {[
-                            ["移除插件", AGENT_PLUGIN_REMOVE_COMMAND],
-                            ["移除手动 MCP", AGENT_MCP_REMOVE_COMMAND],
+                            [t("agent.removePlugin"), AGENT_PLUGIN_REMOVE_COMMAND],
+                            [t("agent.removeMcp"), AGENT_MCP_REMOVE_COMMAND],
                         ].map(([label, command]) => (
                             <div key={command} className="flex items-center gap-2 rounded-md border bg-transparent px-2 py-1.5" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
                                 <span className="shrink-0 text-[11px]" style={{ color: theme.node.muted }}>{label}</span>
                                 <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[11px] leading-5">{command}</code>
-                                <Tooltip title="复制命令">
+                                <Tooltip title={t("agent.copyCommand")}>
                                     <Button size="small" type="text" className="!h-6 !w-6 !min-w-6" icon={<Copy className="size-3.5" />} onClick={() => copyCommand(command)} />
                                 </Tooltip>
                             </div>
@@ -681,36 +686,36 @@ function AgentConnectView({ theme, url, token, enabled, connected, activity, con
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-2">
-                                <span className="shrink-0 text-sm font-medium leading-5">网页连接</span>
+                                <span className="shrink-0 text-sm font-medium leading-5">{t("agent.webConnect")}</span>
                                 <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] leading-4" style={{ borderColor: connected || enabled || connectError ? statusColor : theme.node.stroke, color: statusColor }}>
                                     <span className="size-1.5 shrink-0 rounded-full" style={{ background: statusColor }} />
                                     <span className="truncate">{statusText}</span>
                                 </span>
                             </div>
                             <div className="mt-1 text-xs leading-5" style={{ color: theme.node.muted }}>
-                                默认自动读取 Local URL 和 Connect token，失败时再手动填写。
+                                {t("agent.autoReadHint")}
                             </div>
                         </div>
                         <Button className="!h-8 !px-3" type={enabled ? "default" : "primary"} icon={<PlugZap className="size-4" />} onClick={onToggleEnabled}>
-                            {enabled ? "断开" : "连接"}
+                            {enabled ? t("agent.disconnect") : t("agent.connect")}
                         </Button>
                     </div>
                     <div className="mt-3 grid gap-2.5">
                         <label className="grid gap-1.5">
                             <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.node.muted }}>
                                 <Link2 className="size-3.5" />
-                                本地地址
+                                {t("agent.localAddress")}
                                 <span className="font-normal opacity-70">Local URL</span>
                             </span>
-                            <Input size="large" prefix={<Link2 className="mr-1 size-4" style={{ color: theme.node.faint }} />} value={url} onChange={(event) => onUrlChange(event.target.value)} placeholder="例如 http://127.0.0.1:17371" />
+                            <Input size="large" prefix={<Link2 className="mr-1 size-4" style={{ color: theme.node.faint }} />} value={url} onChange={(event) => onUrlChange(event.target.value)} placeholder={t("agent.urlPlaceholder")} />
                         </label>
                         <label className="grid gap-1.5">
                             <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: theme.node.muted }}>
                                 <KeyRound className="size-3.5" />
-                                连接 Token
+                                {t("agent.connectToken")}
                                 <span className="font-normal opacity-70">Connect token</span>
                             </span>
-                            <Input.Password size="large" prefix={<KeyRound className="mr-1 size-4" style={{ color: theme.node.faint }} />} value={token} onChange={(event) => onTokenChange(event.target.value)} placeholder="自动发现，或手动填入 Connect token" />
+                            <Input.Password size="large" prefix={<KeyRound className="mr-1 size-4" style={{ color: theme.node.faint }} />} value={token} onChange={(event) => onTokenChange(event.target.value)} placeholder={t("agent.tokenPlaceholder")} />
                         </label>
                         {connectError ? (
                             <div className="rounded-md border px-2.5 py-2 text-xs leading-5" style={{ borderColor: "rgba(220,38,38,.35)", color: "#dc2626" }}>
@@ -725,24 +730,25 @@ function AgentConnectView({ theme, url, token, enabled, connected, activity, con
 }
 
 function AgentHistoryView({ theme, threads, activeThreadId, workspacePath, loading, connected, onRefresh, onNewThread, onResumeThread, onDeleteThread }: { theme: (typeof canvasThemes)[keyof typeof canvasThemes]; threads: AgentThreadSummary[]; activeThreadId: string; workspacePath: string; loading: boolean; connected: boolean; onRefresh: () => void; onNewThread: () => void; onResumeThread: (threadId: string) => void; onDeleteThread: (thread: AgentThreadSummary) => void }) {
+    const { t } = useI18n();
     return (
         <div className="thin-scrollbar min-h-0 flex-1 overflow-y-auto p-3">
             <div className="space-y-3">
                 <div className="flex min-w-0 items-center gap-2 text-xs" style={{ color: theme.node.muted }}>
                     <FolderOpen className="size-3.5 shrink-0" />
-                    <span className="shrink-0">工作空间</span>
-                    <span className="min-w-0 truncate" title={workspacePath}>{workspacePath || "默认画布目录"}</span>
+                    <span className="shrink-0">{t("agent.workspace")}</span>
+                    <span className="min-w-0 truncate" title={workspacePath}>{workspacePath || t("agent.defaultCanvasDir")}</span>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="text-sm" style={{ color: theme.node.muted }}>
-                        {threads.length ? `${threads.length} 条历史` : connected ? "暂无历史" : "未连接"}
+                        {threads.length ? t("agent.historyCount", { n: threads.length }) : connected ? t("agent.noHistory") : t("agent.notConnected")}
                     </div>
                     <div className="flex items-center gap-2">
                         <Button size="small" icon={<RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />} disabled={!connected || loading} onClick={onRefresh}>
-                            刷新
+                            {t("agent.refresh")}
                         </Button>
                         <Button size="small" type="primary" icon={<Plus className="size-3.5" />} disabled={!connected || loading} onClick={onNewThread}>
-                            新对话
+                            {t("agent.newThread")}
                         </Button>
                     </div>
                 </div>
@@ -754,17 +760,17 @@ function AgentHistoryView({ theme, threads, activeThreadId, workspacePath, loadi
                                 <div className="flex items-center gap-2">
                                     <div className="min-w-0 flex-1">
                                         <div className="flex min-w-0 items-center gap-1.5">
-                                            {active ? <span className="shrink-0 text-[10px] font-medium" style={{ color: theme.node.text }}>当前</span> : null}
-                                            <div className="truncate text-sm font-medium leading-5">{thread.name || thread.preview || "未命名对话"}</div>
+                                            {active ? <span className="shrink-0 text-[10px] font-medium" style={{ color: theme.node.text }}>{t("agent.current")}</span> : null}
+                                            <div className="truncate text-sm font-medium leading-5">{thread.name || thread.preview || t("agent.untitledThread")}</div>
                                         </div>
                                         <div className="truncate text-[11px] leading-4 opacity-65">{thread.preview || thread.id}</div>
                                     </div>
                                     <div className="flex shrink-0 items-center gap-1">
                                         <span className="text-[10px] opacity-55">{formatThreadTime(thread.updatedAt || thread.createdAt)}</span>
                                         <Button size="small" className="!h-6 !px-2" disabled={loading} onClick={() => onResumeThread(thread.id)}>
-                                            进入
+                                            {t("agent.enter")}
                                         </Button>
-                                        <Tooltip title="删除记录">
+                                        <Tooltip title={t("agent.deleteRecord")}>
                                             <Button size="small" danger type="text" className="!h-6 !w-6 !min-w-6" disabled={loading} icon={<Trash2 className="size-3.5" />} onClick={() => onDeleteThread(thread)} />
                                         </Tooltip>
                                     </div>
@@ -774,7 +780,7 @@ function AgentHistoryView({ theme, threads, activeThreadId, workspacePath, loadi
                     })}
                     {!threads.length ? (
                         <div className="px-3 py-8 text-center text-sm" style={{ color: theme.node.muted }}>
-                            {connected ? "当前工作空间还没有对话记录" : "连接本地 Agent 后显示历史记录"}
+                            {connected ? t("agent.noHistoryInWorkspace") : t("agent.connectToSeeHistory")}
                         </div>
                     ) : null}
                 </div>
@@ -802,10 +808,11 @@ function agentAttachmentToChatAttachment(item: AgentAttachment): CanvasAgentChat
 }
 
 function formatAgentEvent(event: AgentEventPayload): Omit<AgentChatItem, "id"> | null {
+    const t = useLocaleStore.getState().t;
     const item = event.item;
-    if (event.type === "item.completed" && item?.type === "error") return { role: "error", title: "错误", text: normalizeText(item.message), detail: item };
+    if (event.type === "item.completed" && item?.type === "error") return { role: "error", title: t("agent.error"), text: normalizeText(item.message), detail: item };
     if ((event.type === "item.updated" || event.type === "item.completed") && item?.type === "agent_message") return { role: "assistant", title: "Codex", text: stringText(item.text), meta: usageText(event), streamId: item.id };
-    if (event.type === "item.completed" && isMcpToolItem(item) && isReadTool(String(item?.tool || ""))) return { role: "tool", title: `${toolName(String(item?.tool || ""))}完成`, text: item?.error?.message || toolSummary(item), detail: toolDetail(item) };
+    if (event.type === "item.completed" && isMcpToolItem(item) && isReadTool(String(item?.tool || ""))) return { role: "tool", title: t("agent.toolDone", { name: toolName(String(item?.tool || "")) }), text: item?.error?.message || toolSummary(item), detail: toolDetail(item) };
     const text = eventText(event);
     if (text) return { role: "assistant", title: "Codex", text, meta: usageText(event) };
     return null;
@@ -820,11 +827,12 @@ function parseEventData<T>(event: Event) {
 }
 
 function formatLogText(logs: AgentEventLog[], context: AgentLogContext) {
+    const t = useLocaleStore.getState().t;
     const head = [
-        "Infinite Canvas Agent 诊断日志",
+        t("agent.diagLogTitle"),
         `Canvas Agent: ${context.endpoint}`,
-        `连接: ${context.connected ? "在线" : context.enabled ? "连接中" : "未启用"}`,
-        `状态: ${context.activity}`,
+        `${t("agent.connected")}: ${context.connected ? t("agent.online") : context.enabled ? t("agent.connecting") : t("agent.notEnabled")}`,
+        `${t("canvas.node.status")}: ${context.activity}`,
         `waiting: ${context.waiting}`,
         `sending: ${context.sending}`,
         `messages: ${context.messages}`,
@@ -835,7 +843,7 @@ function formatLogText(logs: AgentEventLog[], context: AgentLogContext) {
         const detail = item.raw == null ? item.text : JSON.stringify(item.raw, null, 2);
         return [`#${index + 1} ${item.time} ${item.title}`, detail].filter(Boolean).join("\n");
     }).join("\n\n---\n\n");
-    return [head, body || "暂无事件日志"].join("\n\n");
+    return [head, body || t("agent.noEventLog")].join("\n\n");
 }
 
 function formatLogJson(logs: AgentEventLog[], context: AgentLogContext) {
@@ -858,27 +866,29 @@ function usageText(event: AgentEventPayload) {
 }
 
 function activityText(event: AgentEventPayload) {
+    const t = useLocaleStore.getState().t;
     const name = event.type || "";
-    if (name === "thread.started") return "已创建会话";
-    if (name === "turn.started") return "思考中";
-    if (name === "turn.completed") return "完成";
-    if (name === "turn.failed" || name === "error") return "出错";
-    if (name === "item.started") return isMcpToolItem(event.item) ? `调用${toolName(String(event.item?.tool || ""))}` : "执行步骤";
-    if (name === "item.completed") return isMcpToolItem(event.item) ? "工具完成" : "更新消息";
+    if (name === "thread.started") return t("agent.threadCreated");
+    if (name === "turn.started") return t("agent.thinking");
+    if (name === "turn.completed") return t("agent.done");
+    if (name === "turn.failed" || name === "error") return t("agent.errored");
+    if (name === "item.started") return isMcpToolItem(event.item) ? t("agent.callingTool", { name: toolName(String(event.item?.tool || "")) }) : t("agent.runningStep");
+    if (name === "item.completed") return isMcpToolItem(event.item) ? t("agent.toolCompleted") : t("agent.updatingMessage");
     return "";
 }
 
 function eventTitle(event: AgentEventPayload) {
+    const t = useLocaleStore.getState().t;
     const item = event.item;
-    if (event.type === "thread.started") return "已创建 Codex 会话";
-    if (event.type === "turn.started") return "开始处理";
-    if (event.type === "turn.completed") return "本轮完成";
-    if (event.type === "stream.summary") return "流式摘要";
-    if (event.type === "turn.failed" || event.type === "error") return "本轮失败";
-    if (event.type === "item.started" && isMcpToolItem(item)) return `调用工具：${toolName(String(item?.tool || ""))}`;
-    if (event.type === "item.completed" && isMcpToolItem(item)) return `工具完成：${toolName(String(item?.tool || ""))}`;
-    if (event.type === "item.completed" && item?.type === "agent_message") return "Codex 回复";
-    return event.type || "Codex 事件";
+    if (event.type === "thread.started") return t("agent.codexThreadCreated");
+    if (event.type === "turn.started") return t("agent.turnStarted");
+    if (event.type === "turn.completed") return t("agent.turnCompleted");
+    if (event.type === "stream.summary") return t("agent.streamSummary");
+    if (event.type === "turn.failed" || event.type === "error") return t("agent.turnFailed");
+    if (event.type === "item.started" && isMcpToolItem(item)) return t("agent.callToolTitle", { name: toolName(String(item?.tool || "")) });
+    if (event.type === "item.completed" && isMcpToolItem(item)) return t("agent.toolDoneTitle", { name: toolName(String(item?.tool || "")) });
+    if (event.type === "item.completed" && item?.type === "agent_message") return t("agent.codexReply");
+    return event.type || t("agent.codexEvent");
 }
 
 function shouldLogAgentEvent(event: AgentEventPayload) {
@@ -887,47 +897,53 @@ function shouldLogAgentEvent(event: AgentEventPayload) {
 }
 
 function isConnectionErrorMessage(item: AgentChatItem) {
-    return item.role === "error" && /连接失败|无法连接本地 Agent|本地 Agent 连接失败/.test(item.text);
+    return item.role === "error" && /连接失败|无法连接本地 Agent|本地 Agent 连接失败|connection failed|failed or dropped/i.test(item.text);
 }
 
+const CANVAS_TOOL_KEYS: Record<string, MessageKey> = {
+    canvas_apply_ops: "agent.tool.canvas_apply_ops",
+    canvas_get_state: "agent.tool.canvas_get_state",
+    canvas_get_selection: "agent.tool.canvas_get_selection",
+    canvas_export_snapshot: "agent.tool.canvas_export_snapshot",
+    canvas_create_node: "agent.tool.canvas_create_node",
+    canvas_create_text_node: "agent.tool.canvas_create_text_node",
+    canvas_create_text_nodes: "agent.tool.canvas_create_text_nodes",
+    canvas_create_config_node: "agent.tool.canvas_create_config_node",
+    canvas_create_image_prompt_flow: "agent.tool.canvas_create_image_prompt_flow",
+    canvas_create_generation_flow: "agent.tool.canvas_create_generation_flow",
+    canvas_generate_text: "agent.tool.canvas_generate_text",
+    canvas_generate_image: "agent.tool.canvas_generate_image",
+    canvas_generate_video: "agent.tool.canvas_generate_video",
+    canvas_generate_audio: "agent.tool.canvas_generate_audio",
+    canvas_update_node: "agent.tool.canvas_update_node",
+    canvas_update_node_text: "agent.tool.canvas_update_node_text",
+    canvas_move_nodes: "agent.tool.canvas_move_nodes",
+    canvas_resize_node: "agent.tool.canvas_resize_node",
+    canvas_delete_nodes: "agent.tool.canvas_delete_nodes",
+    canvas_connect_nodes: "agent.tool.canvas_connect_nodes",
+    canvas_select_nodes: "agent.tool.canvas_select_nodes",
+    canvas_set_viewport: "agent.tool.canvas_set_viewport",
+    canvas_run_generation: "agent.tool.canvas_run_generation",
+    site_navigate: "agent.tool.site_navigate",
+};
+
 function toolName(name: string) {
-    if (name === "canvas_apply_ops") return "画布操作";
-    if (name === "canvas_get_state") return "读取画布";
-    if (name === "canvas_get_selection") return "读取选区";
-    if (name === "canvas_export_snapshot") return "导出快照";
-    if (name === "canvas_create_node") return "创建节点";
-    if (name === "canvas_create_text_node") return "创建文本";
-    if (name === "canvas_create_text_nodes") return "批量创建文本";
-    if (name === "canvas_create_config_node") return "创建生成配置";
-    if (name === "canvas_create_image_prompt_flow") return "创建生图流程";
-    if (name === "canvas_create_generation_flow") return "创建生成流程";
-    if (name === "canvas_generate_text") return "生成文本";
-    if (name === "canvas_generate_image") return "生成图片";
-    if (name === "canvas_generate_video") return "生成视频";
-    if (name === "canvas_generate_audio") return "生成音频";
-    if (name === "canvas_update_node") return "更新节点";
-    if (name === "canvas_update_node_text") return "更新文本";
-    if (name === "canvas_move_nodes") return "移动节点";
-    if (name === "canvas_resize_node") return "调整节点尺寸";
-    if (name === "canvas_delete_nodes") return "删除节点";
-    if (name === "canvas_connect_nodes") return "连接节点";
-    if (name === "canvas_select_nodes") return "选择节点";
-    if (name === "canvas_set_viewport") return "调整视口";
-    if (name === "canvas_run_generation") return "触发生成";
-    if (name === "site_navigate") return "网站跳转";
+    const key = CANVAS_TOOL_KEYS[name];
+    if (key) return useLocaleStore.getState().t(key);
     if (isSiteTool(name)) return SITE_TOOL_LABELS[name];
     return name;
 }
 
 function siteToolSummary(name: string, result: unknown) {
+    const t = useLocaleStore.getState().t;
     const data = result && typeof result === "object" ? (result as Record<string, unknown>) : {};
-    if (name === "canvas_list_projects") return `共 ${numberField(data, "total")} 个画布`;
-    if (name === "prompts_search") return `找到 ${numberField(data, "total")} 条提示词`;
-    if (name === "assets_list") return `共 ${numberField(data, "total")} 个素材`;
-    if (name === "assets_add") return "已加入我的素材";
-    if (name === "workbench_image_generate" || name === "workbench_video_generate") return typeof data.note === "string" ? data.note : "已在工作台执行";
-    if (name === "workbench_image_get_config" || name === "workbench_video_get_config") return "已读取工作台配置";
-    return "已完成";
+    if (name === "canvas_list_projects") return t("agent.projectTotal", { n: numberField(data, "total") });
+    if (name === "prompts_search") return t("agent.promptsFound", { n: numberField(data, "total") });
+    if (name === "assets_list") return t("agent.assetsTotal", { n: numberField(data, "total") });
+    if (name === "assets_add") return t("agent.savedToAssets");
+    if (name === "workbench_image_generate" || name === "workbench_video_generate") return typeof data.note === "string" ? data.note : t("agent.ranInWorkbench");
+    if (name === "workbench_image_get_config" || name === "workbench_video_get_config") return t("agent.readWorkbenchConfig");
+    return t("agent.completed");
 }
 
 function isReadTool(name: string) {
@@ -948,8 +964,8 @@ function toolSummary(item?: AgentEventItem) {
     const connectionField = objectField(result, "connections");
     const nodes = Array.isArray(nodeField) ? nodeField : [];
     const connections = Array.isArray(connectionField) ? connectionField : [];
-    if (Array.isArray(nodeField) || Array.isArray(connectionField)) return `读取到 ${nodes.length} 个节点，${connections.length} 条连线`;
-    return "工具调用完成";
+    if (Array.isArray(nodeField) || Array.isArray(connectionField)) return useLocaleStore.getState().t("agent.readNodesConnections", { nodes: nodes.length, connections: connections.length });
+    return useLocaleStore.getState().t("agent.toolCallDone");
 }
 
 function parseToolResult(result: unknown) {
@@ -996,7 +1012,7 @@ function mergeAgentText(prev: string, next: string) {
 function promptWithAttachments(text: string, attachments: AgentAttachment[]) {
     if (!attachments.length) return text;
     const names = attachments.map((item) => item.name).join("、");
-    return [text, `用户上传了 ${attachments.length} 张图片附件：${names}。`].filter(Boolean).join("\n\n");
+    return [text, useLocaleStore.getState().t("agent.uploadedImages", { n: attachments.length, names })].filter(Boolean).join("\n\n");
 }
 
 function attachmentPayloadBytes(attachments: AgentAttachment[]) {
@@ -1011,7 +1027,7 @@ async function fetchAgentJson<T>(endpoint: string, token: string, path: string, 
     const url = `${endpoint}${path}${path.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}`;
     const res = await fetch(url, init);
     const data = (await res.json().catch(() => ({}))) as T & { error?: string; msg?: string };
-    if (!res.ok) throw new Error(data.error || data.msg || "本地 Agent 请求失败");
+    if (!res.ok) throw new Error(data.error || data.msg || useLocaleStore.getState().t("agent.agentRequestFailed"));
     return data;
 }
 
@@ -1053,7 +1069,7 @@ function readDataUrl(file: File) {
     return new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(reader.error || new Error("读取图片失败"));
+        reader.onerror = () => reject(reader.error || new Error(useLocaleStore.getState().t("agent.readImageFailed")));
         reader.readAsDataURL(file);
     });
 }

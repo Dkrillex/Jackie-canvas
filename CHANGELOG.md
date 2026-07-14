@@ -2,6 +2,8 @@
 
 ## Unreleased
 
++ [调整] 第三方提示词库按界面语言切换数据源：英文抓取各仓库英文 README / `title_en`，中文仍用中文 README / `title_cn`；切换语言后首页与提示词库会重新加载。
++ [新增] 支持中英双语：默认英文，顶栏可切换语言；导航、首页、登录、配置、生图/视频工作台、提示词库、素材库、画布主界面与节点工具/对话框已接入 i18n。
 + [修复] Vercel `/gw` 恢复外部 rewrite，并排除 SPA 回退；补充 Middleware 代理以保留登录 Cookie，修复登录 405。
 + [修复] 移除与 antd 6 冲突的 `@ant-design/pro-components`，修复 Vercel/npm 安装 `ERESOLVE` 失败。
 + [调整] 暂时隐藏画布入口（导航「我的画布」、首页「打开画布」），默认进入生图工作台。

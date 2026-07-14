@@ -1,6 +1,6 @@
 import type { NavigateFunction } from "react-router-dom";
 
-import { fetchPrompts } from "@/services/api/prompts";
+import { ALL_PROMPTS_OPTION, fetchPrompts } from "@/services/api/prompts";
 import { uploadImage } from "@/services/image-storage";
 import { imageAspectOptions, imageQualityOptions } from "@/components/image-settings-panel";
 import { videoResolutionOptions, videoSecondOptions, videoSizeOptions } from "@/components/video-settings-panel";
@@ -8,6 +8,8 @@ import { useCanvasStore } from "@/stores/canvas/use-canvas-store";
 import { useAssetStore } from "@/stores/use-asset-store";
 import { modelOptionLabel, modelOptionName, normalizeModelOptionValue, useConfigStore } from "@/stores/use-config-store";
 import { useWorkbenchAgentStore } from "@/stores/use-workbench-agent-store";
+import { useLocaleStore } from "@/stores/use-locale-store";
+import type { MessageKey } from "@/i18n";
 
 // 在网页端执行 Agent 的「站点级」工具（画布列表、工作台生成、提示词搜索、素材增删查等）。
 // 这些工具的数据都在浏览器本地（localforage / zustand），因此由本模块直接读写对应 store 后返回结果。
@@ -29,16 +31,23 @@ export function isSiteTool(name: string): name is SiteToolName {
     return (SITE_TOOL_NAMES as readonly string[]).includes(name);
 }
 
-export const SITE_TOOL_LABELS: Record<SiteToolName, string> = {
-    canvas_list_projects: "画布列表",
-    workbench_image_get_config: "生图配置",
-    workbench_image_generate: "生图工作台生成",
-    workbench_video_get_config: "视频配置",
-    workbench_video_generate: "视频创作台生成",
-    prompts_search: "搜索提示词",
-    assets_list: "素材列表",
-    assets_add: "添加素材",
+const SITE_TOOL_LABEL_KEYS: Record<SiteToolName, MessageKey> = {
+    canvas_list_projects: "agent.siteTool.canvasList",
+    workbench_image_get_config: "agent.siteTool.imageConfig",
+    workbench_image_generate: "agent.siteTool.imageGenerate",
+    workbench_video_get_config: "agent.siteTool.videoConfig",
+    workbench_video_generate: "agent.siteTool.videoGenerate",
+    prompts_search: "agent.siteTool.promptsSearch",
+    assets_list: "agent.siteTool.assetsList",
+    assets_add: "agent.siteTool.assetsAdd",
 };
+
+export const SITE_TOOL_LABELS = new Proxy({} as Record<SiteToolName, string>, {
+    get(_target, prop: string) {
+        const key = SITE_TOOL_LABEL_KEYS[prop as SiteToolName];
+        return key ? useLocaleStore.getState().t(key) : prop;
+    },
+});
 
 type SiteToolInput = Record<string, unknown>;
 
@@ -181,7 +190,7 @@ async function searchPrompts(input: SiteToolInput) {
     const page = Math.max(1, Math.floor(Number(input.page)) || 1);
     const pageSize = Math.max(1, Math.min(50, Math.floor(Number(input.pageSize)) || 20));
     const tags = Array.isArray(input.tags) ? input.tags.filter((tag): tag is string => typeof tag === "string") : [];
-    const result = await fetchPrompts({ keyword: String(input.keyword || ""), category: String(input.category || "全部"), tag: tags, page, pageSize });
+    const result = await fetchPrompts({ keyword: String(input.keyword || ""), category: String(input.category || ALL_PROMPTS_OPTION), tag: tags, page, pageSize });
     return {
         total: result.total,
         page,

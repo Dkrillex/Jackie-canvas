@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import { useLocaleStore } from "@/stores/use-locale-store";
 import type { CanvasAgentOp, CanvasAgentSnapshot } from "@/lib/canvas/canvas-agent-ops";
 
 export type AgentChatRole = "user" | "assistant" | "system" | "tool" | "error";
@@ -76,7 +77,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     loadingThreads: false,
     activeTab: "setup",
     confirmTools: true,
-    activity: "就绪",
+    activity: useLocaleStore.getState().t("agent.ready"),
     connectError: "",
     pendingTool: null,
     setAgentState: (patch) => set(patch),
@@ -87,24 +88,24 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     connectAgent: () => {
         const endpoint = get().url.trim().replace(/\/$/, "");
         const token = get().token.trim();
-        if (!endpoint || !token) return set({ connectError: "请填写 Local URL 和 Connect token" });
+        if (!endpoint || !token) return set({ connectError: useLocaleStore.getState().t("agent.fillUrlToken") });
         try {
             const parsed = new URL(endpoint);
             if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
         } catch {
-            return set({ connectError: "Local URL 格式不正确" });
+            return set({ connectError: useLocaleStore.getState().t("agent.badUrlFormat") });
         }
         localStorage.setItem("canvas-agent-url", endpoint);
         localStorage.setItem("canvas-agent-token", token);
         // 只设 enabled=true，由 CanvasLocalAgentPanel 的 useEffect 统一负责开 SSE
-        set({ url: endpoint, token, enabled: true, activity: "连接中", connectError: "" });
+        set({ url: endpoint, token, enabled: true, activity: useLocaleStore.getState().t("agent.connecting"), connectError: "" });
     },
     disconnectAgent: (patch = {}) => {
         agentSource?.close();
         agentSource = null;
         if (connectTimer) clearTimeout(connectTimer);
         connectTimer = null;
-        set({ enabled: false, connected: false, activity: "离线", ...patch });
+        set({ enabled: false, connected: false, activity: useLocaleStore.getState().t("agent.offline"), ...patch });
     },
     addMessage: (item) => set((state) => ({ messages: [...state.messages.slice(-120), item] })),
     addEventLog: (item) => set((state) => ({ eventLogs: [...state.eventLogs.slice(-160), item] })),
