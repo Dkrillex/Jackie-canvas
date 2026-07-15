@@ -2,6 +2,8 @@
 
 ## Unreleased
 
++ [修复] 画布配置节点未使用 `@` 引用时，自动带上已连接的上游图片/视频/音频作为生成参考。
++ [修复] Seedream 4/5 生图按模型要求映射尺寸（默认至少约 2K / 3686400 像素），避免 `size` 过小被拒绝。
 + [修复] Seedance 任务轮询兼容 `code: "success"` 响应，避免进行中任务被误判为失败。
 + [修复] Seedance 视频在默认 OpenAI 兼容渠道改为调用 `/v1/video/generations`；火山方舟 Agent Plan 仍走 `/contents/generations/tasks`。
 + [调整] 默认渠道模型列表补充 Seedream / Gemini 生图与 Seedance 视频模型；视频默认模型改为 `seedance-2-0`。
