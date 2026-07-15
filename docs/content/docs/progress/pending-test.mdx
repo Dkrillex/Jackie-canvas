@@ -5,6 +5,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- 画布 Seedance：配置节点切到视频模式并选择 `seedance-2-0` 后，请求应走 `/v1/video/generations`，不应再请求 `/v1/videos`。
 - 画布配置节点参考素材：图片节点连到视频模式配置节点后，即使提示词未 `@` 引用，生成视频也应自动带上该参考图；若提示词里写了 `@`，则仍只使用被引用的素材。
 - Seedream 生图尺寸：选择 `seedream-5-0-260128` 等 4/5 模型时，默认 `1:1` 应映射为约 `2048x2048`（或 `2K`），不再因总像素低于 3686400 被拒绝。
 - Seedance 视频接口：默认 `/gw` 渠道选 `seedance-2-0` / `seedance-2-0-fast` 应走 `POST/GET /v1/video/generations`；轮询返回 `code: "success"` 且 `status: "in_progress"` 时应继续等待，不报失败；火山方舟 Agent Plan Base URL 仍走 `/contents/generations/tasks`。

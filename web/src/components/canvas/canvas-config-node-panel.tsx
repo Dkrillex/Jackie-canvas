@@ -44,7 +44,11 @@ export function CanvasConfigNodePanel({
                         size="small"
                         className="canvas-config-mode !rounded-md !p-0.5"
                         value={mode}
-                        onChange={(value) => onConfigChange(node.id, { generationMode: value as CanvasGenerationMode })}
+                        onChange={(value) => {
+                            const nextMode = value as CanvasGenerationMode;
+                            const nextConfig = buildNodeConfig(globalConfig, { ...node, metadata: { ...node.metadata, generationMode: nextMode } }, nextMode);
+                            onConfigChange(node.id, { generationMode: nextMode, model: nextConfig.model });
+                        }}
                         options={[
                             {
                                 value: "image",
