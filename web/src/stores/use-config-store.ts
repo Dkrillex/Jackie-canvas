@@ -59,7 +59,7 @@ export type ModelCapability = "image" | "video" | "text" | "audio";
 const CHANNEL_MODEL_SEPARATOR = "::";
 const OPENAI_BASE_URL = "/gw";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
-const DEFAULT_API_KEY = "sk-tyr8QvmtqoQ8SInccJiLah3mmWqEF2K2GCpQxcI8csFpxmZy";
+const DEFAULT_API_KEY = "sk-ixjnFaGQ2dKmfGkH8IRRIAbr4M7aIaVq09OgxKwgwxJkGlCf";
 const SYSTEM_BASE_URL_HOSTS = ["api.gravitex.ai", "gravitex.ai"];
 
 export const defaultConfig: AiConfig = {
