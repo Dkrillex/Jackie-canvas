@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { buildApiUrl, resolveModelRequestConfig, type AiConfig, type ModelChannel } from "@/stores/use-config-store";
+import { buildApiUrl, modelOptionName, resolveModelRequestConfig, type AiConfig, type ModelChannel } from "@/stores/use-config-store";
 import { nanoid } from "nanoid";
 import { dataUrlToFile } from "@/lib/image-utils";
 import { buildImageReferencePromptText } from "@/lib/image-reference-prompt";
@@ -111,6 +111,29 @@ const IMAGE_MAX_PIXELS = 8294400;
 const IMAGE_MAX_EDGE = 3840;
 const IMAGE_MAX_RATIO = 3;
 const IMAGE_OUTPUT_FORMAT = "png";
+const SEEDREAM_MIN_PIXELS = 3686400;
+const SEEDREAM_MAX_PIXELS = 16777216;
+const SEEDREAM_MAX_EDGE = 8192;
+const SEEDREAM_2K_SIZES: Record<string, string> = {
+    "1:1": "2048x2048",
+    "4:3": "2304x1728",
+    "3:4": "1728x2304",
+    "16:9": "2560x1440",
+    "9:16": "1440x2560",
+    "3:2": "2496x1664",
+    "2:3": "1664x2496",
+    "21:9": "3024x1296",
+};
+const SEEDREAM_4K_SIZES: Record<string, string> = {
+    "1:1": "4096x4096",
+    "4:3": "4704x3520",
+    "3:4": "3520x4704",
+    "16:9": "5504x3040",
+    "9:16": "3040x5504",
+    "3:2": "4992x3328",
+    "2:3": "3328x4992",
+    "21:9": "6240x2656",
+};
 
 const GEMINI_SUPPORTED_RATIOS = ["1:1", "1:4", "1:8", "2:3", "3:2", "3:4", "4:1", "4:3", "4:5", "5:4", "8:1", "9:16", "16:9", "21:9"];
 const GEMINI_IMAGE_SIZE_BY_QUALITY: Record<string, string> = { low: "1K", medium: "2K", high: "4K", standard: "1K", hd: "2K" };
@@ -121,8 +144,21 @@ function normalizeQuality(quality: string) {
     return QUALITY_BASE[normalized] ? normalized : undefined;
 }
 
+function isSeedreamModel(model: string) {
+    return modelOptionName(model).toLowerCase().includes("seedream");
+}
+
+function isSeedreamLegacyModel(model: string) {
+    const value = modelOptionName(model).toLowerCase();
+    return value.includes("seedream-3") || value.includes("seedream_3") || value.includes("seedream3");
+}
+
+function usesSeedreamHighResSize(model: string) {
+    return isSeedreamModel(model) && !isSeedreamLegacyModel(model);
+}
+
 /** Map "quality + ratio" to an explicit pixel dimension like "3840x2160". */
-function resolveSize(quality: string | undefined, ratio: string): string {
+function resolveSize(quality: string | undefined, ratio: string, options?: { minPixels?: number; maxPixels?: number; maxEdge?: number }): string {
     const parsedRatio = parseImageRatio(ratio);
     const basePixels = quality ? QUALITY_BASE[quality] : undefined;
     const isLandscape = parsedRatio.width >= parsedRatio.height;
@@ -140,9 +176,10 @@ function resolveSize(quality: string | undefined, ratio: string): string {
         longSide = Math.round((shortSide * longRatio) / IMAGE_SIZE_STEP) * IMAGE_SIZE_STEP;
     }
 
-    const width = isLandscape ? longSide : shortSide;
-    const height = isLandscape ? shortSide : longSide;
-    validateImageSize(width, height);
+    let width = isLandscape ? longSide : shortSide;
+    let height = isLandscape ? shortSide : longSide;
+    ({ width, height } = ensurePixelBudget(width, height, options?.minPixels, options?.maxPixels, options?.maxEdge));
+    validateImageSize(width, height, options);
     return `${width}x${height}`;
 }
 
@@ -162,16 +199,20 @@ function parseImageDimensions(value: string) {
     return { width: Number(match[1]), height: Number(match[2]) };
 }
 
-function validateImageSize(width: number, height: number) {
+function validateImageSize(width: number, height: number, options?: { minPixels?: number; maxPixels?: number; maxEdge?: number }) {
+    const minPixels = options?.minPixels ?? IMAGE_MIN_PIXELS;
+    const maxPixels = options?.maxPixels ?? IMAGE_MAX_PIXELS;
+    const maxEdge = options?.maxEdge ?? IMAGE_MAX_EDGE;
     if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) throw new Error("图像尺寸必须是正整数，例如 1024x1024");
     if (width % IMAGE_SIZE_STEP !== 0 || height % IMAGE_SIZE_STEP !== 0) throw new Error("图像尺寸的宽高必须是 16 的倍数，请调整尺寸");
-    if (Math.max(width, height) > IMAGE_MAX_EDGE) throw new Error("图像尺寸最长边不能超过 3840px，请调整尺寸");
+    if (Math.max(width, height) > maxEdge) throw new Error(`图像尺寸最长边不能超过 ${maxEdge}px，请调整尺寸`);
     if (Math.max(width, height) / Math.min(width, height) > IMAGE_MAX_RATIO) throw new Error("图像宽高比不能超过 3:1，请调整尺寸");
     const pixels = width * height;
-    if (pixels < IMAGE_MIN_PIXELS || pixels > IMAGE_MAX_PIXELS) throw new Error("图像总像素需在 655360 到 8294400 之间，请调整尺寸");
+    if (pixels < minPixels || pixels > maxPixels) throw new Error(`图像总像素需在 ${minPixels} 到 ${maxPixels} 之间，请调整尺寸`);
 }
 
-function resolveRequestSize(quality: string | undefined, size: string) {
+function resolveRequestSize(quality: string | undefined, size: string, model = "") {
+    if (usesSeedreamHighResSize(model)) return resolveSeedreamRequestSize(quality, size);
     const value = size.trim();
     if (!value || value.toLowerCase() === "auto") return undefined;
     const dimensions = parseImageDimensions(value);
@@ -181,6 +222,44 @@ function resolveRequestSize(quality: string | undefined, size: string) {
     }
     if (value.includes(":")) return resolveSize(quality, value);
     throw new Error("图像尺寸格式不支持，请使用 auto、9:16 或 1024x1024");
+}
+
+function resolveSeedreamRequestSize(quality: string | undefined, size: string) {
+    const value = size.trim();
+    const limits = { minPixels: SEEDREAM_MIN_PIXELS, maxPixels: SEEDREAM_MAX_PIXELS, maxEdge: SEEDREAM_MAX_EDGE };
+    const prefer4k = quality === "high" || quality === "hd";
+    if (!value || value.toLowerCase() === "auto") return prefer4k ? "4K" : "2K";
+    if (/^[24]k$/i.test(value)) return value.toUpperCase();
+    const dimensions = parseImageDimensions(value);
+    if (dimensions) {
+        const next = ensurePixelBudget(dimensions.width, dimensions.height, limits.minPixels, limits.maxPixels, limits.maxEdge);
+        validateImageSize(next.width, next.height, limits);
+        return `${next.width}x${next.height}`;
+    }
+    if (value.includes(":")) {
+        const preset = (prefer4k ? SEEDREAM_4K_SIZES : SEEDREAM_2K_SIZES)[value];
+        if (preset) return preset;
+        return resolveSize(prefer4k ? "high" : "medium", value, limits);
+    }
+    throw new Error("图像尺寸格式不支持，请使用 auto、9:16、2K 或 2048x2048");
+}
+
+function ensurePixelBudget(width: number, height: number, minPixels = IMAGE_MIN_PIXELS, maxPixels = IMAGE_MAX_PIXELS, maxEdge = IMAGE_MAX_EDGE) {
+    let nextWidth = Math.max(IMAGE_SIZE_STEP, Math.round(width / IMAGE_SIZE_STEP) * IMAGE_SIZE_STEP);
+    let nextHeight = Math.max(IMAGE_SIZE_STEP, Math.round(height / IMAGE_SIZE_STEP) * IMAGE_SIZE_STEP);
+    let pixels = nextWidth * nextHeight;
+    if (pixels < minPixels) {
+        const scale = Math.sqrt(minPixels / pixels);
+        nextWidth = Math.ceil((nextWidth * scale) / IMAGE_SIZE_STEP) * IMAGE_SIZE_STEP;
+        nextHeight = Math.ceil((nextHeight * scale) / IMAGE_SIZE_STEP) * IMAGE_SIZE_STEP;
+        pixels = nextWidth * nextHeight;
+    }
+    if (pixels > maxPixels || Math.max(nextWidth, nextHeight) > maxEdge) {
+        const edgeScale = Math.min(1, maxEdge / Math.max(nextWidth, nextHeight), Math.sqrt(maxPixels / pixels));
+        nextWidth = Math.max(IMAGE_SIZE_STEP, Math.floor((nextWidth * edgeScale) / IMAGE_SIZE_STEP) * IMAGE_SIZE_STEP);
+        nextHeight = Math.max(IMAGE_SIZE_STEP, Math.floor((nextHeight * edgeScale) / IMAGE_SIZE_STEP) * IMAGE_SIZE_STEP);
+    }
+    return { width: nextWidth, height: nextHeight };
 }
 
 function resolveGeminiImageConfig(config: AiConfig) {
@@ -659,7 +738,8 @@ export async function requestGeneration(config: AiConfig, prompt: string, option
         }
     }
     const quality = normalizeQuality(config.quality);
-    const requestSize = resolveRequestSize(quality, config.size);
+    const requestSize = resolveRequestSize(quality, config.size, requestConfig.model);
+    const seedream = usesSeedreamHighResSize(requestConfig.model);
     try {
         const response = await axios.post<ImageApiResponse>(
             aiApiUrl(requestConfig, "/images/generations"),
@@ -667,8 +747,9 @@ export async function requestGeneration(config: AiConfig, prompt: string, option
                 model: requestConfig.model,
                 prompt: withSystemPrompt(requestConfig, prompt),
                 n,
-                ...(quality ? { quality } : {}),
+                ...(!seedream && quality ? { quality } : {}),
                 ...(requestSize ? { size: requestSize } : {}),
+                ...(seedream ? { watermark: false } : {}),
                 response_format: "b64_json",
                 output_format: IMAGE_OUTPUT_FORMAT,
             },
@@ -697,18 +778,22 @@ export async function requestEdit(config: AiConfig, prompt: string, references: 
         }
     }
     const quality = normalizeQuality(config.quality);
-    const requestSize = resolveRequestSize(quality, config.size);
+    const requestSize = resolveRequestSize(quality, config.size, requestConfig.model);
+    const seedream = usesSeedreamHighResSize(requestConfig.model);
     const formData = new FormData();
     formData.set("model", requestConfig.model);
     formData.set("prompt", withSystemPrompt(requestConfig, requestPrompt));
     formData.set("n", String(n));
     formData.set("response_format", "b64_json");
     formData.set("output_format", IMAGE_OUTPUT_FORMAT);
-    if (quality) {
+    if (!seedream && quality) {
         formData.set("quality", quality);
     }
     if (requestSize) {
         formData.set("size", requestSize);
+    }
+    if (seedream) {
+        formData.set("watermark", "false");
     }
     const files = await Promise.all(references.map(async (image) => dataUrlToFile({ ...image, dataUrl: await imageToDataUrl(image) })));
     files.forEach((file) => formData.append("image", file));
