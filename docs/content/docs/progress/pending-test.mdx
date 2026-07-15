@@ -5,6 +5,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- 默认模型列表：新环境默认渠道应包含 `seedream-5-0-260128`、Gemini 生图系列与 `seedance-2-0` / `seedance-2-0-fast`；生图/视频可选项分类正确。
 - 登录后配置入口：未登录时顶栏齿轮与导航「配置」不显示；登录后显示；直接访问 `/config` 未登录时提示登录。
 - 系统渠道地址：渠道 Base URL / API Key 仅登录账号为 `admin` 时渲染；普通用户渠道页不显示这两项，默认仍走同源 `/gw` 与内置密钥。
 - Vercel `/gw` 代理：部署后登录与 AI 请求应经 rewrite 转发到上游，不再出现 `405 Method Not Allowed`。
