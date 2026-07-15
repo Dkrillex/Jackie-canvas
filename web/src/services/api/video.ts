@@ -281,11 +281,16 @@ function unwrapSeedanceTask(payload: ApiEnvelope<SeedanceTask>) {
 function unwrapEnvelope<T>(payload: ApiEnvelope<T>, emptyMessage: string): T {
     if (!payload) throw new Error(emptyMessage);
     if (typeof payload === "object" && "code" in payload && payload.code !== undefined) {
-        if (payload.code !== 0 && payload.code !== "0") throw new Error(readApiErrorMessage(payload) || "请求失败");
+        if (!isApiSuccessCode(payload.code)) throw new Error(readApiErrorMessage(payload) || "请求失败");
         if (!payload.data) throw new Error(emptyMessage);
         return payload.data;
     }
     return payload as T;
+}
+
+function isApiSuccessCode(code: number | string) {
+    if (code === 0 || code === "0") return true;
+    return String(code).toLowerCase() === "success";
 }
 
 function videoResultUrl(payload: VideoResponse | SeedanceTask) {
