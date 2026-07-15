@@ -3,6 +3,7 @@ import type { Messages } from "../types";
 export const zh: Messages = {
     "nav.menu": "打开导航菜单",
     "nav.drawer": "导航",
+    "nav.canvas": "我的画布",
     "nav.image": "生图工作台",
     "nav.video": "视频创作台",
     "nav.prompts": "提示词库",
@@ -47,6 +48,7 @@ export const zh: Messages = {
     "home.hero.highlight": "图片、文字与图形",
     "home.hero.after": "，让创作从单次生成变成连续推演。",
     "home.cta": "开始使用",
+    "home.openCanvas": "打开画布",
     "home.showcaseTitle": "沉淀每一次好结果",
     "home.showcaseDesc": "收藏稳定出图的提示词、参考风格和结果图片，让下一次创作从已有经验开始。",
     "home.viewPrompts": "查看提示词库",

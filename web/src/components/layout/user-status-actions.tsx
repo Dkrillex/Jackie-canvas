@@ -32,7 +32,7 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
                 type="button"
                 className={naturalIconClass}
                 style={iconStyle}
-                onClick={() => (user ? openConfigDialog(false, "user") : openLoginModal("/image"))}
+                onClick={() => (user ? openConfigDialog(false, "user") : openLoginModal("/canvas"))}
                 aria-label={user ? t("action.userCenter") : t("action.login")}
                 title={user ? user.displayName || user.username : t("action.login")}
             >

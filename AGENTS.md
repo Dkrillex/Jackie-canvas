@@ -83,4 +83,3 @@
 - 对外文案与渠道配置界面不要暴露底层服务品牌、域名或内置 API Key（如 gravitex）；默认 OpenAI 兼容地址用同源 `/gw`。渠道 Base URL / API Key 表单项仅 `admin` 账号渲染，普通用户不显示。
 - 顶栏配置齿轮与导航「配置」仅登录后显示。
 - 部署到 Vercel 时 `/gw` 必须走外部 rewrite 或 Middleware 代理到上游，且 SPA fallback 不能匹配 `/gw`；不要依赖未部署成功的 `/api` Serverless 回退，否则登录会 405。
-- 画布功能暂时隐藏入口（导航与首页），默认落地页改为生图工作台；路由仍保留便于恢复。

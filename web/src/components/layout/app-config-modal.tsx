@@ -341,7 +341,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                                 type="primary"
                                                 onClick={() => {
                                                     setConfigDialogOpen(false);
-                                                    openLoginModal("/image");
+                                                    openLoginModal("/canvas");
                                                 }}
                                             >
                                                 {t("config.goLogin")}

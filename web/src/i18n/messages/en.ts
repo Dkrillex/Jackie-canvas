@@ -1,6 +1,7 @@
 export const en = {
     "nav.menu": "Open menu",
     "nav.drawer": "Navigation",
+    "nav.canvas": "My canvases",
     "nav.image": "Image Studio",
     "nav.video": "Video Studio",
     "nav.prompts": "Prompt Library",
@@ -45,6 +46,7 @@ export const en = {
     "home.hero.highlight": "images, text, and graphics",
     "home.hero.after": " — turn one-off generations into continuous creative flow.",
     "home.cta": "Get started",
+    "home.openCanvas": "Open canvas",
     "home.showcaseTitle": "Keep every strong result",
     "home.showcaseDesc": "Save reliable prompts, reference styles, and outputs so the next creation starts from proven work.",
     "home.viewPrompts": "Browse prompts",

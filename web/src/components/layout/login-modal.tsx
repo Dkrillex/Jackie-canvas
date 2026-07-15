@@ -27,7 +27,7 @@ export function LoginModal() {
             await login(username, password);
             message.success(t("login.success"));
             setPassword("");
-            navigate(redirectPath || "/image");
+            navigate(redirectPath || "/canvas");
         } catch (error) {
             message.error(error instanceof Error ? error.message : t("login.failed"));
         } finally {

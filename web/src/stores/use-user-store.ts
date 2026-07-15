@@ -31,9 +31,9 @@ export const useUserStore = create<UserStore>()(
         (set, get) => ({
             user: null,
             isLoginOpen: false,
-            loginRedirectPath: "/image",
+            loginRedirectPath: "/canvas",
             hydrating: false,
-            openLoginModal: (redirectPath = "/image") => set({ isLoginOpen: true, loginRedirectPath: redirectPath }),
+            openLoginModal: (redirectPath = "/canvas") => set({ isLoginOpen: true, loginRedirectPath: redirectPath }),
             closeLoginModal: () => set({ isLoginOpen: false }),
             setUser: (user) => set({ user }),
             login: async (username, password) => {
