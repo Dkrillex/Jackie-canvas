@@ -1,4 +1,5 @@
-import { modelOptionName, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
+import { modelOptionName, resolveModelRequestConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
+import { isOssUploadReady } from "@/services/oss-upload";
 import type { ReferenceImage } from "@/types/image";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
 
@@ -151,6 +152,10 @@ export function seedanceVideoReferenceError(videos: ReferenceVideo[]) {
     for (let index = 0; index < videos.length; index += 1) {
         const video = videos[index];
         const label = seedanceReferenceLabel("video", index);
+        if (!isSeedanceRemoteMediaUrl(video.url)) {
+            if (!video.storageKey && !video.url) return `${label} 无效，请重新上传`;
+            if (!isOssUploadReady(useConfigStore.getState().oss)) return `${label} 需公网 https / asset://，或先在配置中填写对象存储 AccessKey 后再上传本地文件`;
+        }
         if (video.bytes && video.bytes > SEEDANCE_REFERENCE_LIMITS.videoMaxBytes) return `${label} 超过 50MB，请压缩后再上传`;
         if (video.durationMs) {
             if (video.durationMs < 2000 || video.durationMs > 15000) return `${label} 时长需要在 2-15 秒之间`;
@@ -168,4 +173,9 @@ export function seedanceVideoReferenceError(videos: ReferenceVideo[]) {
     return "";
 }
 
-export const seedanceVideoReferenceHint = "参考视频需为 mp4/mov，H.264/H.265，FPS 24-60；含真人人脸素材请使用火山授权 asset:// 素材。";
+export function isSeedanceRemoteMediaUrl(value?: string) {
+    const url = (value || "").trim();
+    return /^https?:\/\//i.test(url) || url.startsWith("asset://");
+}
+
+export const seedanceVideoReferenceHint = "参考视频可为公网 https / asset://；本地文件需先在配置中填写对象存储 AccessKey，生成时会自动上传。";

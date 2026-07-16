@@ -3,8 +3,9 @@ import axios from "axios";
 import { dataUrlToFile } from "@/lib/image-utils";
 import { getMediaBlob, uploadMediaFile, type UploadedFile } from "@/services/file-storage";
 import { imageToDataUrl } from "@/services/image-storage";
+import { isOssUploadReady, uploadBlobToOss } from "@/services/oss-upload";
 import { boolConfig, buildSeedancePromptText, isArkPlanBaseUrl, isSeedanceVideoConfig, isSeedanceVideoModel, normalizeSeedanceDuration, normalizeSeedanceRatio, normalizeSeedanceResolution, seedanceVideoReferenceError, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
-import { buildApiUrl, modelOptionName, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
+import { buildApiUrl, modelOptionName, resolveModelRequestConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
 import type { ReferenceImage } from "@/types/image";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
 
@@ -218,20 +219,23 @@ async function resolveSeedanceImageUrl(config: AiConfig, image: ReferenceImage) 
 
 async function resolveSeedanceVideoUrl(video: ReferenceVideo) {
     if (isPublicMediaUrl(video.url) || video.url.startsWith("asset://")) return video.url;
-    let blob: Blob | null = null;
-    if (video.storageKey) blob = await getMediaBlob(video.storageKey);
-    if (!blob && video.url?.startsWith("blob:")) blob = await (await fetch(video.url)).blob();
-    if (!blob) throw new Error("参考视频必须是公网 URL、素材 ID，或本地已保存的视频");
-    return blobToDataUrl(blob);
+    return uploadLocalMediaToOss(video.url, video.storageKey, video.name || "reference.mp4", "参考视频");
 }
 
 async function resolveSeedanceAudioUrl(audio: ReferenceAudio) {
     if (isPublicMediaUrl(audio.url) || audio.url.startsWith("asset://")) return audio.url;
-    let blob: Blob | null = null;
-    if (audio.storageKey) blob = await getMediaBlob(audio.storageKey);
-    if (!blob && audio.url?.startsWith("blob:")) blob = await (await fetch(audio.url)).blob();
-    if (!blob) throw new Error("参考音频必须是公网 URL、素材 ID，或本地已保存的音频");
-    return blobToDataUrl(blob);
+    return uploadLocalMediaToOss(audio.url, audio.storageKey, audio.name || "reference.mp3", "参考音频");
+}
+
+async function uploadLocalMediaToOss(url: string, storageKey: string | undefined, fileName: string, label: string) {
+    const oss = useConfigStore.getState().oss;
+    if (!isOssUploadReady(oss)) {
+        throw new Error(`Seedance ${label}必须使用公网 https URL 或 asset:// 素材；也可在配置中填写对象存储后重新上传本地文件`);
+    }
+    const blob = storageKey ? await getMediaBlob(storageKey) : url ? await (await fetch(url)).blob() : null;
+    if (!blob) throw new Error(`${label}读取失败，请重新上传`);
+    const uploaded = await uploadBlobToOss(oss, blob, fileName);
+    return uploaded.url;
 }
 
 async function videoResultFromUrl(url: string, options?: RequestOptions): Promise<VideoGenerationResult> {
@@ -359,14 +363,5 @@ function delay(ms: number, signal?: AbortSignal) {
             },
             { once: true },
         );
-    });
-}
-
-function blobToDataUrl(blob: Blob) {
-    return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("读取本地素材失败"));
-        reader.readAsDataURL(blob);
     });
 }

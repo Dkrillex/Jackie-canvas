@@ -52,7 +52,17 @@ export type WebdavSyncConfig = {
     directory: string;
     lastSyncedAt: string;
 };
-export type ConfigTabKey = "user" | "channels" | "models" | "preferences" | "webdav" | "codex";
+
+export type OssUploadConfig = {
+    region: string;
+    bucket: string;
+    prefix: string;
+    accessKeyId: string;
+    accessKeySecret: string;
+    publicBaseUrl: string;
+};
+
+export type ConfigTabKey = "user" | "channels" | "models" | "preferences" | "webdav" | "codex" | "oss";
 
 export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 export type ModelCapability = "image" | "video" | "text" | "audio";
@@ -83,6 +93,7 @@ export const defaultConfig: AiConfig = {
                 "grok-imagine-video",
                 "seedance-2-0",
                 "seedance-2-0-fast",
+                "seedance-2-0-NSFW",
                 "gpt-5.5",
                 "gpt-4o-mini-tts",
             ],
@@ -111,6 +122,7 @@ export const defaultConfig: AiConfig = {
         "default::grok-imagine-video",
         "default::seedance-2-0",
         "default::seedance-2-0-fast",
+        "default::seedance-2-0-NSFW",
         "default::gpt-5.5",
         "default::gpt-4o-mini-tts",
     ],
@@ -121,7 +133,7 @@ export const defaultConfig: AiConfig = {
         "default::gemini-3.1-flash-image",
         "default::gemini-3-pro-image-preview",
     ],
-    videoModels: ["default::grok-imagine-video", "default::seedance-2-0", "default::seedance-2-0-fast"],
+    videoModels: ["default::grok-imagine-video", "default::seedance-2-0", "default::seedance-2-0-fast", "default::seedance-2-0-NSFW"],
     textModels: ["default::gpt-5.5"],
     audioModels: ["default::gpt-4o-mini-tts"],
     quality: "auto",
@@ -138,14 +150,25 @@ export const defaultWebdavSyncConfig: WebdavSyncConfig = {
     lastSyncedAt: "",
 };
 
+export const defaultOssUploadConfig: OssUploadConfig = {
+    region: "oss-cn-guangzhou",
+    bucket: "super-jackie",
+    prefix: "canvas/",
+    accessKeyId: "",
+    accessKeySecret: "",
+    publicBaseUrl: "https://super-jackie.oss-cn-guangzhou.aliyuncs.com",
+};
+
 type ConfigStore = {
     config: AiConfig;
     webdav: WebdavSyncConfig;
+    oss: OssUploadConfig;
     isConfigOpen: boolean;
     configTab: ConfigTabKey;
     shouldPromptContinue: boolean;
     updateConfig: <K extends keyof AiConfig>(key: K, value: AiConfig[K]) => void;
     updateWebdavConfig: <K extends keyof WebdavSyncConfig>(key: K, value: WebdavSyncConfig[K]) => void;
+    updateOssConfig: <K extends keyof OssUploadConfig>(key: K, value: OssUploadConfig[K]) => void;
     isAiConfigReady: (config: AiConfig, model: string) => boolean;
     openConfigDialog: (shouldPromptContinue?: boolean, tab?: ConfigTabKey) => void;
     setConfigDialogOpen: (isOpen: boolean) => void;
@@ -202,6 +225,7 @@ export const useConfigStore = create<ConfigStore>()(
         (set, get) => ({
             config: defaultConfig,
             webdav: defaultWebdavSyncConfig,
+            oss: defaultOssUploadConfig,
             isConfigOpen: false,
             configTab: "channels",
             shouldPromptContinue: false,
@@ -219,6 +243,13 @@ export const useConfigStore = create<ConfigStore>()(
                         [key]: value,
                     },
                 })),
+            updateOssConfig: (key, value) =>
+                set((state) => ({
+                    oss: {
+                        ...state.oss,
+                        [key]: value,
+                    },
+                })),
             isAiConfigReady: (config, model) => isAiConfigReady(config, model),
             openConfigDialog: (shouldPromptContinue = false, configTab = "channels") => set({ isConfigOpen: true, shouldPromptContinue, configTab }),
             setConfigDialogOpen: (isConfigOpen) => set({ isConfigOpen }),
@@ -226,11 +257,12 @@ export const useConfigStore = create<ConfigStore>()(
         }),
         {
             name: CONFIG_STORE_KEY,
-            partialize: (state) => ({ config: state.config, webdav: state.webdav }),
+            partialize: (state) => ({ config: state.config, webdav: state.webdav, oss: state.oss }),
             merge: (persisted, current) => {
                 const persistedState = (persisted || {}) as Partial<ConfigStore>;
                 const persistedConfig = (persistedState.config || {}) as Partial<AiConfig>;
                 const persistedWebdav = (persistedState.webdav || {}) as Partial<WebdavSyncConfig>;
+                const persistedOss = (persistedState.oss || {}) as Partial<OssUploadConfig>;
                 const config = { ...defaultConfig, ...persistedConfig };
                 if (!Array.isArray(persistedConfig.channels)) config.channels = [];
                 const channels = normalizeChannels(config);
@@ -238,6 +270,12 @@ export const useConfigStore = create<ConfigStore>()(
                 return {
                     ...current,
                     webdav: { ...defaultWebdavSyncConfig, ...persistedWebdav },
+                    oss: {
+                        ...defaultOssUploadConfig,
+                        ...persistedOss,
+                        accessKeyId: persistedOss.accessKeyId?.trim() || defaultOssUploadConfig.accessKeyId,
+                        accessKeySecret: persistedOss.accessKeySecret?.trim() || defaultOssUploadConfig.accessKeySecret,
+                    },
                     config: {
                         ...config,
                         channelMode: "local",

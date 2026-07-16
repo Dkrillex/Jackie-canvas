@@ -1,11 +1,12 @@
 import { App, Button, Form, Input, Modal, Progress, Select, Switch, Tabs } from "antd";
-import { CircleAlert, Cloud, KeyRound, Link2, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, Wifi } from "lucide-react";
+import { CircleAlert, Cloud, HardDrive, KeyRound, Link2, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ModelPicker } from "@/components/model-picker";
 import { fetchChannelModels } from "@/services/api/image";
 import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCredits, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
+import { isOssUploadReady, testOssUpload } from "@/services/oss-upload";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
 import { useAgentStore } from "@/stores/use-agent-store";
@@ -77,6 +78,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const [loadingChannelId, setLoadingChannelId] = useState("");
     const [testingWebdav, setTestingWebdav] = useState(false);
     const [syncingWebdav, setSyncingWebdav] = useState(false);
+    const [testingOss, setTestingOss] = useState(false);
     const [webdavSyncStatus, setWebdavSyncStatus] = useState("");
     const [webdavDomainProgress, setWebdavDomainProgress] = useState(() => createWebdavDomainProgress(t));
     const [userInfo, setUserInfo] = useState<UserCenterInfo | null>(null);
@@ -85,8 +87,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const [loggingOut, setLoggingOut] = useState(false);
     const config = useConfigStore((state) => state.config);
     const webdav = useConfigStore((state) => state.webdav);
+    const oss = useConfigStore((state) => state.oss);
     const updateConfig = useConfigStore((state) => state.updateConfig);
     const updateWebdavConfig = useConfigStore((state) => state.updateWebdavConfig);
+    const updateOssConfig = useConfigStore((state) => state.updateOssConfig);
     const shouldPromptContinue = useConfigStore((state) => state.shouldPromptContinue);
     const setConfigDialogOpen = useConfigStore((state) => state.setConfigDialogOpen);
     const clearPromptContinue = useConfigStore((state) => state.clearPromptContinue);
@@ -107,6 +111,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const disconnectAgent = useAgentStore((state) => state.disconnectAgent);
     const modelOptions = config.models.map((model) => ({ label: modelOptionLabel(config, model), value: model }));
     const webdavReady = Boolean(webdav.url.trim());
+    const ossReady = isOssUploadReady(oss);
     useEffect(() => {
         const nextTab = initialTab === "preferences" || initialTab === "webdav" || initialTab === "codex" ? "channels" : initialTab;
         setActiveTab(nextTab);
@@ -218,6 +223,22 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
             message.error(error instanceof Error ? error.message : t("config.webdavTestFailed"));
         } finally {
             setTestingWebdav(false);
+        }
+    };
+
+    const testOss = async () => {
+        if (!ossReady) {
+            message.error(t("config.ossNeedKeys"));
+            return;
+        }
+        setTestingOss(true);
+        try {
+            const url = await testOssUpload(oss);
+            message.success(t("config.ossOk", { url }));
+        } catch (error) {
+            message.error(error instanceof Error ? error.message : t("config.ossTestFailed"));
+        } finally {
+            setTestingOss(false);
         }
     };
 
@@ -513,6 +534,51 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                 <Form.Item label={t("config.systemPrompt")} className="mb-0">
                                     <Input.TextArea rows={4} value={config.systemPrompt} placeholder={t("config.systemPromptPh")} onChange={(event) => updateConfig("systemPrompt", event.target.value)} />
                                 </Form.Item>
+                            </Form>
+                        ),
+                    },
+                    {
+                        key: "oss",
+                        label: t("config.tab.oss"),
+                        children: (
+                            <Form layout="vertical" requiredMark={false}>
+                                <section className="rounded-lg border border-stone-200 p-3 dark:border-stone-800">
+                                    <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <div className="flex items-center gap-2 text-sm font-semibold">
+                                                <HardDrive className="size-4" />
+                                                {t("config.oss")}
+                                            </div>
+                                            <div className="mt-1 text-xs text-stone-500">{t("config.ossHint")}</div>
+                                        </div>
+                                        <div className="text-xs text-stone-500">{ossReady ? t("config.ossReady") : t("config.ossNeedKeys")}</div>
+                                    </div>
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <Form.Item label={t("config.ossRegion")} className="mb-4">
+                                            <Input value={oss.region} placeholder="oss-cn-guangzhou" onChange={(event) => updateOssConfig("region", event.target.value)} />
+                                        </Form.Item>
+                                        <Form.Item label={t("config.ossBucket")} className="mb-4">
+                                            <Input value={oss.bucket} placeholder="super-jackie" onChange={(event) => updateOssConfig("bucket", event.target.value)} />
+                                        </Form.Item>
+                                        <Form.Item label={t("config.ossPrefix")} className="mb-4">
+                                            <Input value={oss.prefix} placeholder="canvas/" onChange={(event) => updateOssConfig("prefix", event.target.value)} />
+                                        </Form.Item>
+                                        <Form.Item label={t("config.ossPublicBaseUrl")} className="mb-4" extra={t("config.ossPublicBaseUrlHint")}>
+                                            <Input value={oss.publicBaseUrl} placeholder="https://super-jackie.oss-cn-guangzhou.aliyuncs.com" onChange={(event) => updateOssConfig("publicBaseUrl", event.target.value)} />
+                                        </Form.Item>
+                                        <Form.Item label={t("config.ossAccessKeyId")} className="mb-0">
+                                            <Input value={oss.accessKeyId} autoComplete="off" onChange={(event) => updateOssConfig("accessKeyId", event.target.value)} />
+                                        </Form.Item>
+                                        <Form.Item label={t("config.ossAccessKeySecret")} className="mb-0">
+                                            <Input.Password value={oss.accessKeySecret} autoComplete="new-password" onChange={(event) => updateOssConfig("accessKeySecret", event.target.value)} />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                                        <Button type="primary" icon={<Wifi className="size-4" />} disabled={!ossReady} loading={testingOss} onClick={() => void testOss()}>
+                                            {t("config.ossTest")}
+                                        </Button>
+                                    </div>
+                                </section>
                             </Form>
                         ),
                     },

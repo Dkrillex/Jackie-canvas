@@ -2,6 +2,11 @@
 
 ## Unreleased
 
++ [调整] 默认视频模型列表新增 `seedance-2-0-NSFW`。
++ [新增] 对象存储（阿里云 OSS）配置与上传：Seedance 参考视频/音频本地文件可自动上传到 `super-jackie/canvas/` 并转为公网 https。
++ [新增] 视频创作台参考视频/音频支持粘贴公网 https 或 `asset://` 链接（Seedance 所需）。
++ [修复] Seedance 参考视频/音频仅接受公网 https 或 `asset://`，本地上传改为提前提示，避免上游 `InvalidParameter`。
++ [修复] 图生图 `/images/edits` 不再传上游不支持的 `response_format` / `output_format`。
 + [修复] 画布配置节点切换到视频模式时按能力选择模型，避免仍用旧图片模型误走 `/v1/videos`。
 + [修复] 画布配置节点未使用 `@` 引用时，自动带上已连接的上游图片/视频/音频作为生成参考。
 + [修复] Seedream 4/5 生图按模型要求映射尺寸（默认至少约 2K / 3686400 像素），避免 `size` 过小被拒绝。

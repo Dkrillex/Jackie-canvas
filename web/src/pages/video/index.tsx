@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, BookOpen, CheckSquare, ClipboardPaste, Download, FolderPlus, History, LoaderCircle, Music2, Plus, SlidersHorizontal, Sparkles, Trash2, Upload, VideoIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, CheckSquare, ClipboardPaste, Download, FolderPlus, History, Link2, LoaderCircle, Music2, Plus, SlidersHorizontal, Sparkles, Trash2, Upload, VideoIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { App, Button, Checkbox, Drawer, Empty, Input, Modal, Tag, Typography } from "antd";
 import localforage from "localforage";
@@ -11,9 +11,10 @@ import { PromptSelectDialog } from "@/components/prompts/prompt-select-dialog";
 import { VideoSettingsPanel, normalizeVideoResolutionValue, normalizeVideoSizeValue, videoSizeLabel } from "@/components/video-settings-panel";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { formatBytes, formatDuration } from "@/lib/image-utils";
-import { boolConfig, isSeedanceVideoConfig, normalizeSeedanceRatio, seedanceReferenceLabel, seedanceVideoReferenceError, seedanceVideoReferenceHint, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
+import { boolConfig, isSeedanceRemoteMediaUrl, isSeedanceVideoConfig, normalizeSeedanceRatio, seedanceReferenceLabel, seedanceVideoReferenceError, seedanceVideoReferenceHint, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
 import { deleteStoredMedia, resolveMediaUrl, uploadMediaFile } from "@/services/file-storage";
 import { resolveImageUrl, uploadImage } from "@/services/image-storage";
+import { isOssUploadReady, uploadBlobToOss } from "@/services/oss-upload";
 import { createVideoGenerationTask, pollVideoGenerationTask, storeGeneratedVideo, type VideoGenerationTask } from "@/services/api/video";
 import { useAssetStore } from "@/stores/use-asset-store";
 import { useWorkbenchAgentStore } from "@/stores/use-workbench-agent-store";
@@ -97,6 +98,8 @@ export default function VideoPage() {
     const [previewLog, setPreviewLog] = useState<GenerationLog | null>(null);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [autoRunToken, setAutoRunToken] = useState(0);
+    const [remoteMediaKind, setRemoteMediaKind] = useState<"video" | "audio" | null>(null);
+    const [remoteMediaUrl, setRemoteMediaUrl] = useState("");
     const videoCommand = useWorkbenchAgentStore((state) => state.videoCommand);
     const clearVideoCommand = useWorkbenchAgentStore((state) => state.clearVideoCommand);
     const processedCommandRef = useRef(0);
@@ -115,40 +118,47 @@ export default function VideoPage() {
     }, []);
 
     const addReferences = async (files?: FileList | null) => {
-        const selectedFiles = Array.from(files || []);
-        const unsupported = selectedFiles.filter((file) => !file.type.startsWith("image/") && !file.type.startsWith("video/") && !isSupportedAudioFile(file));
-        if (unsupported.length) message.warning(t("wb.ignoreUnsupportedRefs"));
-        const imageFiles = selectedFiles.filter((file) => file.type.startsWith("image/") && file.size <= SEEDANCE_REFERENCE_LIMITS.imageMaxBytes).slice(0, SEEDANCE_REFERENCE_LIMITS.images - references.length);
-        const videoFiles = selectedFiles.filter((file) => file.type.startsWith("video/") && file.size <= SEEDANCE_REFERENCE_LIMITS.videoMaxBytes).slice(0, SEEDANCE_REFERENCE_LIMITS.videos - videoReferences.length);
-        const audioFiles = selectedFiles.filter((file) => isSupportedAudioFile(file) && file.size <= SEEDANCE_REFERENCE_LIMITS.audioMaxBytes).slice(0, SEEDANCE_REFERENCE_LIMITS.audios - audioReferences.length);
-        if (selectedFiles.some((file) => file.type.startsWith("image/") && file.size > SEEDANCE_REFERENCE_LIMITS.imageMaxBytes)) message.warning(t("wb.ignoreLargeImage"));
-        if (selectedFiles.some((file) => file.type.startsWith("video/") && file.size > SEEDANCE_REFERENCE_LIMITS.videoMaxBytes)) message.warning(t("wb.ignoreLargeVideo"));
-        if (selectedFiles.some((file) => isSupportedAudioFile(file) && file.size > SEEDANCE_REFERENCE_LIMITS.audioMaxBytes)) message.warning(t("wb.ignoreLargeAudio"));
-        const nextReferences = await Promise.all(
-            imageFiles.map(async (file) => {
-                const image = await uploadImage(file);
-                return { id: nanoid(), name: file.name, type: image.mimeType, dataUrl: image.url, storageKey: image.storageKey };
-            }),
-        );
-        const nextVideoReferences = await Promise.all(
-            videoFiles.map(async (file) => {
-                const video = await uploadMediaFile(file, "video-reference");
-                return { id: nanoid(), name: file.name, type: video.mimeType, url: video.url, storageKey: video.storageKey, bytes: video.bytes, width: video.width, height: video.height, durationMs: video.durationMs };
-            }),
-        );
-        const nextAudioReferences = filterAudioReferencesByDuration(
-            audioReferences,
-            await Promise.all(
-                audioFiles.map(async (file) => {
-                    const audio = await uploadMediaFile(file, "audio-reference");
-                    return { id: nanoid(), name: file.name, type: audio.mimeType, url: audio.url, storageKey: audio.storageKey, durationMs: audio.durationMs };
+        try {
+            const selectedFiles = Array.from(files || []);
+            const unsupported = selectedFiles.filter((file) => !file.type.startsWith("image/") && !file.type.startsWith("video/") && !isSupportedAudioFile(file));
+            if (unsupported.length) message.warning(t("wb.ignoreUnsupportedRefs"));
+            const imageFiles = selectedFiles.filter((file) => file.type.startsWith("image/") && file.size <= SEEDANCE_REFERENCE_LIMITS.imageMaxBytes).slice(0, SEEDANCE_REFERENCE_LIMITS.images - references.length);
+            const videoFiles = selectedFiles.filter((file) => file.type.startsWith("video/") && file.size <= SEEDANCE_REFERENCE_LIMITS.videoMaxBytes).slice(0, SEEDANCE_REFERENCE_LIMITS.videos - videoReferences.length);
+            const audioFiles = selectedFiles.filter((file) => isSupportedAudioFile(file) && file.size <= SEEDANCE_REFERENCE_LIMITS.audioMaxBytes).slice(0, SEEDANCE_REFERENCE_LIMITS.audios - audioReferences.length);
+            if (selectedFiles.some((file) => file.type.startsWith("image/") && file.size > SEEDANCE_REFERENCE_LIMITS.imageMaxBytes)) message.warning(t("wb.ignoreLargeImage"));
+            if (selectedFiles.some((file) => file.type.startsWith("video/") && file.size > SEEDANCE_REFERENCE_LIMITS.videoMaxBytes)) message.warning(t("wb.ignoreLargeVideo"));
+            if (selectedFiles.some((file) => isSupportedAudioFile(file) && file.size > SEEDANCE_REFERENCE_LIMITS.audioMaxBytes)) message.warning(t("wb.ignoreLargeAudio"));
+            const nextReferences = await Promise.all(
+                imageFiles.map(async (file) => {
+                    const image = await uploadImage(file);
+                    return { id: nanoid(), name: file.name, type: image.mimeType, dataUrl: image.url, storageKey: image.storageKey };
                 }),
-            ),
-            message.warning,
-        );
-        setReferences((value) => [...value, ...nextReferences].slice(0, SEEDANCE_REFERENCE_LIMITS.images));
-        setVideoReferences((value) => [...value, ...nextVideoReferences].slice(0, SEEDANCE_REFERENCE_LIMITS.videos));
-        setAudioReferences((value) => [...value, ...nextAudioReferences].slice(0, SEEDANCE_REFERENCE_LIMITS.audios));
+            );
+            const nextVideoReferences = await Promise.all(
+                videoFiles.map(async (file) => {
+                    const video = await uploadMediaFile(file, "video-reference");
+                    const url = await maybeUploadSeedanceMediaToOss(file, video.url);
+                    return { id: nanoid(), name: file.name, type: video.mimeType, url, storageKey: video.storageKey, bytes: video.bytes, width: video.width, height: video.height, durationMs: video.durationMs };
+                }),
+            );
+            const nextAudioReferences = filterAudioReferencesByDuration(
+                audioReferences,
+                await Promise.all(
+                    audioFiles.map(async (file) => {
+                        const audio = await uploadMediaFile(file, "audio-reference");
+                        const url = await maybeUploadSeedanceMediaToOss(file, audio.url);
+                        return { id: nanoid(), name: file.name, type: audio.mimeType, url, storageKey: audio.storageKey, durationMs: audio.durationMs };
+                    }),
+                ),
+                message.warning,
+            );
+            setReferences((value) => [...value, ...nextReferences].slice(0, SEEDANCE_REFERENCE_LIMITS.images));
+            setVideoReferences((value) => [...value, ...nextVideoReferences].slice(0, SEEDANCE_REFERENCE_LIMITS.videos));
+            setAudioReferences((value) => [...value, ...nextAudioReferences].slice(0, SEEDANCE_REFERENCE_LIMITS.audios));
+            if ((videoFiles.length || audioFiles.length) && isOssUploadReady(useConfigStore.getState().oss)) message.success(t("wb.ossUploaded"));
+        } catch (error) {
+            message.error(error instanceof Error ? error.message : t("wb.ossUploadFailed"));
+        }
     };
 
     const addReferencesFromClipboard = async () => {
@@ -170,6 +180,37 @@ export default function VideoPage() {
         } catch {
             message.error(t("wb.clipboardEmpty"));
         }
+    };
+
+    const openRemoteMediaModal = (kind: "video" | "audio") => {
+        setRemoteMediaKind(kind);
+        setRemoteMediaUrl("");
+    };
+
+    const confirmRemoteMediaUrl = () => {
+        const url = remoteMediaUrl.trim();
+        if (!remoteMediaKind) return;
+        if (!isSeedanceRemoteMediaUrl(url)) {
+            message.error(t("wb.remoteMediaUrlInvalid"));
+            return;
+        }
+        if (remoteMediaKind === "video") {
+            if (videoReferences.length >= SEEDANCE_REFERENCE_LIMITS.videos) {
+                message.warning(t("wb.refVideosFull"));
+                return;
+            }
+            setVideoReferences((value) => [...value, { id: nanoid(), name: remoteMediaName(url, "video"), type: guessRemoteMediaType(url, "video"), url }].slice(0, SEEDANCE_REFERENCE_LIMITS.videos));
+            message.success(t("wb.addedRefVideo"));
+        } else {
+            if (audioReferences.length >= SEEDANCE_REFERENCE_LIMITS.audios) {
+                message.warning(t("wb.refAudiosFull"));
+                return;
+            }
+            setAudioReferences((value) => [...value, { id: nanoid(), name: remoteMediaName(url, "audio"), type: guessRemoteMediaType(url, "audio"), url }].slice(0, SEEDANCE_REFERENCE_LIMITS.audios));
+            message.success(t("wb.addedRefAudio"));
+        }
+        setRemoteMediaKind(null);
+        setRemoteMediaUrl("");
     };
     const generate = async () => {
         const snapshot = buildRequestSnapshot();
@@ -433,9 +474,14 @@ export default function VideoPage() {
                             <div className="min-w-0">
                                 <div className="mb-2 flex items-center justify-between gap-3">
                                     <span className="text-base font-semibold">{t("wb.refVideos")}</span>
-                                    <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
-                                        {t("wb.upload")}
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button size="small" icon={<Link2 className="size-3.5" />} onClick={() => openRemoteMediaModal("video")}>
+                                            {t("wb.addUrl")}
+                                        </Button>
+                                        <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
+                                            {t("wb.upload")}
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700">
                                     {videoReferences.map((item, index) => (
@@ -455,9 +501,14 @@ export default function VideoPage() {
                             <div className="min-w-0">
                                 <div className="mb-2 flex items-center justify-between gap-3">
                                     <span className="text-base font-semibold">{t("wb.refAudios")}</span>
-                                    <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
-                                        {t("wb.upload")}
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button size="small" icon={<Link2 className="size-3.5" />} onClick={() => openRemoteMediaModal("audio")}>
+                                            {t("wb.addUrl")}
+                                        </Button>
+                                        <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
+                                            {t("wb.upload")}
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700">
                                     {audioReferences.map((item, index) => (
@@ -538,6 +589,31 @@ export default function VideoPage() {
             </Drawer>
             <PromptSelectDialog open={promptDialogOpen} onOpenChange={setPromptDialogOpen} onSelect={setPrompt} />
             <AssetPickerModal open={assetPickerOpen} defaultTab="my-assets" onInsert={(payload) => void insertPickedAsset(payload)} onClose={() => setAssetPickerOpen(false)} />
+            <Modal
+                title={remoteMediaKind === "audio" ? t("wb.addAudioUrlTitle") : t("wb.addVideoUrlTitle")}
+                open={Boolean(remoteMediaKind)}
+                onCancel={() => {
+                    setRemoteMediaKind(null);
+                    setRemoteMediaUrl("");
+                }}
+                onOk={confirmRemoteMediaUrl}
+                okText={t("wb.addUrl")}
+                destroyOnHidden
+            >
+                <div className="space-y-2 pt-2">
+                    <Input
+                        prefix={<Link2 className="mr-1 size-4 text-stone-400" />}
+                        value={remoteMediaUrl}
+                        onChange={(event) => setRemoteMediaUrl(event.target.value)}
+                        onPressEnter={confirmRemoteMediaUrl}
+                        placeholder={t("wb.remoteMediaUrlPh")}
+                        autoFocus
+                    />
+                    <Typography.Paragraph type="secondary" className="!mb-0 text-xs">
+                        {t("wb.remoteMediaUrlHint")}
+                    </Typography.Paragraph>
+                </div>
+            </Modal>
             <Modal title={t("wb.deleteLogsTitle")} open={deleteConfirmOpen} onCancel={() => setDeleteConfirmOpen(false)} onOk={deleteSelectedLogs} okText={t("action.delete")} okButtonProps={{ danger: true }} cancelText={t("action.cancel")}>
                 {t("wb.deleteLogsConfirm", { n: selectedLogIds.length })}
             </Modal>
@@ -872,6 +948,30 @@ function normalizeVideoSize(value: string) {
 
 function normalizeResolution(value: string) {
     return normalizeVideoResolutionValue(value);
+}
+
+function remoteMediaName(url: string, kind: "video" | "audio") {
+    try {
+        const pathname = new URL(url).pathname;
+        const name = pathname.split("/").filter(Boolean).pop();
+        if (name) return decodeURIComponent(name);
+    } catch {
+        // asset:// or invalid URL — fall through
+    }
+    return kind === "video" ? "remote-video.mp4" : "remote-audio.mp3";
+}
+
+function guessRemoteMediaType(url: string, kind: "video" | "audio") {
+    const path = url.split("?")[0].toLowerCase();
+    if (kind === "video") return path.endsWith(".mov") ? "video/quicktime" : "video/mp4";
+    return path.endsWith(".wav") || path.endsWith(".wave") ? "audio/wav" : "audio/mpeg";
+}
+
+async function maybeUploadSeedanceMediaToOss(file: File, fallbackUrl: string) {
+    const oss = useConfigStore.getState().oss;
+    if (!isOssUploadReady(oss)) return fallbackUrl;
+    const uploaded = await uploadBlobToOss(oss, file, file.name);
+    return uploaded.url;
 }
 
 function delay(ms: number) {

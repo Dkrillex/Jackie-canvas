@@ -5,11 +5,15 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- 对象存储 OSS：配置页「对象存储」填写阿里云 AccessKey 后可测试上传；Bucket `super-jackie`、前缀 `canvas/`、Region `oss-cn-guangzhou`；需确认 `canvas/` 公共可读且 CORS 允许浏览器 PUT。
+- Seedance 参考视频/音频：配置 OSS 后，视频创作台本地上传应自动得到 `https://super-jackie.oss-cn-guangzhou.aliyuncs.com/canvas/...` 公网链接并可生成；也可继续用「链接」粘贴公网 https / `asset://`。
+- Seedance 参考视频：未配置 OSS 时，本地上传应在生成前提示需公网链接或填写 AccessKey；配置后不再因 data URL 报 `reference_video must be provided as a web url`。
+- GPT-Image-2 图生图：带参考图走 `/v1/images/edits` 时不应再因 `response_format` 报 `Unknown parameter`。
 - 画布 Seedance：配置节点切到视频模式并选择 `seedance-2-0` 后，请求应走 `/v1/video/generations`，不应再请求 `/v1/videos`。
 - 画布配置节点参考素材：图片节点连到视频模式配置节点后，即使提示词未 `@` 引用，生成视频也应自动带上该参考图；若提示词里写了 `@`，则仍只使用被引用的素材。
 - Seedream 生图尺寸：选择 `seedream-5-0-260128` 等 4/5 模型时，默认 `1:1` 应映射为约 `2048x2048`（或 `2K`），不再因总像素低于 3686400 被拒绝。
 - Seedance 视频接口：默认 `/gw` 渠道选 `seedance-2-0` / `seedance-2-0-fast` 应走 `POST/GET /v1/video/generations`；轮询返回 `code: "success"` 且 `status: "in_progress"` 时应继续等待，不报失败；火山方舟 Agent Plan Base URL 仍走 `/contents/generations/tasks`。
-- 默认模型列表：新环境默认渠道应包含 `seedream-5-0-260128`、Gemini 生图系列与 `seedance-2-0` / `seedance-2-0-fast`；生图/视频可选项分类正确。
+- 默认模型列表：新环境默认渠道应包含 `seedream-5-0-260128`、Gemini 生图系列与 `seedance-2-0` / `seedance-2-0-fast` / `seedance-2-0-NSFW`；生图/视频可选项分类正确。
 - 登录后配置入口：未登录时顶栏齿轮与导航「配置」不显示；登录后显示；直接访问 `/config` 未登录时提示登录。
 - 系统渠道地址：渠道 Base URL / API Key 仅登录账号为 `admin` 时渲染；普通用户渠道页不显示这两项，默认仍走同源 `/gw` 与内置密钥。
 - Vercel `/gw` 代理：部署后登录与 AI 请求应经 rewrite 转发到上游，不再出现 `405 Method Not Allowed`。
