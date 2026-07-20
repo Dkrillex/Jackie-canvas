@@ -2,6 +2,8 @@
 
 ## Unreleased
 
++ [新增] WorkBuddy / CodeBuddy 插件清单与 marketplace（与 Codex 共用 `plugins/infinite-canvas` skills / MCP），并补充安装文档。
++ [调整] 恢复全站 Agent 右侧面板与顶栏/画布入口，配置页 Agent 连接支持说明 Codex / WorkBuddy。
 + [新增] 补充 `@jackie-canvas/canvas-agent` 发布到 npm 的流程文档。
 + [调整] 本地 Canvas Agent npm 包名改为 `@jackie-canvas/canvas-agent`。
 + [调整] 画布默认生图张数改为 1。

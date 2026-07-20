@@ -5,6 +5,7 @@
   "pages": [
     "quick-start",
     "codex-app-plugin",
+    "workbuddy-plugin",
     "features",
     "render",
     "docker",

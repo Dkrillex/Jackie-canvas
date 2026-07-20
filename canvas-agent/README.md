@@ -1,4 +1,4 @@
-# Infinite Canvas Agent
+# Jackie Canvas Agent
 
 本地 Canvas Agent 用来连接画布网页和用户电脑上的 Codex / Claude Code。本地开发时优先连接 `http://localhost:3000`，不需要先使用线上站点。
 
@@ -63,16 +63,36 @@ codex plugin remove infinite-canvas
 codex mcp remove infinite-canvas
 ```
 
-### Codex app 插件
+### Codex / WorkBuddy 插件
 
-仓库内提供了 Codex app 插件：`plugins/infinite-canvas`。在 Codex app 中添加本仓库的 marketplace 后，可以安装 `Infinite Canvas` 插件；插件会注册同一个 `infinite-canvas` MCP，并带上画布操作说明。
+仓库内提供统一插件：`plugins/infinite-canvas`（Codex 与 WorkBuddy 共用 skills / MCP）。
 
-添加本地 marketplace 时建议使用仓库绝对路径，避免 Codex 从其他工作目录解析失败：
+**Codex**：添加本仓库 marketplace 后安装 `Jackie Canvas` 插件：
 
 ```bash
-cd /path/to/infinite-canvas
+cd /path/to/Jackie-canvas
 codex plugin marketplace add "$(pwd)"
 codex plugin add infinite-canvas@infinite-canvas-local
+```
+
+**WorkBuddy**：在仓库根目录用 slash 命令安装（需存在 `.codebuddy-plugin/marketplace.json`）：
+
+```text
+/plugin marketplace add .
+/plugin install infinite-canvas@jackie-canvas-local
+```
+
+WorkBuddy 也可只配 MCP，编辑 `~/.workbuddy/mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "infinite-canvas": {
+      "command": "npx",
+      "args": ["-y", "@jackie-canvas/canvas-agent", "mcp"]
+    }
+  }
+}
 ```
 
 插件默认通过 npm 启动 MCP；这个命令只提供 MCP 工具，不会把 MCP 写入全局配置，也不会在退出时自动卸载：
@@ -81,7 +101,7 @@ codex plugin add infinite-canvas@infinite-canvas-local
 npx -y @jackie-canvas/canvas-agent mcp
 ```
 
-使用时可以直接在 Codex 里说“打开 Infinite Canvas”，插件会优先启动本地画布和本地 Agent，读取 Local URL 和 Connect token，然后直接打开画布网页地址新建并连接画布。如果自动连接失败，再检查本地画布服务和 Canvas Agent 是否都已启动。
+使用时可以直接在 Codex / WorkBuddy 里说“打开 Jackie Canvas”，插件会优先启动本地画布和本地 Agent，读取 Local URL 和 Connect token，然后直接打开画布网页地址新建并连接画布。如果自动连接失败，再检查本地画布服务和 Canvas Agent 是否都已启动。
 
 Canvas Agent 启动后，给 Codex 添加 MCP：
 

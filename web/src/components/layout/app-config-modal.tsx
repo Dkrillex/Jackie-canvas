@@ -113,7 +113,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const webdavReady = Boolean(webdav.url.trim());
     const ossReady = isOssUploadReady(oss);
     useEffect(() => {
-        const nextTab = initialTab === "preferences" || initialTab === "webdav" || initialTab === "codex" ? "channels" : initialTab;
+        const nextTab = initialTab === "preferences" || initialTab === "webdav" ? "channels" : initialTab;
         setActiveTab(nextTab);
     }, [initialTab]);
 
@@ -628,7 +628,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                     },
                     {
                         key: "codex",
-                        label: "Codex",
+                        label: "Agent",
                         children: (
                             <Form layout="vertical" requiredMark={false}>
                                 <section className="rounded-lg border border-stone-200 p-3 dark:border-stone-800">
@@ -687,7 +687,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                             </Form>
                         ),
                     },
-                ].filter((item) => item.key !== "preferences" && item.key !== "webdav" && item.key !== "codex")}
+                ].filter((item) => item.key !== "preferences" && item.key !== "webdav")}
             />
             {showDoneButton ? (
                 <div className="mt-4 flex justify-end">

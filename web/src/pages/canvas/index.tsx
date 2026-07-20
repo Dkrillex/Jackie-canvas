@@ -34,7 +34,7 @@ export default function CanvasPage() {
     const enterProject = (id: string) => {
         navigate(`/canvas/${id}${agentQuery}`);
     };
-    const createAndEnter = () => enterProject(createProject(`MPTECH AI ${projects.length + 1}`));
+    const createAndEnter = () => enterProject(createProject(`Jackie Canvas ${projects.length + 1}`));
     const importCanvas = async (file?: File) => {
         if (!file) return;
         try {
@@ -64,7 +64,7 @@ export default function CanvasPage() {
     useEffect(() => {
         if (!hydrated || autoOpenRef.current || (mode !== "new" && mode !== "recent")) return;
         autoOpenRef.current = true;
-        enterProject(mode === "new" ? createProject(`MPTECH AI ${projects.length + 1}`) : projects[0]?.id || createProject(`MPTECH AI ${projects.length + 1}`));
+        enterProject(mode === "new" ? createProject(`Jackie Canvas ${projects.length + 1}`) : projects[0]?.id || createProject(`Jackie Canvas ${projects.length + 1}`));
     }, [createProject, hydrated, mode, projects]);
 
     if (hydrated && (mode === "new" || mode === "recent")) return <main className="flex h-full items-center justify-center bg-background text-sm text-stone-500">{t("canvas.loading")}</main>;
@@ -75,12 +75,12 @@ export default function CanvasPage() {
                 <header className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-6 dark:border-stone-800">
                     <div>
                         <p className="text-xs text-stone-500">{t("canvas.library")}</p>
-                        <h1 className="mt-3 text-3xl font-semibold">MPTECH AI</h1>
+                        <h1 className="mt-3 text-3xl font-semibold">Jackie Canvas</h1>
                     </div>
                     <div className="flex items-center gap-2">
                         {selectedIds.length ? (
                             <>
-                                <Button disabled={!hydrated} icon={<Download className="size-4" />} onClick={() => void exportCanvasProjects(projects.filter((project) => selectedIds.includes(project.id)), `MPTECH AI-${selectedIds.length}`)}>
+                                <Button disabled={!hydrated} icon={<Download className="size-4" />} onClick={() => void exportCanvasProjects(projects.filter((project) => selectedIds.includes(project.id)), `Jackie Canvas-${selectedIds.length}`)}>
                                     {t("canvas.exportSelected")}
                                 </Button>
                                 <Button disabled={!hydrated} onClick={() => setDeleteIds(selectedIds)}>

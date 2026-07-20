@@ -1,0 +1,14 @@
+{
+  "name": "infinite-canvas",
+  "version": "0.1.0",
+  "description": "通过本地 Canvas Agent MCP，让 WorkBuddy 打开并操作 Jackie Canvas。",
+  "author": {
+    "name": "Jackie Canvas"
+  },
+  "homepage": "https://github.com/Dkrillex/Jackie-canvas",
+  "repository": "https://github.com/Dkrillex/Jackie-canvas",
+  "license": "AGPL-3.0",
+  "keywords": ["jackie-canvas", "infinite-canvas", "canvas", "mcp", "agent"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}
