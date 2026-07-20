@@ -10,6 +10,7 @@
     "docker",
     "third-party-prompt-repositories",
     "[在线体验](https://canvas.best/)",
-    "local-codex-canvas"
+    "local-codex-canvas",
+    "publish-canvas-agent"
   ]
 }

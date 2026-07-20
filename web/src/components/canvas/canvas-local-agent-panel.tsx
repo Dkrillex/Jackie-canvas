@@ -19,7 +19,7 @@ const MAX_ATTACHMENT_PAYLOAD_BYTES = 28 * 1024 * 1024;
 const DEFAULT_AGENT_URL = "http://127.0.0.1:17371";
 const AGENT_CONNECT_STEPS: Array<{ titleKey: MessageKey; textKey: MessageKey; command?: string }> = [
     { titleKey: "agent.step1.title", textKey: "agent.step1.text" },
-    { titleKey: "agent.step2.title", textKey: "agent.step2.text", command: "npx -y @basketikun/canvas-agent" },
+    { titleKey: "agent.step2.title", textKey: "agent.step2.text", command: "npx -y @jackie-canvas/canvas-agent" },
 ];
 const AGENT_PLUGIN_REMOVE_COMMAND = "codex plugin remove infinite-canvas";
 const AGENT_MCP_REMOVE_COMMAND = "codex mcp remove infinite-canvas";

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
++ [新增] 补充 `@jackie-canvas/canvas-agent` 发布到 npm 的流程文档。
++ [调整] 本地 Canvas Agent npm 包名改为 `@jackie-canvas/canvas-agent`。
++ [调整] 画布默认生图张数改为 1。
 + [调整] 默认视频模型列表新增 `seedance-2-0-NSFW`。
 + [新增] 对象存储（阿里云 OSS）配置与上传：Seedance 参考视频/音频本地文件可自动上传到 `super-jackie/canvas/` 并转为公网 https。
 + [新增] 视频创作台参考视频/音频支持粘贴公网 https 或 `asset://` 链接（Seedance 所需）。

@@ -44,3 +44,4 @@
 ## 原理说明
 
 - [本地 Codex 连接画布原理](/docs/overview/local-codex-canvas)
+- [发布 Canvas Agent 到 npm](/docs/overview/publish-canvas-agent)

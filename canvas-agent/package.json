@@ -1,5 +1,5 @@
 {
-  "name": "@basketikun/canvas-agent",
+  "name": "@jackie-canvas/canvas-agent",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",

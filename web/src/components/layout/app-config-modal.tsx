@@ -56,7 +56,7 @@ const webdavDomainLabelKeys: Record<AppSyncDomainKey, "config.domain.canvas" | "
 };
 const codexSetupStepKeys = [
     { titleKey: "config.codexStep1Title" as const, textKey: "config.codexStep1Text" as const },
-    { titleKey: "config.codexStep2Title" as const, textKey: "config.codexStep2Text" as const, command: "npx -y @basketikun/canvas-agent" },
+    { titleKey: "config.codexStep2Title" as const, textKey: "config.codexStep2Text" as const, command: "npx -y @jackie-canvas/canvas-agent" },
 ];
 const codexPluginRemoveCommand = "codex plugin remove infinite-canvas";
 const codexMcpRemoveCommand = "codex mcp remove infinite-canvas";

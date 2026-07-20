@@ -1,0 +1,217 @@
+---
+title: 发布 Canvas Agent 到 npm
+description: 将本仓库 canvas-agent 发布为 @jackie-canvas/canvas-agent 的完整流程
+---
+
+# 发布 Canvas Agent 到 npm
+
+包名：[`@jackie-canvas/canvas-agent`](https://www.npmjs.com/package/@jackie-canvas/canvas-agent)  
+源码目录：仓库根目录下的 `canvas-agent/`  
+版本号：只看 `canvas-agent/package.json` 的 `version`，**不**跟根目录 `VERSION` 绑定。
+
+用户安装 / 启动：
+
+```bash
+npx -y @jackie-canvas/canvas-agent
+```
+
+MCP 模式：
+
+```bash
+npx -y @jackie-canvas/canvas-agent mcp
+```
+
+---
+
+## 一、前置条件
+
+1. 已在 [npmjs.com](https://www.npmjs.com/) 创建组织 **`jackie-canvas`**，当前账号对该组织有发布权限。
+2. 准备 **Granular Access Token**（不要用写进聊天、写进代码的 token）：
+   - 打开 [npm Access Tokens](https://www.npmjs.com/settings/~/tokens)
+   - 类型选 **Granular Access Token**
+   - 勾选 **Read and write**
+   - 若账号开启了 2FA，必须勾选 **Bypass two-factor authentication**（否则会 `403`）
+   - Packages：Read and write；组织：`jackie-canvas` 有权限
+3. 本机已安装 Node.js 18+（CI 使用 Node 22）。
+
+> 安全：token 只放本机环境变量或 GitHub Secrets `NPM_TOKEN`，不要提交到 Git，也不要贴到公开聊天。泄露后立刻在 npm 上撤销并换新。
+
+---
+
+## 二、发布前检查清单
+
+在 `canvas-agent/` 目录确认：
+
+| 项 | 说明 |
+|---|---|
+| `package.json` → `name` | 必须是 `@jackie-canvas/canvas-agent` |
+| `package.json` → `version` | 要比 npm 上已有版本**更高**（同一版本只能发一次） |
+| `publishConfig.access` | `"public"`（scoped 包公开发布需要） |
+| 构建 | `npm run build` 能通过 |
+| 文案 | 仓库里启动命令若改了包名，配置页 / 插件 / 文档应同步为 `npx -y @jackie-canvas/canvas-agent` |
+
+查看线上是否已有某版本：
+
+```bash
+npm view @jackie-canvas/canvas-agent version
+npm view @jackie-canvas/canvas-agent versions
+```
+
+---
+
+## 三、方式 A：本机手动发布
+
+适合首次发包、紧急热修，或 CI 尚未配置好时。
+
+```bash
+cd canvas-agent
+npm install --no-audit --no-fund
+npm run build
+
+# 临时写入 registry 鉴权（不要提交 .npmrc）
+printf '%s\n' \
+  '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' \
+  'registry=https://registry.npmjs.org/' \
+  'always-auth=true' > .npmrc
+
+NPM_TOKEN='你的_granular_token' npm publish --access public
+rm -f .npmrc
+```
+
+成功标志：终端出现 `+ @jackie-canvas/canvas-agent@x.y.z`，且：
+
+```bash
+npm view @jackie-canvas/canvas-agent version
+# 应输出刚发布的版本号
+```
+
+常见错误：
+
+| 错误 | 原因 | 处理 |
+|---|---|---|
+| `403` + Bypass 2FA | token 权限不够或未开绕过 2FA | 按「前置条件」重建 Granular Token |
+| `403` 无组织权限 | 账号不在 `jackie-canvas` 或无 publish | 在 npm 组织里加成员 / 权限 |
+| `EPUBLISHCONFLICT` / 版本已存在 | 该 `version` 已发布过 |  bump `package.json` 的 `version` 再发 |
+
+发布后如有 `npm warn publish "bin[canvas-agent]" script name was cleaned`，可在目录内执行 `npm pkg fix` 后提交修正（不影响已发布包）。
+
+---
+
+## 四、方式 B：GitHub Actions 自动发布（推荐）
+
+工作流文件：`.github/workflows/publish-canvas-agent.yml`
+
+### 1. 配置 Secret
+
+在 GitHub 仓库 **Settings → Secrets and variables → Actions** 新增：
+
+- Name：`NPM_TOKEN`
+- Value：npm Granular Access Token（同上，具备 publish + Bypass 2FA）
+
+### 2. 触发条件
+
+满足任一即可：
+
+- 推送到 **`main`**，且变更路径包含 `canvas-agent/**` 或该 workflow 文件
+- 在 Actions 页面手动运行 **Publish Canvas Agent**（`workflow_dispatch`）
+
+### 3. CI 行为
+
+1. 安装依赖并读取 `package.json` 的 `name` / `version`
+2. 用 `npm view name@version` 判断该版本是否已在 npm 上
+3. **不存在** → `npm publish --access public`
+4. **已存在** → 跳过，避免重复发布报错
+
+因此日常流程是：
+
+```txt
+改代码 →  bump canvas-agent/package.json 的 version → 合并/推到 main
+→ Actions 自动发布新版本
+```
+
+若当前开发分支是 `canvas-dev` 等，需要先合并进 `main`，或临时改 workflow 的 `branches`，或手动 `workflow_dispatch`（仍以当前默认分支检出内容为准，注意核对）。
+
+---
+
+## 五、版本号怎么升
+
+只改 `canvas-agent/package.json`：
+
+```json
+{
+  "name": "@jackie-canvas/canvas-agent",
+  "version": "0.1.1"
+}
+```
+
+建议：
+
+- 修复：`0.1.0` → `0.1.1`
+- 小功能：`0.1.x` → `0.2.0`
+- 不兼容变更：升主版本
+
+发完后用户无需升级仓库，直接：
+
+```bash
+npx -y @jackie-canvas/canvas-agent@latest
+```
+
+`npx -y` 一般会拉最新；若本机缓存了旧包，可加 `@版本号` 或清 npx 缓存后再试。
+
+---
+
+## 六、发布后验收
+
+1. 打开 https://www.npmjs.com/package/@jackie-canvas/canvas-agent 确认版本与时间
+2. 本机干净环境试跑：
+
+```bash
+npx -y @jackie-canvas/canvas-agent@0.1.0
+```
+
+应打印 `Local URL` 与 `Connect token`。
+
+3. 网页 Agent 面板填入地址和 token，确认可连接
+4. （可选）MCP：
+
+```bash
+codex mcp add infinite-canvas -- npx -y @jackie-canvas/canvas-agent mcp
+```
+
+---
+
+## 七、与仓库其它部分的关系
+
+| 内容 | 关系 |
+|---|---|
+| 根目录 `VERSION` / 发版 tag | 无关；Canvas Agent 独立版本 |
+| 前端 `web/` | 仅文案/插件里写的 `npx` 命令需与包名一致 |
+| `plugins/infinite-canvas` | `.mcp.json` 通过 `npx -y @jackie-canvas/canvas-agent mcp` 拉包 |
+| 原 `@basketikun/canvas-agent` | 上游/旧包名；本组织发布使用 `@jackie-canvas/canvas-agent` |
+
+本地开发可不发 npm，直接：
+
+```bash
+cd canvas-agent
+npm install
+npm run build
+node dist/index.js
+```
+
+---
+
+## 八、简要流程图
+
+```txt
+准备 jackie-canvas 组织 + Granular Token（含 Bypass 2FA）
+        |
+        v
+修改 canvas-agent 代码，bump package.json version
+        |
+        +---> 本机：npm publish --access public
+        |
+        +---> CI：配置 NPM_TOKEN → 推 main / 手动跑 Publish Canvas Agent
+        |
+        v
+npm view / 官网确认 → npx 试跑 → 网页连 Agent
+```
