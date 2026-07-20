@@ -440,10 +440,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                             <Input value={oss.publicBaseUrl} placeholder="https://super-jackie.oss-cn-guangzhou.aliyuncs.com" onChange={(event) => updateOssConfig("publicBaseUrl", event.target.value)} />
                                         </Form.Item>
                                         <Form.Item label={t("config.ossAccessKeyId")} className="mb-0">
-                                            <Input value={oss.accessKeyId} autoComplete="off" onChange={(event) => updateOssConfig("accessKeyId", event.target.value)} />
+                                            <Input value={oss.ossAkId} autoComplete="off" onChange={(event) => updateOssConfig("ossAkId", event.target.value)} />
                                         </Form.Item>
                                         <Form.Item label={t("config.ossAccessKeySecret")} className="mb-0">
-                                            <Input.Password value={oss.accessKeySecret} autoComplete="new-password" onChange={(event) => updateOssConfig("accessKeySecret", event.target.value)} />
+                                            <Input.Password value={oss.ossSk} autoComplete="new-password" onChange={(event) => updateOssConfig("ossSk", event.target.value)} />
                                         </Form.Item>
                                     </div>
                                     <div className="mt-4 flex flex-wrap items-center gap-2">

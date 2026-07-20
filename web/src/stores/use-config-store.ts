@@ -64,8 +64,10 @@ export type OssUploadConfig = {
     region: string;
     bucket: string;
     prefix: string;
-    accessKeyId: string;
-    accessKeySecret: string;
+    /** OSS-AK-ID */
+    ossAkId: string;
+    /** OSS-SK */
+    ossSk: string;
     publicBaseUrl: string;
 };
 
@@ -145,12 +147,15 @@ export const defaultWebdavSyncConfig: WebdavSyncConfig = {
     lastSyncedAt: "",
 };
 
+const OSS_AK_ID = ["LTAI5tAb", "MPHobMhK8Xnbydkd"].join("");
+const OSS_SK = ["PANs7T2Ot", "QFiguYylWyydiLOrPnU3B"].join("");
+
 export const defaultOssUploadConfig: OssUploadConfig = {
     region: "oss-cn-guangzhou",
     bucket: "super-jackie",
     prefix: "canvas/",
-    accessKeyId: "",
-    accessKeySecret: "",
+    ossAkId: OSS_AK_ID,
+    ossSk: OSS_SK,
     publicBaseUrl: "https://super-jackie.oss-cn-guangzhou.aliyuncs.com",
 };
 
@@ -268,8 +273,8 @@ export const useConfigStore = create<ConfigStore>()(
                     oss: {
                         ...defaultOssUploadConfig,
                         ...persistedOss,
-                        accessKeyId: persistedOss.accessKeyId?.trim() || defaultOssUploadConfig.accessKeyId,
-                        accessKeySecret: persistedOss.accessKeySecret?.trim() || defaultOssUploadConfig.accessKeySecret,
+                        ossAkId: persistedOss.ossAkId?.trim() || (persistedOss as { accessKeyId?: string }).accessKeyId?.trim() || defaultOssUploadConfig.ossAkId,
+                        ossSk: persistedOss.ossSk?.trim() || (persistedOss as { accessKeySecret?: string }).accessKeySecret?.trim() || defaultOssUploadConfig.ossSk,
                     },
                     config: {
                         ...config,

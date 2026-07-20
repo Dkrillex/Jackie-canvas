@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import type { OssUploadConfig } from "@/stores/use-config-store";
 
 export function isOssUploadReady(config: OssUploadConfig) {
-    return Boolean(config.region.trim() && config.bucket.trim() && config.accessKeyId.trim() && config.accessKeySecret.trim());
+    return Boolean(config.region.trim() && config.bucket.trim() && config.ossAkId.trim() && config.ossSk.trim());
 }
 
 export function ossPublicObjectUrl(config: OssUploadConfig, objectKey: string) {
@@ -13,15 +13,15 @@ export function ossPublicObjectUrl(config: OssUploadConfig, objectKey: string) {
 }
 
 export async function uploadBlobToOss(config: OssUploadConfig, blob: Blob, fileName: string) {
-    if (!isOssUploadReady(config)) throw new Error("请先在配置里填写对象存储 AccessKey");
+    if (!isOssUploadReady(config)) throw new Error("请先在配置里填写 OSS-AK-ID / OSS-SK");
     const OSS = (await import("ali-oss")).default;
     const region = config.region.trim();
     const bucket = config.bucket.trim();
     const client = new OSS({
         region,
         bucket,
-        accessKeyId: config.accessKeyId.trim(),
-        accessKeySecret: config.accessKeySecret.trim(),
+        accessKeyId: config.ossAkId.trim(),
+        accessKeySecret: config.ossSk.trim(),
         endpoint: `${region}.aliyuncs.com`,
         secure: true,
         // V1 签名与控制台/curl 更一致；浏览器 CORS 失败时错误也更易识别
