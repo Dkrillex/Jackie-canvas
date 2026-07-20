@@ -417,6 +417,7 @@ export const en = {
     "canvas.tool.group": "Group",
     "canvas.tool.upload": "Upload media",
     "canvas.tool.assets": "My assets",
+    "canvas.pluginManager": "Node plugins",
     "canvas.tool.style": "Appearance",
     "canvas.tool.delete": "Delete selected",
     "canvas.tool.clear": "Clear canvas",
