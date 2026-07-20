@@ -2,6 +2,7 @@ import { CanvasNodeType } from "@/types/canvas";
 import type { CanvasNodeMetadata } from "@/types/canvas";
 import { useLocaleStore } from "@/stores/use-locale-store";
 import type { MessageKey } from "@/i18n";
+import { getNodeSpec as getRegistryNodeSpec } from "@/lib/canvas/node-registry";
 
 type CanvasNodeSpec = {
     width: number;
@@ -59,6 +60,12 @@ export function nodeDefaultTitle(type: CanvasNodeType) {
     return useLocaleStore.getState().t(NODE_TITLE_KEYS[type]);
 }
 
-export function getNodeSpec(type: CanvasNodeType) {
-    return NODE_SPECS[type];
+// 内置类型返回内置 spec(含 i18n 标题);插件类型从注册表解析
+export function getNodeSpec(type: string) {
+    if ((Object.values(CanvasNodeType) as string[]).includes(type)) {
+        const spec = NODE_SPECS[type as CanvasNodeType];
+        return { ...spec, title: nodeDefaultTitle(type as CanvasNodeType) };
+    }
+    const spec = getRegistryNodeSpec(type);
+    return { width: spec.width, height: spec.height, title: spec.title, metadata: spec.metadata };
 }

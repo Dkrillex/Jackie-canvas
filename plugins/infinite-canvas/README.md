@@ -65,11 +65,24 @@
 
 ### 本仓库开发调试
 
+macOS / Linux：
+
 ```bash
 cd /path/to/Jackie-canvas
 codex plugin marketplace add "$(pwd)"
 codex plugin add infinite-canvas@infinite-canvas-local
 ```
+
+Windows PowerShell：
+
+```powershell
+git clone https://github.com/basketikun/infinite-canvas.git
+cd infinite-canvas
+codex plugin marketplace add "$PWD"
+codex plugin add infinite-canvas@infinite-canvas-local
+```
+
+Windows CMD 将 `$PWD` 替换为 `%cd%`。
 
 仓库内的 `.agents/plugins/marketplace.json` 已经指向 `./plugins/infinite-canvas`。
 
@@ -90,11 +103,10 @@ codex mcp remove infinite-canvas
 ## 使用
 
 1. 新建对话后说「打开 Jackie Canvas」。
-2. 插件会确认当前仓库的本地画布服务是否已运行；端口被占用时会检查进程归属，不会把其他项目的端口当作 Jackie Canvas。
-3. 确认或启动后，插件会直接打开新建画布 URL，并自动尝试连接本地 Agent。
-4. 画布打开后，让 Agent 读取或操作当前画布。
+2. 插件会启动本地 Agent，读取 Local URL 和 Connect token，然后在右侧打开 `https://canvas.best/` 并自动新建、连接画布；只有明确要求使用本地项目时才会启动本地前端。
+3. 画布打开后，让 Agent 读取或操作当前画布。
 
-常用提示：
+安装后新建一个 Codex 任务，然后输入：
 
 ```text
 打开 Jackie Canvas

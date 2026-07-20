@@ -1,7 +1,8 @@
 import type { CSSProperties } from "react";
-import { Keyboard, Languages, Settings2, User } from "lucide-react";
+import { BookOpen, Keyboard, Languages, Puzzle, Settings2, User } from "lucide-react";
 
 import { canvasThemes } from "@/lib/canvas-theme";
+import { DOCS_URL } from "@/constant/env";
 import { useConfigStore } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useThemeStore } from "@/stores/use-theme-store";
@@ -11,9 +12,10 @@ type UserStatusActionsProps = {
     showConfig?: boolean;
     variant?: "default" | "canvas";
     onOpenShortcuts?: () => void;
+    onOpenPlugins?: () => void;
 };
 
-export function UserStatusActions({ showConfig = true, variant = "default", onOpenShortcuts }: UserStatusActionsProps) {
+export function UserStatusActions({ showConfig = true, variant = "default", onOpenShortcuts, onOpenPlugins }: UserStatusActionsProps) {
     const { t, locale, toggleLocale } = useI18n();
     const theme = useThemeStore((state) => state.theme);
     const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
@@ -38,6 +40,14 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
             >
                 <User className="size-4" />
             </button>
+            {onOpenPlugins ? (
+                <button type="button" className={naturalIconClass} style={iconStyle} onClick={onOpenPlugins} aria-label={t("canvas.pluginManager")} title={t("canvas.pluginManager")}>
+                    <Puzzle className="size-4" />
+                </button>
+            ) : null}
+            <a href={DOCS_URL} target="_blank" rel="noopener noreferrer" className={naturalIconClass} style={iconStyle} aria-label={t("nav.docs")} title={t("nav.docs")}>
+                <BookOpen className="size-4" />
+            </a>
             {showConfig && user ? (
                 <button type="button" className={naturalIconClass} style={iconStyle} onClick={() => openConfigDialog(false)} aria-label={t("action.config")} title={t("action.config")}>
                     <Settings2 className="size-4" />

@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "description": "Use Codex to read and operate Jackie Canvas through the local Canvas Agent MCP server.",
   "author": {
-    "name": "Jackie Canvas"
+    "name": "Jackie Canvas",
+    "url": "https://canvas.best/"
   },
+  "homepage": "https://canvas.best/",
   "repository": "https://github.com/basketikun/infinite-canvas",
   "license": "AGPL-3.0",
   "keywords": ["infinite-canvas", "canvas", "mcp", "agent"],
@@ -17,6 +19,7 @@
     "developerName": "Jackie Canvas",
     "category": "Productivity",
     "capabilities": ["Canvas", "MCP", "Creative Workflow"],
+    "websiteURL": "https://canvas.best/",
     "defaultPrompt": [
       "打开 Jackie Canvas",
       "读取当前画布并总结节点结构",

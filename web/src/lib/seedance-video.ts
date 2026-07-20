@@ -144,7 +144,7 @@ export function buildSeedancePromptText(prompt: string, images: ReferenceImage[]
     ];
     const text = prompt.trim();
     if (!labels.length) return text;
-    return `参考素材编号：${labels.join("、")}。请按这些编号理解提示词中的图片、视频和音频引用。\n\n${text}`;
+    return `参考资产编号：${labels.join("、")}。请按这些编号理解提示词中的图片、视频和音频引用。\n\n${text}`;
 }
 
 export function seedanceVideoReferenceError(videos: ReferenceVideo[]) {
@@ -178,4 +178,5 @@ export function isSeedanceRemoteMediaUrl(value?: string) {
     return /^https?:\/\//i.test(url) || url.startsWith("asset://");
 }
 
-export const seedanceVideoReferenceHint = "参考视频可为公网 https / asset://；本地文件需先在配置中填写对象存储 AccessKey，生成时会自动上传。";
+export const seedanceVideoReferenceHint =
+    "参考视频需为 mp4/mov，H.264/H.265，FPS 24-60；可为公网 https / asset://；本地文件需先在配置中填写对象存储 AccessKey，生成时会自动上传；含真人人脸资产请使用火山授权 asset:// 资产。";

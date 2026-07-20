@@ -94,7 +94,9 @@ export default function ImagePage() {
     const [autoRunToken, setAutoRunToken] = useState(0);
     const imageCommand = useWorkbenchAgentStore((state) => state.imageCommand);
     const clearImageCommand = useWorkbenchAgentStore((state) => state.clearImageCommand);
+    const updateAgentTask = useWorkbenchAgentStore((state) => state.updateTask);
     const processedCommandRef = useRef(0);
+    const agentTaskIdRef = useRef<string | undefined>(undefined);
 
     const model = effectiveConfig.imageModel || effectiveConfig.model;
     const canGenerate = Boolean(prompt.trim());
@@ -143,22 +145,30 @@ export default function ImagePage() {
     };
 
     const generate = async () => {
+        const agentTaskId = agentTaskIdRef.current;
+        agentTaskIdRef.current = undefined;
         const text = prompt.trim();
         if (!text) {
             message.error(t("wb.needImagePrompt"));
+            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: t("wb.needImagePrompt") });
             return;
         }
         if (!isAiConfigReady(effectiveConfig, model)) {
             message.warning(t("wb.needConfig"));
             openConfigDialog(true);
+            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: "生图配置不完整" });
             return;
         }
 
         const snapshot = buildRequestSnapshot();
-        if (!snapshot) return;
+        if (!snapshot) {
+            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: "生图参数无效" });
+            return;
+        }
 
         setElapsedMs(0);
         setRunning(true);
+        if (agentTaskId) updateAgentTask(agentTaskId, { status: "running", error: undefined });
         setPreviewLog(null);
         setResults(Array.from({ length: generationCount }, () => ({ id: nanoid(), status: "pending" })));
         const batchStartedAt = performance.now();
@@ -171,6 +181,8 @@ export default function ImagePage() {
         const successCount = successImages.length;
         const failCount = generationCount - successCount;
         const failed = result.find((item): item is PromiseRejectedResult => item.status === "rejected");
+        const error = failed?.reason instanceof Error ? failed.reason.message : failCount ? "生成失败" : undefined;
+        if (agentTaskId) updateAgentTask(agentTaskId, { status: successCount ? "succeeded" : "failed", successCount, failCount, error: successCount ? undefined : error });
 
         try {
             const logImages = await Promise.all(
@@ -204,8 +216,15 @@ export default function ImagePage() {
         processedCommandRef.current = imageCommand.nonce;
         clearImageCommand();
         if (typeof imageCommand.prompt === "string") setPrompt(imageCommand.prompt);
-        if (imageCommand.run && !running) setAutoRunToken((value) => value + 1);
-    }, [imageCommand, clearImageCommand, running]);
+        if (imageCommand.run && running) {
+            if (imageCommand.taskId) updateAgentTask(imageCommand.taskId, { status: "failed", error: "生图工作台已有任务正在运行" });
+            return;
+        }
+        if (imageCommand.run) {
+            agentTaskIdRef.current = imageCommand.taskId;
+            setAutoRunToken((value) => value + 1);
+        }
+    }, [imageCommand, clearImageCommand, running, updateAgentTask]);
 
     useEffect(() => {
         if (!autoRunToken) return;

@@ -1,16 +1,17 @@
 import { App, Button, Form, Input, Modal, Progress, Select, Switch, Tabs } from "antd";
-import { CircleAlert, Cloud, HardDrive, KeyRound, Link2, LogOut, Plus, RefreshCw, ShieldCheck, Trash2, Wifi } from "lucide-react";
+import { Cloud, HardDrive, KeyRound, Link2, LogOut, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ModelPicker } from "@/components/model-picker";
-import { fetchChannelModels } from "@/services/api/image";
+import { ChannelEditorDrawer } from "@/components/layout/channel-editor-drawer";
+import { ConfigPromptSources } from "@/components/layout/config-prompt-sources";
 import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCredits, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { isOssUploadReady, testOssUpload } from "@/services/oss-upload";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
 import { useAgentStore } from "@/stores/use-agent-store";
-import { createModelChannel, defaultBaseUrlForApiFormat, filterModelsByCapability, isSystemOpenAiBaseUrl, modelOptionLabel, modelOptionsFromChannels, normalizeModelOptionValue, normalizeOpenAiBaseUrl, useConfigStore, type AiConfig, type ApiCallFormat, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
+import { createModelChannel, modelOptionsFromChannels, normalizeModelOptionValue, selectableModelsByCapability, useConfigStore, type AiConfig, type ApiCallFormat, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 import type { MessageKey } from "@/i18n";
@@ -22,9 +23,7 @@ function isAdminUser(username?: string | null) {
 type ModelGroup = {
     capability: ModelCapability;
     modelKey: "imageModel" | "videoModel" | "textModel" | "audioModel";
-    modelsKey: "imageModels" | "videoModels" | "textModels" | "audioModels";
     defaultLabelKey: MessageKey;
-    optionsLabelKey: MessageKey;
 };
 
 type WebdavDomainProgress = {
@@ -36,10 +35,10 @@ type WebdavDomainProgress = {
 };
 
 const modelGroups: ModelGroup[] = [
-    { capability: "image", modelKey: "imageModel", modelsKey: "imageModels", defaultLabelKey: "config.defaultImageModel", optionsLabelKey: "config.imageModelOptions" },
-    { capability: "video", modelKey: "videoModel", modelsKey: "videoModels", defaultLabelKey: "config.defaultVideoModel", optionsLabelKey: "config.videoModelOptions" },
-    { capability: "text", modelKey: "textModel", modelsKey: "textModels", defaultLabelKey: "config.defaultTextModel", optionsLabelKey: "config.textModelOptions" },
-    { capability: "audio", modelKey: "audioModel", modelsKey: "audioModels", defaultLabelKey: "config.defaultAudioModel", optionsLabelKey: "config.audioModelOptions" },
+    { capability: "image", modelKey: "imageModel", defaultLabelKey: "config.defaultImageModel" },
+    { capability: "video", modelKey: "videoModel", defaultLabelKey: "config.defaultVideoModel" },
+    { capability: "text", modelKey: "textModel", defaultLabelKey: "config.defaultTextModel" },
+    { capability: "audio", modelKey: "audioModel", defaultLabelKey: "config.defaultAudioModel" },
 ];
 
 const apiFormatOptions: Array<{ label: string; value: ApiCallFormat }> = [
@@ -75,7 +74,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const { message } = App.useApp();
     const { t } = useI18n();
     const [activeTab, setActiveTab] = useState<ConfigTabKey>(initialTab);
-    const [loadingChannelId, setLoadingChannelId] = useState("");
+    const [editingChannelId, setEditingChannelId] = useState("");
     const [testingWebdav, setTestingWebdav] = useState(false);
     const [syncingWebdav, setSyncingWebdav] = useState(false);
     const [testingOss, setTestingOss] = useState(false);
@@ -109,12 +108,11 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const setAgentState = useAgentStore((state) => state.setAgentState);
     const connectAgent = useAgentStore((state) => state.connectAgent);
     const disconnectAgent = useAgentStore((state) => state.disconnectAgent);
-    const modelOptions = config.models.map((model) => ({ label: modelOptionLabel(config, model), value: model }));
     const webdavReady = Boolean(webdav.url.trim());
     const ossReady = isOssUploadReady(oss);
+    const editingChannel = config.channels.find((channel) => channel.id === editingChannelId) || null;
     useEffect(() => {
-        const nextTab = initialTab === "preferences" || initialTab === "webdav" ? "channels" : initialTab;
-        setActiveTab(nextTab);
+        setActiveTab(initialTab);
     }, [initialTab]);
 
     const saveConfig = (nextConfig: AiConfig) => {
@@ -129,35 +127,11 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
         clearPromptContinue();
     };
 
-    const updateChannels = (channels: ModelChannel[]) => {
-        const nextConfig = withChannels(config, channels);
-        saveConfig(nextConfig);
-    };
-
-    const updateChannel = (id: string, patch: Partial<ModelChannel>) => {
-        updateChannels(
-            config.channels.map((channel) =>
-                channel.id === id
-                    ? {
-                          ...channel,
-                          ...patch,
-                          ...(patch.baseUrl !== undefined
-                              ? { baseUrl: patch.baseUrl.trim() ? normalizeOpenAiBaseUrl(patch.baseUrl) : "" }
-                              : {}),
-                          models: patch.models ? uniqueModels(patch.models) : channel.models,
-                      }
-                    : channel,
-            ),
-        );
-    };
-
-    const updateChannelApiFormat = (channel: ModelChannel, apiFormat: ApiCallFormat) => {
-        const baseUrl = !channel.baseUrl.trim() || isSystemOpenAiBaseUrl(channel.baseUrl) || channel.baseUrl.trim() === defaultBaseUrlForApiFormat(channel.apiFormat) ? defaultBaseUrlForApiFormat(apiFormat) : channel.baseUrl;
-        updateChannel(channel.id, { apiFormat, baseUrl });
-    };
-
+    const updateChannels = (channels: ModelChannel[]) => saveConfig(withChannels(config, channels));
     const addChannel = () => {
-        updateChannels([...config.channels, createModelChannel({ name: t("config.channelNameTemplate", { n: config.channels.length + 1 }), baseUrl: "" })]);
+        const channel = createModelChannel({ name: t("config.channelNameTemplate", { n: config.channels.length + 1 }) });
+        updateChannels([...config.channels, channel]);
+        setEditingChannelId(channel.id);
     };
 
     const deleteChannel = (id: string) => {
@@ -168,46 +142,8 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
         updateChannels(config.channels.filter((channel) => channel.id !== id));
     };
 
-    const refreshChannelModels = async (channel: ModelChannel) => {
-        if (!channel.baseUrl.trim() || !channel.apiKey.trim()) {
-            message.error(t("config.needChannelCredentials"));
-            return;
-        }
-        setLoadingChannelId(channel.id);
-        try {
-            const models = await fetchChannelModels(channel);
-            updateChannels(config.channels.map((item) => (item.id === channel.id ? { ...item, models } : item)));
-            message.success(t("config.modelsUpdatedNamed", { name: channel.name || t("config.unnamedChannel") }));
-        } catch (error) {
-            message.error(error instanceof Error ? error.message : t("config.fetchModelsFailed"));
-        } finally {
-            setLoadingChannelId("");
-        }
-    };
-
-    const refreshAllModels = async () => {
-        const runnable = config.channels.filter((channel) => channel.baseUrl.trim() && channel.apiKey.trim());
-        if (!runnable.length) {
-            message.error(t("config.needAnyChannelCredentials"));
-            return;
-        }
-        setLoadingChannelId("all");
-        try {
-            const entries = await Promise.all(runnable.map(async (channel) => [channel.id, await fetchChannelModels(channel)] as const));
-            const modelMap = new Map(entries);
-            updateChannels(config.channels.map((channel) => (modelMap.has(channel.id) ? { ...channel, models: modelMap.get(channel.id) || [] } : channel)));
-            message.success(t("config.modelsUpdated"));
-        } catch (error) {
-            message.error(error instanceof Error ? error.message : t("config.fetchModelsFailed"));
-        } finally {
-            setLoadingChannelId("");
-        }
-    };
-
-    const updateCapabilityModels = (group: ModelGroup, models: string[]) => {
-        const next = uniqueModels(models.map((model) => normalizeModelOptionValue(model, config.channels)).filter(Boolean));
-        updateConfig(group.modelsKey, next);
-        if (!next.includes(config[group.modelKey])) updateConfig(group.modelKey, next[0] || "");
+    const saveChannel = (channel: ModelChannel) => {
+        updateChannels(config.channels.map((item) => (item.id === channel.id ? channel : item)));
     };
 
     const testWebdav = async () => {
@@ -335,7 +271,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
         if (activeTab !== "user") return;
         void refreshUserInfo();
     }, [activeTab, config.channels, sessionUser?.id]);
-
     return (
         <>
             <Tabs
@@ -395,103 +330,32 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                         key: "channels",
                         label: t("config.tab.channels"),
                         children: (
-                            <Form layout="vertical" requiredMark={false}>
-                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex w-fit max-w-full flex-wrap items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100">
-                                            <CircleAlert className="size-3.5 shrink-0" />
-                                            <span>{t("config.channelsHint")}</span>
-                                            <Button type="link" size="small" className="h-auto p-0 text-xs font-semibold text-amber-900 dark:text-amber-100" onClick={() => setActiveTab("models")}>
-                                                {t("config.goModels")}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <div className="flex shrink-0 gap-2">
-                                        <Button icon={<RefreshCw className="size-4" />} loading={Boolean(loadingChannelId)} onClick={() => void refreshAllModels()}>
-                                            {t("config.fetchAll")}
-                                        </Button>
-                                        <Button type="primary" icon={<Plus className="size-4" />} onClick={addChannel}>
-                                            {t("config.addChannel")}
-                                        </Button>
-                                    </div>
+                            <div>
+                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                    <div className="text-xs text-stone-500">{t("config.channelsHint")}</div>
+                                    <Button type="primary" icon={<Plus className="size-4" />} onClick={addChannel}>
+                                        {t("config.addChannel")}
+                                    </Button>
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     {config.channels.map((channel) => (
-                                        <section key={channel.id} className="rounded-lg border border-stone-200 p-3 dark:border-stone-800">
-                                            <div className="mb-3 flex items-center justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <div className="truncate text-sm font-semibold">{channel.name || t("config.unnamedChannel")}</div>
-                                                    <div className="mt-1 text-xs text-stone-500">
-                                                        {apiFormatLabel(channel.apiFormat)} · {channel.models.length} {t("config.savedModels")}
-                                                    </div>
-                                                </div>
-                                                <div className="flex shrink-0 gap-2">
-                                                    <Button size="small" loading={loadingChannelId === channel.id} onClick={() => void refreshChannelModels(channel)}>
-                                                        {t("config.fetchModels")}
-                                                    </Button>
-                                                    <Button size="small" danger icon={<Trash2 className="size-3.5" />} onClick={() => deleteChannel(channel.id)} />
+                                        <div key={channel.id} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-4 py-3 dark:border-stone-800">
+                                            <div className="min-w-0">
+                                                <div className="truncate text-sm font-semibold">{channel.name || t("config.unnamedChannel")}</div>
+                                                <div className="mt-1 truncate text-xs text-stone-500">
+                                                    {apiFormatLabel(channel.apiFormat)} · {channel.models.length} {t("config.savedModels")}
                                                 </div>
                                             </div>
-                                            <div className="grid gap-4 md:grid-cols-2">
-                                                <Form.Item label={t("config.channelName")} className="mb-0">
-                                                    <Input value={channel.name} onChange={(event) => updateChannel(channel.id, { name: event.target.value })} />
-                                                </Form.Item>
-                                                <Form.Item label={t("config.apiFormat")} className="mb-0">
-                                                    <Select value={channel.apiFormat} options={apiFormatOptions} onChange={(value: ApiCallFormat) => updateChannelApiFormat(channel, value)} />
-                                                </Form.Item>
-                                                {showChannelSecrets ? (
-                                                    <>
-                                                        <Form.Item label="Base URL" className="mb-0">
-                                                            <Input value={channel.baseUrl} onChange={(event) => updateChannel(channel.id, { baseUrl: event.target.value })} />
-                                                        </Form.Item>
-                                                        <Form.Item label="API Key" className="mb-0">
-                                                            <Input.Password value={channel.apiKey} onChange={(event) => updateChannel(channel.id, { apiKey: event.target.value })} />
-                                                        </Form.Item>
-                                                    </>
-                                                ) : null}
-                                                <Form.Item label={t("config.modelList")} className="mb-0 md:col-span-2">
-                                                    <Select mode="tags" showSearch allowClear maxTagCount="responsive" placeholder={t("config.modelListPlaceholder")} value={channel.models} onChange={(models) => updateChannel(channel.id, { models })} />
-                                                </Form.Item>
+                                            <div className="flex shrink-0 gap-2">
+                                                <Button size="small" icon={<Pencil className="size-3.5" />} onClick={() => setEditingChannelId(channel.id)}>
+                                                    {t("action.edit")}
+                                                </Button>
+                                                <Button size="small" danger icon={<Trash2 className="size-3.5" />} onClick={() => deleteChannel(channel.id)} />
                                             </div>
-                                        </section>
+                                        </div>
                                     ))}
                                 </div>
-                            </Form>
-                        ),
-                    },
-                    {
-                        key: "models",
-                        label: t("config.tab.models"),
-                        children: (
-                            <Form layout="vertical" requiredMark={false}>
-                                <div className="mb-4 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
-                                    <div className="text-sm font-semibold">{t("config.modelsTitle")}</div>
-                                    <div className="mt-1 text-xs leading-5 text-stone-500">{t("config.modelsDesc")}</div>
-                                </div>
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    {modelGroups.map((group) => (
-                                        <Form.Item key={group.modelsKey} label={t(group.optionsLabelKey)} className="mb-0">
-                                            <Select
-                                                mode="tags"
-                                                showSearch
-                                                allowClear
-                                                maxTagCount="responsive"
-                                                placeholder={config.models.length ? t(group.optionsLabelKey) : t("config.modelListPlaceholder")}
-                                                value={config[group.modelsKey]}
-                                                options={modelOptions}
-                                                onChange={(models) => updateCapabilityModels(group, models)}
-                                            />
-                                        </Form.Item>
-                                    ))}
-                                </div>
-                                <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                                    {modelGroups.map((group) => (
-                                        <Form.Item key={group.modelKey} label={t(group.defaultLabelKey)} className="mb-0">
-                                            <ModelPicker config={config} value={config[group.modelKey]} onChange={(model) => updateConfig(group.modelKey, model)} capability={group.capability} fullWidth />
-                                        </Form.Item>
-                                    ))}
-                                </div>
-                            </Form>
+                            </div>
                         ),
                     },
                     {
@@ -499,6 +363,15 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                         label: t("config.prefs"),
                         children: (
                             <Form layout="vertical" requiredMark={false}>
+                                <div className="mb-2 text-sm font-semibold">{t("config.modelsTitle")}</div>
+                                <div className="mb-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                    {modelGroups.map((group) => (
+                                        <Form.Item key={group.modelKey} label={t(group.defaultLabelKey)} className="mb-0">
+                                            <ModelPicker config={config} value={config[group.modelKey]} onChange={(model) => updateConfig(group.modelKey, model)} capability={group.capability} fullWidth />
+                                        </Form.Item>
+                                    ))}
+                                </div>
+                                <div className="mb-2 text-sm font-semibold">{t("config.prefs")}</div>
                                 <div className="grid gap-4 md:grid-cols-4">
                                     <Form.Item label={t("config.canvasImageCount")} extra={t("config.canvasImageCountHint")} className="mb-4">
                                         <Input
@@ -581,6 +454,11 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                 </section>
                             </Form>
                         ),
+                    },
+                    {
+                        key: "prompt-sources",
+                        label: "提示词来源",
+                        children: <ConfigPromptSources />,
                     },
                     {
                         key: "webdav",
@@ -687,7 +565,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                             </Form>
                         ),
                     },
-                ].filter((item) => item.key !== "preferences" && item.key !== "webdav")}
+                ]}
             />
             {showDoneButton ? (
                 <div className="mt-4 flex justify-end">
@@ -696,6 +574,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                     </Button>
                 </div>
             ) : null}
+            <ChannelEditorDrawer open={Boolean(editingChannel)} channel={editingChannel} onSave={saveChannel} onClose={() => setEditingChannelId("")} />
         </>
     );
 }
@@ -726,46 +605,31 @@ export function AppConfigModal() {
 }
 
 function withChannels(config: AiConfig, channels: ModelChannel[]): AiConfig {
-    const models = modelOptionsFromChannels(channels);
-    const imageModels = keepOrSuggest(config.imageModels, filterModelsByCapability(models, "image"), models);
-    const videoModels = keepOrSuggest(config.videoModels, filterModelsByCapability(models, "video"), models);
-    const textModels = keepOrSuggest(config.textModels, filterModelsByCapability(models, "text"), models);
-    const audioModels = keepOrSuggest(config.audioModels, filterModelsByCapability(models, "audio"), models);
-    return {
+    const next: AiConfig = {
         ...config,
         channels,
-        models,
+        models: modelOptionsFromChannels(channels),
         baseUrl: channels[0]?.baseUrl || config.baseUrl,
         apiKey: channels[0]?.apiKey || config.apiKey,
         apiFormat: channels[0]?.apiFormat || config.apiFormat,
-        imageModels,
-        videoModels,
-        textModels,
-        audioModels,
-        imageModel: normalizeDefaultModel(config.imageModel, imageModels),
-        videoModel: normalizeDefaultModel(config.videoModel, videoModels),
-        textModel: normalizeDefaultModel(config.textModel, textModels),
-        audioModel: normalizeDefaultModel(config.audioModel, audioModels),
+    };
+    return {
+        ...next,
+        imageModel: pickDefaultModel(next, "image", config.imageModel),
+        videoModel: pickDefaultModel(next, "video", config.videoModel),
+        textModel: pickDefaultModel(next, "text", config.textModel),
+        audioModel: pickDefaultModel(next, "audio", config.audioModel),
     };
 }
 
-function keepOrSuggest(current: string[], suggested: string[], allModels: string[]) {
-    const available = new Set(allModels);
-    const kept = uniqueModels(current).filter((model) => available.has(model));
-    return kept.length ? kept : suggested;
-}
-
-function normalizeDefaultModel(value: string, options: string[]) {
-    if (options.includes(value)) return value;
-    return options[0] || value;
+function pickDefaultModel(config: AiConfig, capability: ModelCapability, current: string) {
+    const options = selectableModelsByCapability(config, capability);
+    const normalized = normalizeModelOptionValue(current, config.channels);
+    return options.includes(normalized) ? normalized : options[0] || "";
 }
 
 function normalizeImageCount(value: string) {
     return String(Math.max(1, Math.min(15, Math.floor(Math.abs(Number(value)) || 3))));
-}
-
-function uniqueModels(models: string[]) {
-    return Array.from(new Set(models.map((model) => model.trim()).filter(Boolean)));
 }
 
 function apiFormatLabel(apiFormat: ApiCallFormat) {

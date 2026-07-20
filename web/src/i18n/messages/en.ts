@@ -844,6 +844,7 @@ export const en = {
     "agent.tool.canvas_run_generation": "Run generation",
     "agent.tool.site_navigate": "Site navigate",
     "agent.siteTool.canvasList": "Canvas list",
+    "agent.siteTool.generationStatus": "Generation status",
     "agent.siteTool.imageConfig": "Image config",
     "agent.siteTool.imageGenerate": "Image workbench generate",
     "agent.siteTool.videoConfig": "Video config",

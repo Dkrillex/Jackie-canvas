@@ -33,7 +33,7 @@ export function AppTopNav() {
     useEffect(() => {
         if (autoConnectRef.current || agentEnabled || agentConnected || !agentToken.trim()) return;
         autoConnectRef.current = true;
-        connectAgent();
+        connectAgent({ silent: true });
     }, [agentConnected, agentEnabled, agentToken, connectAgent]);
 
     return (
@@ -95,7 +95,6 @@ export function AppTopNav() {
         </>
     );
 }
-
 function CodexStatusButton() {
     const { t } = useI18n();
     const connected = useAgentStore((state) => state.connected);

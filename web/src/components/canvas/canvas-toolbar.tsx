@@ -1,10 +1,11 @@
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode, RefObject } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Segmented, Switch } from "antd";
-import { CircleDot, Eraser, FolderOpen, Grid2x2, Group, Hand, Image as ImageIcon, Info, Music2, Palette, Redo2, Settings2, Square, Trash2, Type, Undo2, Upload, Video } from "lucide-react";
+import { CircleDot, Eraser, Grid2x2, Group, Hand, Image as ImageIcon, Info, Music2, Palette, Puzzle, Redo2, Settings2, Square, Trash2, Type, Undo2, Upload, Video } from "lucide-react";
 
 import { canvasThemes, type CanvasBackgroundMode, type CanvasTheme } from "@/lib/canvas-theme";
 import { useI18n, useLocaleStore } from "@/stores/use-locale-store";
+import { getNodePluginId, listNodeDefinitions, useNodeRegistryVersion } from "@/lib/canvas/node-registry";
 import { useThemeStore } from "@/stores/use-theme-store";
 import type { MessageKey } from "@/i18n";
 
@@ -20,6 +21,7 @@ export function CanvasToolbar({
     onAddText,
     onAddConfig,
     onAddGroup,
+    onAddExtensionNode,
     onUndo,
     onRedo,
     onUpload,
@@ -28,7 +30,6 @@ export function CanvasToolbar({
     onDeselect,
     onBackgroundModeChange,
     onShowImageInfoChange,
-    onOpenMyAssets,
 }: {
     selectedCount: number;
     canUndo: boolean;
@@ -41,6 +42,7 @@ export function CanvasToolbar({
     onAddText: () => void;
     onAddConfig: () => void;
     onAddGroup: () => void;
+    onAddExtensionNode: (type: string) => void;
     onUndo: () => void;
     onRedo: () => void;
     onUpload: () => void;
@@ -49,23 +51,41 @@ export function CanvasToolbar({
     onDeselect: () => void;
     onBackgroundModeChange: (mode: CanvasBackgroundMode) => void;
     onShowImageInfoChange: (show: boolean) => void;
-    onOpenMyAssets: () => void;
 }) {
     const { t } = useI18n();
     const wrapRef = useRef<HTMLDivElement>(null);
+    const rootRef = useRef<HTMLDivElement>(null);
     const colorTheme = useThemeStore((state) => state.theme);
     const theme = canvasThemes[colorTheme];
     const [hovered, setHovered] = useState<string | null>(null);
     const [tipX, setTipX] = useState(0);
     const [appearanceOpen, setAppearanceOpen] = useState(false);
     const [panelX, setPanelX] = useState(0);
+    const [extensionsOpen, setExtensionsOpen] = useState(false);
+    const [extPanelX, setExtPanelX] = useState(0);
+    // 扩展(插件)节点,随注册表变化实时更新
+    useNodeRegistryVersion();
+    const extensionDefs = listNodeDefinitions().filter((def) => def.showInCreateMenu !== false && getNodePluginId(def.type) !== "builtin");
     const dockStyle = { background: theme.toolbar.panel, borderColor: theme.toolbar.border, color: theme.toolbar.item, boxShadow: colorTheme === "dark" ? "0 18px 45px rgba(0,0,0,.32)" : "0 16px 40px rgba(28,25,23,.12)" };
     const hoverStyle = { background: theme.toolbar.itemHover, color: theme.toolbar.activeText };
     const activeStyle = { background: theme.toolbar.activeBg, color: theme.toolbar.activeText };
     const tip = hovered ? toolLabel(hovered) : "";
 
+    // 点击工具栏(含弹出面板)以外的地方,关闭弹出的扩展节点/画布外观面板
+    useEffect(() => {
+        if (!extensionsOpen && !appearanceOpen) return;
+        const handlePointerDown = (event: PointerEvent) => {
+            if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+                setExtensionsOpen(false);
+                setAppearanceOpen(false);
+            }
+        };
+        document.addEventListener("pointerdown", handlePointerDown, true);
+        return () => document.removeEventListener("pointerdown", handlePointerDown, true);
+    }, [extensionsOpen, appearanceOpen]);
+
     return (
-        <div className="pointer-events-none absolute bottom-5 z-50 flex justify-center" style={{ left: 300, right: 16 }}>
+        <div ref={rootRef} className="pointer-events-none absolute bottom-5 z-50 flex justify-center" style={{ left: 300, right: 16 }}>
             {tip ? <DockTip label={tip} x={tipX} theme={theme} /> : null}
             <div ref={wrapRef} className="thin-scrollbar pointer-events-auto flex h-14 max-w-full items-center gap-1 overflow-x-auto rounded-xl border px-2 shadow-lg backdrop-blur [&>*]:shrink-0" style={dockStyle}>
                 <ToolbarButton id="tool-hand" label={t("canvas.tool.hand")} active={!selectedCount} hovered={hovered} activeStyle={activeStyle} hoverStyle={hoverStyle} wrapRef={wrapRef} onTipX={setTipX} onHover={setHovered} onClick={onDeselect}>
@@ -96,13 +116,30 @@ export function CanvasToolbar({
                 <ToolbarButton id="tool-group" label={t("canvas.tool.group")} hovered={hovered} hoverStyle={hoverStyle} wrapRef={wrapRef} onTipX={setTipX} onHover={setHovered} onClick={onAddGroup}>
                     <Group className="size-4.5" />
                 </ToolbarButton>
+                {extensionDefs.length ? (
+                    <ToolbarButton
+                        id="tool-extensions"
+                        label="扩展节点"
+                        active={extensionsOpen}
+                        hovered={hovered}
+                        activeStyle={activeStyle}
+                        hoverStyle={hoverStyle}
+                        wrapRef={wrapRef}
+                        onTipX={setTipX}
+                        onHover={setHovered}
+                        onClick={(event) => {
+                            setExtPanelX(getTipX(wrapRef.current, event.currentTarget));
+                            setAppearanceOpen(false);
+                            setExtensionsOpen((value) => !value);
+                        }}
+                    >
+                        <Puzzle className="size-4.5" />
+                    </ToolbarButton>
+                ) : null}
                 <ToolbarButton id="tool-upload" label={t("canvas.tool.upload")} hovered={hovered} hoverStyle={hoverStyle} wrapRef={wrapRef} onTipX={setTipX} onHover={setHovered} onClick={onUpload}>
                     <Upload className="size-4.5" />
                 </ToolbarButton>
                 <Divider theme={theme} />
-                <ToolbarButton id="tool-assets" label={t("canvas.tool.assets")} hovered={hovered} hoverStyle={hoverStyle} wrapRef={wrapRef} onTipX={setTipX} onHover={setHovered} onClick={onOpenMyAssets}>
-                    <FolderOpen className="size-4.5" />
-                </ToolbarButton>
                 <ToolbarButton
                     id="tool-style"
                     label={t("canvas.tool.style")}
@@ -115,6 +152,7 @@ export function CanvasToolbar({
                     onHover={setHovered}
                     onClick={(event) => {
                         setPanelX(getTipX(wrapRef.current, event.currentTarget));
+                        setExtensionsOpen(false);
                         setAppearanceOpen((value) => !value);
                     }}
                 >
@@ -133,6 +171,36 @@ export function CanvasToolbar({
                     <Eraser className="size-4.5" />
                 </ToolbarButton>
             </div>
+
+            {extensionsOpen && extensionDefs.length ? (
+                <div
+                    className="thin-scrollbar pointer-events-auto absolute bottom-[72px] z-30 max-h-[50vh] w-[240px] -translate-x-1/2 overflow-y-auto rounded-xl border p-2 shadow-xl backdrop-blur"
+                    style={{ left: extPanelX || "50%", background: theme.toolbar.panel, borderColor: theme.toolbar.border, color: theme.toolbar.item }}
+                >
+                    <div className="px-1.5 pb-1.5 text-[11px] font-medium opacity-50">扩展节点</div>
+                    <div className="grid gap-0.5">
+                        {extensionDefs.map((def) => (
+                            <button
+                                key={def.type}
+                                type="button"
+                                className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm transition"
+                                style={{ color: theme.toolbar.item }}
+                                onMouseEnter={(event) => (event.currentTarget.style.background = theme.toolbar.itemHover)}
+                                onMouseLeave={(event) => (event.currentTarget.style.background = "transparent")}
+                                onClick={() => {
+                                    onAddExtensionNode(def.type);
+                                    setExtensionsOpen(false);
+                                }}
+                            >
+                                <span className="grid size-7 shrink-0 place-items-center rounded-md text-base" style={{ background: theme.toolbar.itemHover }}>
+                                    {def.icon}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate">{def.title}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            ) : null}
 
             {appearanceOpen ? (
                 <div
