@@ -1,8 +1,7 @@
 import type { CSSProperties } from "react";
-import { BookOpen, Keyboard, Languages, Puzzle, Settings2, User } from "lucide-react";
+import { Keyboard, Languages, Puzzle, Settings2, User } from "lucide-react";
 
 import { canvasThemes } from "@/lib/canvas-theme";
-import { DOCS_URL } from "@/constant/env";
 import { useConfigStore } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useThemeStore } from "@/stores/use-theme-store";
@@ -45,9 +44,6 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
                     <Puzzle className="size-4" />
                 </button>
             ) : null}
-            <a href={DOCS_URL} target="_blank" rel="noopener noreferrer" className={naturalIconClass} style={iconStyle} aria-label={t("nav.docs")} title={t("nav.docs")}>
-                <BookOpen className="size-4" />
-            </a>
             {showConfig && user ? (
                 <button type="button" className={naturalIconClass} style={iconStyle} onClick={() => openConfigDialog(false)} aria-label={t("action.config")} title={t("action.config")}>
                     <Settings2 className="size-4" />
