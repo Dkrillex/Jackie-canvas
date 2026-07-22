@@ -1,7 +1,8 @@
-const UPSTREAM = "https://api.gravitex.ai";
+const GW_UPSTREAM = "https://api.gravitex.ai";
+const AUTH_UPSTREAM = "https://maas.gravitex.ai";
 
 export const config = {
-    matcher: ["/gw", "/gw/:path*"],
+    matcher: ["/gw", "/gw/:path*", "/prod-api", "/prod-api/:path*"],
 };
 
 function sanitizeSetCookie(cookie) {
@@ -14,11 +15,14 @@ function sanitizeSetCookie(cookie) {
 
 export default async function middleware(request) {
     const incoming = new URL(request.url);
-    const upstreamPath = incoming.pathname.replace(/^\/gw/, "") || "/";
-    const target = `${UPSTREAM}${upstreamPath}${incoming.search}`;
+    const isAuth = incoming.pathname === "/prod-api" || incoming.pathname.startsWith("/prod-api/");
+    const upstreamBase = isAuth ? AUTH_UPSTREAM : GW_UPSTREAM;
+    const upstreamHost = isAuth ? "maas.gravitex.ai" : "api.gravitex.ai";
+    const upstreamPath = isAuth ? incoming.pathname : incoming.pathname.replace(/^\/gw/, "") || "/";
+    const target = `${upstreamBase}${upstreamPath}${incoming.search}`;
 
     const headers = new Headers(request.headers);
-    headers.set("host", "api.gravitex.ai");
+    headers.set("host", upstreamHost);
     headers.delete("accept-encoding");
 
     const init = {

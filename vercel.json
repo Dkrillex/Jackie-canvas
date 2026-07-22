@@ -9,7 +9,11 @@
       "destination": "https://api.gravitex.ai/:path*"
     },
     {
-      "source": "/((?!gw/).*)",
+      "source": "/prod-api/:path*",
+      "destination": "https://maas.gravitex.ai/prod-api/:path*"
+    },
+    {
+      "source": "/((?!gw/|prod-api/).*)",
       "destination": "/index.html"
     }
   ]

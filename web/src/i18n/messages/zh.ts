@@ -43,6 +43,7 @@ export const zh: Messages = {
     "login.required": "请输入用户名和密码",
     "login.success": "登录成功",
     "login.failed": "登录失败",
+    "login.actionRequired": "请先登录后再进行生成",
     "home.hero.before": "在",
     "home.hero.mid": "中生成、连接和重组",
     "home.hero.highlight": "图片、文字与图形",

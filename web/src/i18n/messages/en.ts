@@ -41,6 +41,7 @@ export const en = {
     "login.required": "Please enter username and password",
     "login.success": "Signed in",
     "login.failed": "Sign-in failed",
+    "login.actionRequired": "Please sign in before generating",
     "home.hero.before": "Create, connect, and remix",
     "home.hero.mid": " in ",
     "home.hero.highlight": "images, text, and graphics",

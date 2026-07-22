@@ -4,6 +4,11 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 登录改为 MaaS `/prod-api/auth/login`（密码登录 + JWT），会话校验走 `/system/user/getInfo`；本地/Vercel 增加 `/prod-api` 代理。
++ [调整][Jackie] 「开始生成」等生成操作需登录；未登录点击会提示并弹出登录框。
++ [新增][Jackie] 首页 hero 增加字编码莫比乌斯环装饰（风格参考 OOMOL）。
++ [调整][Jackie] 更新默认模型：生图 gpt-image-2 / Gemini 3.1&2.5 Flash Image / Seedream；视频 Veo 3.1 / Seedance NSFW / Wan2.7；文本 gpt-5.5 / gpt-5.6-sol；默认生图张数为 1。
++ [调整][Jackie] 去掉首页 hero 装饰虚线圆。
 + [优化][Jackie] 合并会话 hydrate 与账户页刷新，避免 `/api/user/self` 被重复请求。
 + [调整][Jackie] 配置账户页只展示登录账号与剩余金额，不再显示用户名称/积分/已用积分。
 + [调整][Jackie] 配置页隐藏「渠道」「提示词来源」「对象存储」入口（默认渠道/内置来源/默认 OSS 与相关逻辑仍保留）。

@@ -5,7 +5,10 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
-- Gemini Nano Banana 生图：默认 `/gw`（OpenAI 兼容）渠道下选择 `gemini-3.1-flash-lite-image` / `gemini-3.1-flash-image` / `gemini-3-pro-image-preview` 应走 `/v1beta/models/{model}:generateContent` 并成功出图，不再报 `not supported model for image generation`。
+- MaaS 登录：用平台账号密码登录应走 `/prod-api/auth/login` 成功并拉取用户信息；刷新后保持登录；退出后 token 清除；账户页能显示账号与剩余金额。
+- 生成需登录：未登录时可进入生图/视频/画布页面浏览；点击「开始生成」或画布触发生成应提示登录并弹出登录框，不发起请求；登录后再点可正常生成。
+- 默认模型列表：新环境/刷新后默认渠道应包含生图 `gpt-image-2`、`gemini-3.1-flash-lite-image`、`gemini-3.1-flash-image`、`gemini-2.5-flash-image`、`seedream-5-0-260128`；视频 `veo-3.1-lite-generate-001`、`veo-3.1-fast-generate-001`、`seedance-2-0-NSFW`、`wan2.7-t2v`、`wan2.7-i2v`、`wan2.7-r2v`；文本 `gpt-5.5`、`gpt-5.6-sol`；默认生图张数为 1。
+- Gemini Nano Banana 生图：默认 `/gw`（OpenAI 兼容）渠道下选择 `gemini-3.1-flash-lite-image` / `gemini-3.1-flash-image` / `gemini-2.5-flash-image` 应走 `/v1beta/models/{model}:generateContent` 并成功出图，不再报 `not supported model for image generation`。
 - 全站 Agent 面板：顶栏 Bot 按钮与画布右上角 Agent 可打开右侧面板；配置 → Codex 可填 Local URL / token 并连接；面板收起后 SSE 仍保持（方便外部 MCP 操作画布）。
 - 对象存储 OSS：配置页「对象存储」填写阿里云 AccessKey 后可测试上传；Bucket `super-jackie`、前缀 `canvas/`、Region `oss-cn-guangzhou`；需确认 `canvas/` 公共可读且 CORS 允许浏览器 PUT。
 - Seedance 参考视频/音频：配置 OSS 后，视频创作台本地上传应自动得到 `https://super-jackie.oss-cn-guangzhou.aliyuncs.com/canvas/...` 公网链接并可生成；也可继续用「链接」粘贴公网 https / `asset://`。
@@ -18,7 +21,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 默认模型列表：新环境默认渠道应包含 `seedream-5-0-260128`、Gemini 生图系列与 `seedance-2-0` / `seedance-2-0-fast` / `seedance-2-0-NSFW`；生图/视频可选项分类正确。
 - 登录后配置入口：未登录时顶栏齿轮与导航「配置」不显示；登录后显示；直接访问 `/config` 未登录时提示登录。
 - 系统渠道地址：渠道 Base URL / API Key 仅登录账号为 `admin` 时渲染；普通用户渠道页不显示这两项，默认仍走同源 `/gw` 与内置密钥。
-- Vercel `/gw` 代理：部署后登录与 AI 请求应经 rewrite 转发到上游，不再出现 `405 Method Not Allowed`。
+- Vercel `/gw` 与 `/prod-api` 代理：部署后 AI 走 `/gw`、登录走 `/prod-api`，均应 rewrite/Middleware 转发到上游，不再出现 `405 Method Not Allowed`。
 - 画布入口：导航显示「我的画布」、首页有「打开画布」；「开始使用」与登录默认进入画布。
 - 多语言：默认英文；顶栏语言按钮可切换中/英；验证导航、首页、登录、配置、生图/视频工作台、提示词库、素材库、画布列表/工具栏/节点工具与常用对话框文案切换正确。
 - 提示词库语言：英文界面下首页示例与提示词库标题应为英文（如 “Celebrity in real life”）；切到中文后重新加载为中文标题；分类/标签里的「全部 / All」随语言显示。

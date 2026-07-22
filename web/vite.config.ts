@@ -62,6 +62,11 @@ export default defineConfig({
                 secure: true,
                 rewrite: (path) => path.replace(/^\/gw/, ""),
             },
+            "/prod-api": {
+                target: "https://maas.gravitex.ai",
+                changeOrigin: true,
+                secure: true,
+            },
         },
     },
 });

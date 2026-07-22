@@ -197,7 +197,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
         setLoadingUserInfo(true);
         setUserInfoError("");
         try {
-            // 已有会话时默认复用；未就绪则并入全局 hydrate，避免重复打 /api/user/self
+            // 已有会话时默认复用；未就绪则并入全局 hydrate，避免重复打 getInfo
             if (!force) {
                 if (sessionUser) {
                     applySessionUserInfo(sessionUser);

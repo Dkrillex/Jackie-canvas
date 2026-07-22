@@ -1,6 +1,8 @@
-import axios from "axios";
+import axios, { type AxiosResponse } from "axios";
 
+import { AUTH_CLIENT_ID, AUTH_GRANT_TYPE, AUTH_TENANT_ID, AUTH_TOKEN_KEY, AUTH_USER_ID_KEY } from "@/constant/auth";
 import { AUTH_API_BASE } from "@/constant/env";
+import { decryptResponseBody, encryptRequestBody } from "@/lib/auth-crypto";
 import type { AiConfig } from "@/stores/use-config-store";
 import type { LocalUser } from "@/stores/use-user-store";
 
@@ -30,59 +32,108 @@ type TokenLogResponse = {
     data?: Array<{ username?: string; token_name?: string }>;
 };
 
-type AuthApiResponse<T = unknown> = {
-    success?: boolean;
-    message?: string;
+type RuoyiResponse<T = unknown> = {
+    code?: number | string;
+    msg?: string;
     data?: T;
+    access_token?: string;
+    client_id?: string;
+    expire_in?: number;
 };
 
-type GravitexUser = {
-    id?: number | string;
-    username?: string;
-    display_name?: string;
-    displayName?: string;
-    avatar_url?: string;
-    avatarUrl?: string;
+type LoginData = {
+    access_token?: string;
+    client_id?: string;
+    expire_in?: number;
+};
+
+type UserInfoData = {
+    permissions?: string[];
+    roles?: string[];
+    user?: {
+        userId?: number | string;
+        userName?: string;
+        nickName?: string;
+        avatar?: string;
+        apiId?: number | string;
+    };
+};
+
+type UserQuotaData = {
     quota?: number;
-    used_quota?: number;
+    quotaDollar?: string | number;
     usedQuota?: number;
 };
 
 const NEW_API_QUOTA_PER_UNIT = 500_000;
+
 const authClient = axios.create({
     baseURL: AUTH_API_BASE,
-    withCredentials: true,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+        "Content-Type": "application/json;charset=utf-8",
+        Clientid: AUTH_CLIENT_ID,
+    },
 });
 
 authClient.interceptors.request.use((config) => {
-    const userId = typeof window !== "undefined" ? window.localStorage.getItem("infinite-canvas:auth_user_id") : "";
-    if (userId) {
+    const token = typeof window !== "undefined" ? window.localStorage.getItem(AUTH_TOKEN_KEY) : "";
+    if (token) {
         config.headers = config.headers || {};
-        config.headers["New-Api-User"] = userId;
+        config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
 });
 
 export async function loginWithPassword(username: string, password: string): Promise<LocalUser> {
-    const response = await authClient.post<AuthApiResponse<GravitexUser>>("/api/user/login", { username: username.trim(), password });
-    if (!response.data?.success) throw new Error(response.data?.message || "登录失败");
-    const user = response.data.data ? mapGravitexUser(response.data.data) : await fetchCurrentUser();
-    if (typeof window !== "undefined" && user.id) window.localStorage.setItem("infinite-canvas:auth_user_id", user.id);
-    return user;
+    const payload = {
+        username: username.trim(),
+        password,
+        clientId: AUTH_CLIENT_ID,
+        grantType: AUTH_GRANT_TYPE,
+        tenantId: AUTH_TENANT_ID,
+    };
+    const { body, encryptKey } = encryptRequestBody(payload);
+    const response = await authClient.post<RuoyiResponse<LoginData>>("/auth/login", body, {
+        headers: { "encrypt-key": encryptKey },
+        transformRequest: [(data) => data],
+    });
+    const login = unwrapRuoyi(await maybeDecrypt(response), "登录失败") as LoginData;
+    const token = login.access_token;
+    if (!token) throw new Error("登录失败：未返回 access_token");
+    setAuthToken(token);
+    return fetchCurrentUser();
 }
 
 export async function fetchCurrentUser(): Promise<LocalUser> {
-    const response = await authClient.get<AuthApiResponse<GravitexUser>>("/api/user/self");
-    if (!response.data?.success || !response.data.data) throw new Error(response.data?.message || "未登录或会话已失效");
-    const user = mapGravitexUser(response.data.data);
-    if (typeof window !== "undefined" && user.id) window.localStorage.setItem("infinite-canvas:auth_user_id", user.id);
-    return user;
+    const token = getAuthToken();
+    if (!token) throw new Error("未登录或会话已失效");
+
+    const response = await authClient.get<RuoyiResponse<UserInfoData>>("/system/user/getInfo");
+    const info = unwrapRuoyi(await maybeDecrypt(response), "未登录或会话已失效");
+    const profile = info.user;
+    if (!profile) throw new Error("未登录或会话已失效");
+
+    const username = (profile.userName || "").trim() || "用户";
+    const userId = String(profile.userId ?? username);
+    const apiId = profile.apiId != null ? String(profile.apiId) : "";
+    if (typeof window !== "undefined") {
+        window.localStorage.setItem(AUTH_USER_ID_KEY, userId);
+    }
+
+    const quota = apiId ? await fetchUserQuota(apiId).catch(() => ({ quota: 0, usedQuota: 0 })) : { quota: 0, usedQuota: 0 };
+    return {
+        id: userId,
+        username,
+        displayName: (profile.nickName || username).trim() || username,
+        avatarUrl: (profile.avatar || "").trim(),
+        quota: quota.quota,
+        usedQuota: quota.usedQuota,
+    };
 }
 
 export async function logoutRemote(): Promise<void> {
-    await authClient.get<AuthApiResponse>("/api/user/logout").catch(() => undefined);
-    if (typeof window !== "undefined") window.localStorage.removeItem("infinite-canvas:auth_user_id");
+    await authClient.post<RuoyiResponse>("/auth/logout", {}).catch(() => undefined);
+    clearAuthSession();
 }
 
 export async function fetchUserCenterInfo(config: Pick<AiConfig, "baseUrl" | "apiKey">): Promise<UserCenterInfo> {
@@ -117,18 +168,59 @@ export function formatQuotaCurrency(quota: number) {
     return `$${(Math.max(0, quota) / NEW_API_QUOTA_PER_UNIT).toFixed(2)}`;
 }
 
-function mapGravitexUser(data: GravitexUser): LocalUser {
-    const username = (data.username || "").trim() || "用户";
-    const quota = Number(data.quota) || 0;
-    const usedQuota = Number(data.used_quota ?? data.usedQuota) || 0;
+async function fetchUserQuota(apiId: string): Promise<{ quota: number; usedQuota: number }> {
+    const response = await authClient.get<RuoyiResponse<UserQuotaData>>(`/api/users/${apiId}`);
+    const data = unwrapRuoyi(await maybeDecrypt(response), "获取余额失败");
+    const dollar = Number(data.quotaDollar ?? data.quota);
+    const used = Number(data.usedQuota);
+    // 小数视为美元余额，整数大额视为 New API quota 单位
+    if (Number.isFinite(dollar) && Math.abs(dollar) < 1_000_000) {
+        return {
+            quota: Math.round(dollar * NEW_API_QUOTA_PER_UNIT),
+            usedQuota: Number.isFinite(used) && Math.abs(used) < 1_000_000 ? Math.round(used * NEW_API_QUOTA_PER_UNIT) : 0,
+        };
+    }
     return {
-        id: String(data.id ?? username),
-        username,
-        displayName: (data.display_name || data.displayName || username).trim() || username,
-        avatarUrl: (data.avatar_url || data.avatarUrl || "").trim(),
-        quota,
-        usedQuota,
+        quota: Number.isFinite(dollar) ? Math.round(dollar) : 0,
+        usedQuota: Number.isFinite(used) ? Math.round(used) : 0,
     };
+}
+
+function unwrapRuoyi<T>(raw: RuoyiResponse<T> | T, fallback: string): T & RuoyiResponse {
+    const res = raw as RuoyiResponse<T>;
+    const code = res?.code;
+    if (code !== undefined && code !== 200 && code !== "200") {
+        throw new Error(res.msg || fallback);
+    }
+    if (res?.data !== undefined) return res.data as T & RuoyiResponse;
+    return raw as T & RuoyiResponse;
+}
+
+async function maybeDecrypt<T>(response: AxiosResponse<RuoyiResponse<T>>): Promise<RuoyiResponse<T>> {
+    const headers = response.headers as { get?: (name: string) => string | undefined; [key: string]: unknown };
+    const encryptKey = headers.get?.("encrypt-key") || (headers["encrypt-key"] as string | undefined) || (headers["Encrypt-Key"] as string | undefined);
+    if (!encryptKey || typeof response.data !== "string") return response.data;
+    try {
+        return decryptResponseBody(response.data, encryptKey) as RuoyiResponse<T>;
+    } catch {
+        return response.data;
+    }
+}
+
+function getAuthToken() {
+    return typeof window !== "undefined" ? window.localStorage.getItem(AUTH_TOKEN_KEY) || "" : "";
+}
+
+function setAuthToken(token: string) {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+    window.localStorage.removeItem(AUTH_USER_ID_KEY);
+}
+
+function clearAuthSession() {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    window.localStorage.removeItem(AUTH_USER_ID_KEY);
 }
 
 function buildHostApiUrl(baseUrl: string, path: string) {
