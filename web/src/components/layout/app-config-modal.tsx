@@ -3,7 +3,7 @@ import { Cloud, KeyRound, Link2, LogOut, RefreshCw, ShieldCheck, Wifi } from "lu
 import { useEffect, useState } from "react";
 
 import { ModelPicker } from "@/components/model-picker";
-import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCredits, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
+import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
@@ -83,6 +83,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const setUser = useUserStore((state) => state.setUser);
     const logout = useUserStore((state) => state.logout);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
+    const hydrateFromServer = useUserStore((state) => state.hydrateFromServer);
     const agentUrl = useAgentStore((state) => state.url);
     const agentToken = useAgentStore((state) => state.token);
     const agentConnected = useAgentStore((state) => state.connected);
@@ -166,33 +167,56 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
 
     const toggleAgentConnection = () => (agentEnabled ? disconnectAgent({ connectError: "" }) : connectAgent());
 
-    const refreshUserInfo = async () => {
+    const applySessionUserInfo = (current: NonNullable<typeof sessionUser>) => {
+        setUserInfo({
+            username: current.displayName || current.username,
+            tokenName: current.username,
+            totalAvailable: Math.max(0, current.quota - current.usedQuota),
+            totalGranted: current.quota,
+            totalUsed: current.usedQuota,
+            unlimitedQuota: false,
+        });
+    };
+
+    const loadUserInfoFromChannelFallback = async () => {
+        const channel = config.channels.find((item) => item.baseUrl.trim() && item.apiKey.trim()) || config.channels[0];
+        if (!channel?.baseUrl.trim() || !channel?.apiKey.trim()) {
+            setUserInfo(null);
+            setUserInfoError(useUserStore.getState().user ? t("config.sessionExpired") : t("config.loginOrChannelHint"));
+            return;
+        }
+        try {
+            setUserInfo(await fetchUserCenterInfo({ baseUrl: channel.baseUrl, apiKey: channel.apiKey }));
+        } catch (error) {
+            setUserInfo(null);
+            setUserInfoError(error instanceof Error ? error.message : t("config.fetchUserFailed"));
+        }
+    };
+
+    const refreshUserInfo = async (force = false) => {
         setLoadingUserInfo(true);
         setUserInfoError("");
         try {
+            // 已有会话时默认复用；未就绪则并入全局 hydrate，避免重复打 /api/user/self
+            if (!force) {
+                if (sessionUser) {
+                    applySessionUserInfo(sessionUser);
+                    return;
+                }
+                await hydrateFromServer();
+                const hydrated = useUserStore.getState().user;
+                if (hydrated) {
+                    applySessionUserInfo(hydrated);
+                    return;
+                }
+                await loadUserInfoFromChannelFallback();
+                return;
+            }
             const current = await fetchCurrentUser();
             setUser(current);
-            setUserInfo({
-                username: current.displayName || current.username,
-                tokenName: current.username,
-                totalAvailable: Math.max(0, current.quota - current.usedQuota),
-                totalGranted: current.quota,
-                totalUsed: current.usedQuota,
-                unlimitedQuota: false,
-            });
+            applySessionUserInfo(current);
         } catch {
-            const channel = config.channels.find((item) => item.baseUrl.trim() && item.apiKey.trim()) || config.channels[0];
-            if (!channel?.baseUrl.trim() || !channel?.apiKey.trim()) {
-                setUserInfo(null);
-                setUserInfoError(sessionUser ? t("config.sessionExpired") : t("config.loginOrChannelHint"));
-            } else {
-                try {
-                    setUserInfo(await fetchUserCenterInfo({ baseUrl: channel.baseUrl, apiKey: channel.apiKey }));
-                } catch (error) {
-                    setUserInfo(null);
-                    setUserInfoError(error instanceof Error ? error.message : t("config.fetchUserFailed"));
-                }
-            }
+            await loadUserInfoFromChannelFallback();
         } finally {
             setLoadingUserInfo(false);
         }
@@ -214,8 +238,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
 
     useEffect(() => {
         if (activeTab !== "user") return;
-        void refreshUserInfo();
-    }, [activeTab, config.channels, sessionUser?.id]);
+        void refreshUserInfo(false);
+        // 仅切到账户 Tab 时拉取/填充；刷新按钮可 force 重新请求
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 刻意不跟 channels / sessionUser 联动，避免重复 /self
+    }, [activeTab]);
     return (
         <>
             <Tabs
@@ -248,24 +274,28 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                                 {t("config.goLogin")}
                                             </Button>
                                         )}
-                                        <Button icon={<RefreshCw className="size-4" />} loading={loadingUserInfo} onClick={() => void refreshUserInfo()}>
+                                        <Button icon={<RefreshCw className="size-4" />} loading={loadingUserInfo} onClick={() => void refreshUserInfo(true)}>
                                             {t("action.refresh")}
                                         </Button>
                                     </div>
                                 </div>
                                 {userInfoError ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">{userInfoError}</div> : null}
                                 <div className="grid gap-4 md:grid-cols-2">
-                                    <Form.Item label={t("config.displayName")} className="mb-0">
-                                        <Input value={userInfo?.username || sessionUser?.displayName || sessionUser?.username || ""} readOnly placeholder={loadingUserInfo ? t("config.loading") : t("config.empty")} />
-                                    </Form.Item>
                                     <Form.Item label={t("config.accountName")} className="mb-0">
-                                        <Input value={sessionUser?.username || userInfo?.tokenName || ""} readOnly placeholder={loadingUserInfo ? t("config.loading") : t("config.empty")} />
+                                        <div className="flex h-8 items-center text-base font-semibold text-stone-800 dark:text-stone-100">
+                                            {loadingUserInfo ? t("config.loading") : sessionUser?.username || userInfo?.tokenName || t("config.empty")}
+                                        </div>
                                     </Form.Item>
-                                    <Form.Item label={t("config.creditsLeft")} className="mb-0" extra={userInfo ? `${t("config.about")} ${formatQuotaCurrency(userInfo.totalAvailable)}` : undefined}>
-                                        <Input value={userInfo ? (userInfo.unlimitedQuota ? t("config.unlimited") : formatQuotaCredits(userInfo.totalAvailable)) : ""} readOnly placeholder={loadingUserInfo ? t("config.loading") : t("config.empty")} />
-                                    </Form.Item>
-                                    <Form.Item label={t("config.creditsUsed")} className="mb-0" extra={userInfo ? `${t("config.total")} ${formatQuotaCredits(userInfo.totalGranted)}` : undefined}>
-                                        <Input value={userInfo ? formatQuotaCredits(userInfo.totalUsed) : ""} readOnly placeholder={loadingUserInfo ? t("config.loading") : t("config.empty")} />
+                                    <Form.Item label={t("config.balanceLeft")} className="mb-0">
+                                        <div className="flex h-8 items-center text-base font-semibold text-stone-800 dark:text-stone-100">
+                                            {loadingUserInfo
+                                                ? t("config.loading")
+                                                : userInfo
+                                                  ? userInfo.unlimitedQuota
+                                                      ? t("config.unlimited")
+                                                      : formatQuotaCurrency(userInfo.totalAvailable)
+                                                  : t("config.empty")}
+                                        </div>
                                     </Form.Item>
                                 </div>
                             </Form>
@@ -457,11 +487,12 @@ export function AppConfigModal() {
             open={isConfigOpen}
             width={980}
             centered
+            destroyOnHidden
             onCancel={() => setConfigDialogOpen(false)}
             styles={{ body: { maxHeight: "72vh", overflowY: "auto", paddingRight: 12 } }}
             footer={null}
         >
-            <AppConfigPanel showDoneButton initialTab={configTab} />
+            {isConfigOpen ? <AppConfigPanel showDoneButton initialTab={configTab} /> : null}
         </Modal>
     );
 }

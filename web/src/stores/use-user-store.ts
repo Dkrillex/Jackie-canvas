@@ -26,6 +26,9 @@ type UserStore = {
     clearSession: () => void;
 };
 
+/** 合并并发 / StrictMode 重复 hydrate，避免多次打 /api/user/self */
+let hydrateFromServerPromise: Promise<void> | null = null;
+
 export const useUserStore = create<UserStore>()(
     persist(
         (set, get) => ({
@@ -46,16 +49,20 @@ export const useUserStore = create<UserStore>()(
                 set({ user: null, isLoginOpen: false });
             },
             hydrateFromServer: async () => {
-                if (get().hydrating) return;
+                if (hydrateFromServerPromise) return hydrateFromServerPromise;
                 set({ hydrating: true });
-                try {
-                    const user = await fetchCurrentUser();
-                    set({ user });
-                } catch {
-                    if (get().user) set({ user: null });
-                } finally {
-                    set({ hydrating: false });
-                }
+                hydrateFromServerPromise = (async () => {
+                    try {
+                        const user = await fetchCurrentUser();
+                        set({ user });
+                    } catch {
+                        if (get().user) set({ user: null });
+                    } finally {
+                        set({ hydrating: false });
+                        hydrateFromServerPromise = null;
+                    }
+                })();
+                return hydrateFromServerPromise;
             },
             clearSession: () => set({ user: null }),
         }),

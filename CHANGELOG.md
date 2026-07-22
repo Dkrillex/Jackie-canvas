@@ -4,6 +4,8 @@
 
 ### Jackie（本分支定制）
 
++ [优化][Jackie] 合并会话 hydrate 与账户页刷新，避免 `/api/user/self` 被重复请求。
++ [调整][Jackie] 配置账户页只展示登录账号与剩余金额，不再显示用户名称/积分/已用积分。
 + [调整][Jackie] 配置页隐藏「渠道」「提示词来源」「对象存储」入口（默认渠道/内置来源/默认 OSS 与相关逻辑仍保留）。
 + [修复][Jackie] Gemini Nano Banana 生图模型（如 `gemini-3.1-flash-lite-image`）在 OpenAI 兼容渠道下改为走 `generateContent`，避免误调 `/images/generations` 报 not supported。
 + [新增][Jackie] WorkBuddy / CodeBuddy 插件清单与 marketplace（与 Codex 共用 `plugins/infinite-canvas` skills / MCP），并补充安装文档。
