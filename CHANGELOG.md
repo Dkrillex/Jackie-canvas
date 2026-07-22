@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] Gemini Nano Banana 生图模型（如 `gemini-3.1-flash-lite-image`）在 OpenAI 兼容渠道下改为走 `generateContent`，避免误调 `/images/generations` 报 not supported。
 + [新增][Jackie] WorkBuddy / CodeBuddy 插件清单与 marketplace（与 Codex 共用 `plugins/infinite-canvas` skills / MCP），并补充安装文档。
 + [调整][Jackie] 恢复全站 Agent 右侧面板与顶栏/画布入口，配置页 Agent 连接支持说明 Codex / WorkBuddy。
 + [新增][Jackie] 补充 `@jackie-canvas/canvas-agent` 发布到 npm 的流程文档。
