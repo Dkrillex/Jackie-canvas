@@ -2,30 +2,37 @@
 
 ## Unreleased
 
-+ [新增] WorkBuddy / CodeBuddy 插件清单与 marketplace（与 Codex 共用 `plugins/infinite-canvas` skills / MCP），并补充安装文档。
-+ [调整] 恢复全站 Agent 右侧面板与顶栏/画布入口，配置页 Agent 连接支持说明 Codex / WorkBuddy。
-+ [新增] 补充 `@jackie-canvas/canvas-agent` 发布到 npm 的流程文档。
-+ [调整] 本地 Canvas Agent npm 包名改为 `@jackie-canvas/canvas-agent`。
-+ [调整] 画布默认生图张数改为 1。
-+ [调整] 默认视频模型列表新增 `seedance-2-0-NSFW`。
-+ [新增] 对象存储（阿里云 OSS）配置与上传：Seedance 参考视频/音频本地文件可自动上传到 `super-jackie/canvas/` 并转为公网 https。
-+ [新增] 视频创作台参考视频/音频支持粘贴公网 https 或 `asset://` 链接（Seedance 所需）。
-+ [修复] Seedance 参考视频/音频仅接受公网 https 或 `asset://`，本地上传改为提前提示，避免上游 `InvalidParameter`。
-+ [修复] 图生图 `/images/edits` 不再传上游不支持的 `response_format` / `output_format`。
-+ [修复] 画布配置节点切换到视频模式时按能力选择模型，避免仍用旧图片模型误走 `/v1/videos`。
-+ [修复] 画布配置节点未使用 `@` 引用时，自动带上已连接的上游图片/视频/音频作为生成参考。
-+ [修复] Seedream 4/5 生图按模型要求映射尺寸（默认至少约 2K / 3686400 像素），避免 `size` 过小被拒绝。
-+ [修复] Seedance 任务轮询兼容 `code: "success"` 响应，避免进行中任务被误判为失败。
-+ [修复] Seedance 视频在默认 OpenAI 兼容渠道改为调用 `/v1/video/generations`；火山方舟 Agent Plan 仍走 `/contents/generations/tasks`。
-+ [调整] 默认渠道模型列表补充 Seedream / Gemini 生图与 Seedance 视频模型；视频默认模型改为 `seedance-2-0`。
-+ [调整] 第三方提示词库按界面语言切换数据源：英文抓取各仓库英文 README / `title_en`，中文仍用中文 README / `title_cn`；切换语言后首页与提示词库会重新加载。
-+ [新增] 支持中英双语：默认英文，顶栏可切换语言；导航、首页、登录、配置、生图/视频工作台、提示词库、素材库、画布主界面与节点工具/对话框已接入 i18n。
-+ [修复] Vercel `/gw` 恢复外部 rewrite，并排除 SPA 回退；补充 Middleware 代理以保留登录 Cookie，修复登录 405。
-+ [修复] 移除与 antd 6 冲突的 `@ant-design/pro-components`，修复 Vercel/npm 安装 `ERESOLVE` 失败。
-+ [调整] 恢复画布入口（导航「我的画布」、首页「打开画布」），登录后默认进入画布。
-+ [修复] Vercel 登录会话：`/gw` 改为 Serverless 代理并转发/清洗 Set-Cookie，同时请求携带 `New-Api-User`，避免登录后 `/self` 一直 401。
-+ [修复] Vercel 部署为 `/gw` 增加外部反向代理 rewrite，避免登录 POST 落到静态页返回 405。
-+ [调整] 顶栏配置入口（齿轮与导航「配置」）仅登录后显示；渠道 Base URL / API Key 仅 `admin` 账号可见可编辑，普通用户界面不渲染这两项。
+### Jackie（本分支定制）
+
++ [新增][Jackie] WorkBuddy / CodeBuddy 插件清单与 marketplace（与 Codex 共用 `plugins/infinite-canvas` skills / MCP），并补充安装文档。
++ [调整][Jackie] 恢复全站 Agent 右侧面板与顶栏/画布入口，配置页 Agent 连接支持说明 Codex / WorkBuddy。
++ [新增][Jackie] 补充 `@jackie-canvas/canvas-agent` 发布到 npm 的流程文档。
++ [调整][Jackie] 本地 Canvas Agent npm 包名改为 `@jackie-canvas/canvas-agent`。
++ [调整][Jackie] 画布默认生图张数改为 1。
++ [调整][Jackie] 默认视频模型列表新增 `seedance-2-0-NSFW`。
++ [新增][Jackie] 对象存储（阿里云 OSS）配置与上传：Seedance 参考视频/音频本地文件可自动上传到 `super-jackie/canvas/` 并转为公网 https。
++ [新增][Jackie] 视频创作台参考视频/音频支持粘贴公网 https 或 `asset://` 链接（Seedance 所需）。
++ [修复][Jackie] Seedance 参考视频/音频仅接受公网 https 或 `asset://`，本地上传改为提前提示，避免上游 `InvalidParameter`。
++ [修复][Jackie] 图生图 `/images/edits` 不再传上游不支持的 `response_format` / `output_format`。
++ [修复][Jackie] 画布配置节点切换到视频模式时按能力选择模型，避免仍用旧图片模型误走 `/v1/videos`。
++ [修复][Jackie] 画布配置节点未使用 `@` 引用时，自动带上已连接的上游图片/视频/音频作为生成参考。
++ [修复][Jackie] Seedream 4/5 生图按模型要求映射尺寸（默认至少约 2K / 3686400 像素），避免 `size` 过小被拒绝。
++ [修复][Jackie] Seedance 任务轮询兼容 `code: "success"` 响应，避免进行中任务被误判为失败。
++ [修复][Jackie] Seedance 视频在默认 OpenAI 兼容渠道改为调用 `/v1/video/generations`；火山方舟 Agent Plan 仍走 `/contents/generations/tasks`。
++ [调整][Jackie] 默认渠道模型列表补充 Seedream / Gemini 生图与 Seedance 视频模型；视频默认模型改为 `seedance-2-0`。
++ [调整][Jackie] 第三方提示词库按界面语言切换数据源：英文抓取各仓库英文 README / `title_en`，中文仍用中文 README / `title_cn`；切换语言后首页与提示词库会重新加载。
++ [新增][Jackie] 支持中英双语：默认英文，顶栏可切换语言；导航、首页、登录、配置、生图/视频工作台、提示词库、素材库、画布主界面与节点工具/对话框已接入 i18n。
++ [修复][Jackie] Vercel `/gw` 恢复外部 rewrite，并排除 SPA 回退；补充 Middleware 代理以保留登录 Cookie，修复登录 405。
++ [修复][Jackie] 移除与 antd 6 冲突的 `@ant-design/pro-components`，修复 Vercel/npm 安装 `ERESOLVE` 失败。
++ [调整][Jackie] 恢复画布入口（导航「我的画布」、首页「打开画布」），登录后默认进入画布。
++ [修复][Jackie] Vercel 登录会话：`/gw` 改为 Serverless 代理并转发/清洗 Set-Cookie，同时请求携带 `New-Api-User`，避免登录后 `/self` 一直 401。
++ [修复][Jackie] Vercel 部署为 `/gw` 增加外部反向代理 rewrite，避免登录 POST 落到静态页返回 405。
++ [调整][Jackie] 顶栏配置入口（齿轮与导航「配置」）仅登录后显示；渠道 Base URL / API Key 仅 `admin` 账号可见可编辑，普通用户界面不渲染这两项。
++ [调整][Jackie] 产品展示名统一为 Jackie Canvas；隐藏顶栏与画布菜单中的文档入口。
++ [新增][Jackie] 仓库 Agent Skill：`jackie-canvas` / `jackie-canvas-nodes` / `jackie-canvas-agent`。
+
+### Upstream（合入上游）
+
 + [优化] 本地 Agent 连接说明明确区分插件 / 手动 MCP 才会增加 Codex token 消耗，直接运行 Agent 不受影响。
 + [新增] Agent 对话消息改用 streamdown 流式渲染，提升长回复与 Markdown 内容展示效果。
 + [新增] Agent 新增画布、工作台、提示词库和素材等站点级工具，支持读取配置、触发生成与新增素材。
