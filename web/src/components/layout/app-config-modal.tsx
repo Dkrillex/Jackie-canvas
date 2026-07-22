@@ -1,24 +1,19 @@
 import { App, Button, Form, Input, Modal, Progress, Select, Switch, Tabs } from "antd";
-import { Cloud, HardDrive, KeyRound, Link2, LogOut, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Wifi } from "lucide-react";
+import { Cloud, KeyRound, Link2, LogOut, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ModelPicker } from "@/components/model-picker";
-import { ChannelEditorDrawer } from "@/components/layout/channel-editor-drawer";
-import { ConfigPromptSources } from "@/components/layout/config-prompt-sources";
 import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCredits, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
-import { isOssUploadReady, testOssUpload } from "@/services/oss-upload";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
 import { useAgentStore } from "@/stores/use-agent-store";
-import { createModelChannel, modelOptionsFromChannels, normalizeModelOptionValue, selectableModelsByCapability, useConfigStore, type AiConfig, type ApiCallFormat, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
+import { useConfigStore, type ConfigTabKey, type ModelCapability } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 import type { MessageKey } from "@/i18n";
 
-function isAdminUser(username?: string | null) {
-    return (username || "").trim().toLowerCase() === "admin";
-}
+const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels", "prompt-sources", "oss"];
 
 type ModelGroup = {
     capability: ModelCapability;
@@ -39,11 +34,6 @@ const modelGroups: ModelGroup[] = [
     { capability: "video", modelKey: "videoModel", defaultLabelKey: "config.defaultVideoModel" },
     { capability: "text", modelKey: "textModel", defaultLabelKey: "config.defaultTextModel" },
     { capability: "audio", modelKey: "audioModel", defaultLabelKey: "config.defaultAudioModel" },
-];
-
-const apiFormatOptions: Array<{ label: string; value: ApiCallFormat }> = [
-    { label: "OpenAI", value: "openai" },
-    { label: "Gemini", value: "gemini" },
 ];
 
 const webdavDomainKeys: AppSyncDomainKey[] = ["canvas", "assets", "image-workbench", "video-workbench"];
@@ -70,14 +60,12 @@ function createWebdavDomainProgress(t: (key: MessageKey, vars?: Record<string, s
     );
 }
 
-export function AppConfigPanel({ showDoneButton = false, initialTab = "channels" }: { showDoneButton?: boolean; initialTab?: ConfigTabKey }) {
+export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: { showDoneButton?: boolean; initialTab?: ConfigTabKey }) {
     const { message } = App.useApp();
     const { t } = useI18n();
-    const [activeTab, setActiveTab] = useState<ConfigTabKey>(initialTab);
-    const [editingChannelId, setEditingChannelId] = useState("");
+    const [activeTab, setActiveTab] = useState<ConfigTabKey>(HIDDEN_CONFIG_TABS.includes(initialTab) ? "user" : initialTab);
     const [testingWebdav, setTestingWebdav] = useState(false);
     const [syncingWebdav, setSyncingWebdav] = useState(false);
-    const [testingOss, setTestingOss] = useState(false);
     const [webdavSyncStatus, setWebdavSyncStatus] = useState("");
     const [webdavDomainProgress, setWebdavDomainProgress] = useState(() => createWebdavDomainProgress(t));
     const [userInfo, setUserInfo] = useState<UserCenterInfo | null>(null);
@@ -86,10 +74,8 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const [loggingOut, setLoggingOut] = useState(false);
     const config = useConfigStore((state) => state.config);
     const webdav = useConfigStore((state) => state.webdav);
-    const oss = useConfigStore((state) => state.oss);
     const updateConfig = useConfigStore((state) => state.updateConfig);
     const updateWebdavConfig = useConfigStore((state) => state.updateWebdavConfig);
-    const updateOssConfig = useConfigStore((state) => state.updateOssConfig);
     const shouldPromptContinue = useConfigStore((state) => state.shouldPromptContinue);
     const setConfigDialogOpen = useConfigStore((state) => state.setConfigDialogOpen);
     const clearPromptContinue = useConfigStore((state) => state.clearPromptContinue);
@@ -97,7 +83,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const setUser = useUserStore((state) => state.setUser);
     const logout = useUserStore((state) => state.logout);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
-    const showChannelSecrets = isAdminUser(sessionUser?.username);
     const agentUrl = useAgentStore((state) => state.url);
     const agentToken = useAgentStore((state) => state.token);
     const agentConnected = useAgentStore((state) => state.connected);
@@ -109,15 +94,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const connectAgent = useAgentStore((state) => state.connectAgent);
     const disconnectAgent = useAgentStore((state) => state.disconnectAgent);
     const webdavReady = Boolean(webdav.url.trim());
-    const ossReady = isOssUploadReady(oss);
-    const editingChannel = config.channels.find((channel) => channel.id === editingChannelId) || null;
     useEffect(() => {
-        setActiveTab(initialTab);
+        // 渠道 / 提示词来源 / 对象存储 Tab 已隐藏，旧入口回退到账户
+        setActiveTab(HIDDEN_CONFIG_TABS.includes(initialTab) ? "user" : initialTab);
     }, [initialTab]);
-
-    const saveConfig = (nextConfig: AiConfig) => {
-        (Object.keys(nextConfig) as Array<keyof AiConfig>).forEach((key) => updateConfig(key, nextConfig[key]));
-    };
 
     const finishConfig = () => {
         const ready = config.channels.some((channel) => channel.baseUrl.trim() && channel.apiKey.trim() && channel.models.length);
@@ -125,25 +105,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
         if (!ready) return;
         message.success(shouldPromptContinue ? t("config.savedContinue") : t("config.saved"));
         clearPromptContinue();
-    };
-
-    const updateChannels = (channels: ModelChannel[]) => saveConfig(withChannels(config, channels));
-    const addChannel = () => {
-        const channel = createModelChannel({ name: t("config.channelNameTemplate", { n: config.channels.length + 1 }) });
-        updateChannels([...config.channels, channel]);
-        setEditingChannelId(channel.id);
-    };
-
-    const deleteChannel = (id: string) => {
-        if (config.channels.length <= 1) {
-            message.warning(t("config.keepOneChannel"));
-            return;
-        }
-        updateChannels(config.channels.filter((channel) => channel.id !== id));
-    };
-
-    const saveChannel = (channel: ModelChannel) => {
-        updateChannels(config.channels.map((item) => (item.id === channel.id ? channel : item)));
     };
 
     const testWebdav = async () => {
@@ -159,22 +120,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
             message.error(error instanceof Error ? error.message : t("config.webdavTestFailed"));
         } finally {
             setTestingWebdav(false);
-        }
-    };
-
-    const testOss = async () => {
-        if (!ossReady) {
-            message.error(t("config.ossNeedKeys"));
-            return;
-        }
-        setTestingOss(true);
-        try {
-            const url = await testOssUpload(oss);
-            message.success(t("config.ossOk", { url }));
-        } catch (error) {
-            message.error(error instanceof Error ? error.message : t("config.ossTestFailed"));
-        } finally {
-            setTestingOss(false);
         }
     };
 
@@ -327,38 +272,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                         ),
                     },
                     {
-                        key: "channels",
-                        label: t("config.tab.channels"),
-                        children: (
-                            <div>
-                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                                    <div className="text-xs text-stone-500">{t("config.channelsHint")}</div>
-                                    <Button type="primary" icon={<Plus className="size-4" />} onClick={addChannel}>
-                                        {t("config.addChannel")}
-                                    </Button>
-                                </div>
-                                <div className="space-y-2">
-                                    {config.channels.map((channel) => (
-                                        <div key={channel.id} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-4 py-3 dark:border-stone-800">
-                                            <div className="min-w-0">
-                                                <div className="truncate text-sm font-semibold">{channel.name || t("config.unnamedChannel")}</div>
-                                                <div className="mt-1 truncate text-xs text-stone-500">
-                                                    {apiFormatLabel(channel.apiFormat)} · {channel.models.length} {t("config.savedModels")}
-                                                </div>
-                                            </div>
-                                            <div className="flex shrink-0 gap-2">
-                                                <Button size="small" icon={<Pencil className="size-3.5" />} onClick={() => setEditingChannelId(channel.id)}>
-                                                    {t("action.edit")}
-                                                </Button>
-                                                <Button size="small" danger icon={<Trash2 className="size-3.5" />} onClick={() => deleteChannel(channel.id)} />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ),
-                    },
-                    {
                         key: "preferences",
                         label: t("config.prefs"),
                         children: (
@@ -409,56 +322,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                                 </Form.Item>
                             </Form>
                         ),
-                    },
-                    {
-                        key: "oss",
-                        label: t("config.tab.oss"),
-                        children: (
-                            <Form layout="vertical" requiredMark={false}>
-                                <section className="rounded-lg border border-stone-200 p-3 dark:border-stone-800">
-                                    <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                                        <div>
-                                            <div className="flex items-center gap-2 text-sm font-semibold">
-                                                <HardDrive className="size-4" />
-                                                {t("config.oss")}
-                                            </div>
-                                            <div className="mt-1 text-xs text-stone-500">{t("config.ossHint")}</div>
-                                        </div>
-                                        <div className="text-xs text-stone-500">{ossReady ? t("config.ossReady") : t("config.ossNeedKeys")}</div>
-                                    </div>
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                        <Form.Item label={t("config.ossRegion")} className="mb-4">
-                                            <Input value={oss.region} placeholder="oss-cn-guangzhou" onChange={(event) => updateOssConfig("region", event.target.value)} />
-                                        </Form.Item>
-                                        <Form.Item label={t("config.ossBucket")} className="mb-4">
-                                            <Input value={oss.bucket} placeholder="super-jackie" onChange={(event) => updateOssConfig("bucket", event.target.value)} />
-                                        </Form.Item>
-                                        <Form.Item label={t("config.ossPrefix")} className="mb-4">
-                                            <Input value={oss.prefix} placeholder="canvas/" onChange={(event) => updateOssConfig("prefix", event.target.value)} />
-                                        </Form.Item>
-                                        <Form.Item label={t("config.ossPublicBaseUrl")} className="mb-4" extra={t("config.ossPublicBaseUrlHint")}>
-                                            <Input value={oss.publicBaseUrl} placeholder="https://super-jackie.oss-cn-guangzhou.aliyuncs.com" onChange={(event) => updateOssConfig("publicBaseUrl", event.target.value)} />
-                                        </Form.Item>
-                                        <Form.Item label={t("config.ossAccessKeyId")} className="mb-0">
-                                            <Input value={oss.ossAkId} autoComplete="off" onChange={(event) => updateOssConfig("ossAkId", event.target.value)} />
-                                        </Form.Item>
-                                        <Form.Item label={t("config.ossAccessKeySecret")} className="mb-0">
-                                            <Input.Password value={oss.ossSk} autoComplete="new-password" onChange={(event) => updateOssConfig("ossSk", event.target.value)} />
-                                        </Form.Item>
-                                    </div>
-                                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                                        <Button type="primary" icon={<Wifi className="size-4" />} disabled={!ossReady} loading={testingOss} onClick={() => void testOss()}>
-                                            {t("config.ossTest")}
-                                        </Button>
-                                    </div>
-                                </section>
-                            </Form>
-                        ),
-                    },
-                    {
-                        key: "prompt-sources",
-                        label: "提示词来源",
-                        children: <ConfigPromptSources />,
                     },
                     {
                         key: "webdav",
@@ -574,7 +437,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                     </Button>
                 </div>
             ) : null}
-            <ChannelEditorDrawer open={Boolean(editingChannel)} channel={editingChannel} onSave={saveChannel} onClose={() => setEditingChannelId("")} />
         </>
     );
 }
@@ -604,36 +466,8 @@ export function AppConfigModal() {
     );
 }
 
-function withChannels(config: AiConfig, channels: ModelChannel[]): AiConfig {
-    const next: AiConfig = {
-        ...config,
-        channels,
-        models: modelOptionsFromChannels(channels),
-        baseUrl: channels[0]?.baseUrl || config.baseUrl,
-        apiKey: channels[0]?.apiKey || config.apiKey,
-        apiFormat: channels[0]?.apiFormat || config.apiFormat,
-    };
-    return {
-        ...next,
-        imageModel: pickDefaultModel(next, "image", config.imageModel),
-        videoModel: pickDefaultModel(next, "video", config.videoModel),
-        textModel: pickDefaultModel(next, "text", config.textModel),
-        audioModel: pickDefaultModel(next, "audio", config.audioModel),
-    };
-}
-
-function pickDefaultModel(config: AiConfig, capability: ModelCapability, current: string) {
-    const options = selectableModelsByCapability(config, capability);
-    const normalized = normalizeModelOptionValue(current, config.channels);
-    return options.includes(normalized) ? normalized : options[0] || "";
-}
-
 function normalizeImageCount(value: string) {
     return String(Math.max(1, Math.min(15, Math.floor(Math.abs(Number(value)) || 3))));
-}
-
-function apiFormatLabel(apiFormat: ApiCallFormat) {
-    return apiFormat === "gemini" ? "Gemini" : "OpenAI";
 }
 
 function formatWebdavTime(value: string) {

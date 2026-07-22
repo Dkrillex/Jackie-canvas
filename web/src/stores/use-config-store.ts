@@ -227,7 +227,7 @@ export const useConfigStore = create<ConfigStore>()(
             webdav: defaultWebdavSyncConfig,
             oss: defaultOssUploadConfig,
             isConfigOpen: false,
-            configTab: "channels",
+            configTab: "user",
             shouldPromptContinue: false,
             updateConfig: (key, value) =>
                 set((state) => ({
@@ -251,7 +251,7 @@ export const useConfigStore = create<ConfigStore>()(
                     },
                 })),
             isAiConfigReady: (config, model) => isAiConfigReady(config, model),
-            openConfigDialog: (shouldPromptContinue = false, configTab = "channels") => set({ isConfigOpen: true, shouldPromptContinue, configTab }),
+            openConfigDialog: (shouldPromptContinue = false, configTab = "user") => set({ isConfigOpen: true, shouldPromptContinue, configTab }),
             setConfigDialogOpen: (isConfigOpen) => set({ isConfigOpen }),
             clearPromptContinue: () => set({ shouldPromptContinue: false }),
         }),
