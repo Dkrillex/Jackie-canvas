@@ -1,8 +1,9 @@
-import { App, Button, Form, Input, Modal, Progress, Select, Switch, Tabs } from "antd";
-import { Cloud, KeyRound, Link2, LogOut, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
+import { App, Button, Form, Input, Modal, Progress, Select, Switch, Tabs, Tooltip } from "antd";
+import { Cloud, Copy, Eye, EyeOff, KeyRound, Link2, LogOut, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ModelPicker } from "@/components/model-picker";
+import { useCopyText } from "@/hooks/use-copy-text";
 import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
@@ -12,6 +13,13 @@ import { useConfigStore, type ConfigTabKey, type ModelCapability } from "@/store
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 import type { MessageKey } from "@/i18n";
+
+function maskApiKey(key: string) {
+    const value = key.trim();
+    if (!value) return "";
+    if (value.length <= 12) return `${value.slice(0, 4)}${"*".repeat(Math.max(0, value.length - 4))}`;
+    return `${value.slice(0, 7)}${"*".repeat(Math.min(18, value.length - 11))}${value.slice(-4)}`;
+}
 
 const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels", "prompt-sources", "oss"];
 
@@ -72,7 +80,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const [loadingUserInfo, setLoadingUserInfo] = useState(false);
     const [userInfoError, setUserInfoError] = useState("");
     const [loggingOut, setLoggingOut] = useState(false);
+    const [showApiKey, setShowApiKey] = useState(false);
+    const copyText = useCopyText();
     const config = useConfigStore((state) => state.config);
+    const sessionApiKey = (config.channels.find((channel) => channel.id === "default")?.apiKey || config.apiKey || "").trim();
     const webdav = useConfigStore((state) => state.webdav);
     const updateConfig = useConfigStore((state) => state.updateConfig);
     const updateWebdavConfig = useConfigStore((state) => state.updateWebdavConfig);
@@ -84,6 +95,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const logout = useUserStore((state) => state.logout);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
     const hydrateFromServer = useUserStore((state) => state.hydrateFromServer);
+    const syncSessionApiKey = useUserStore((state) => state.syncSessionApiKey);
     const agentUrl = useAgentStore((state) => state.url);
     const agentToken = useAgentStore((state) => state.token);
     const agentConnected = useAgentStore((state) => state.connected);
@@ -201,6 +213,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
             if (!force) {
                 if (sessionUser) {
                     applySessionUserInfo(sessionUser);
+                    if (!sessionApiKey) await syncSessionApiKey();
                     return;
                 }
                 await hydrateFromServer();
@@ -215,6 +228,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
             const current = await fetchCurrentUser();
             setUser(current);
             applySessionUserInfo(current);
+            await syncSessionApiKey();
         } catch {
             await loadUserInfoFromChannelFallback();
         } finally {
@@ -296,6 +310,23 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                                       : formatQuotaCurrency(userInfo.totalAvailable)
                                                   : t("config.empty")}
                                         </div>
+                                    </Form.Item>
+                                    <Form.Item label={t("config.apiKey")} extra={t("config.apiKeyHint")} className="mb-0 md:col-span-2">
+                                        {sessionApiKey ? (
+                                            <div className="flex items-center gap-2">
+                                                <code className="min-w-0 flex-1 truncate rounded-md bg-stone-100 px-3 py-1.5 text-sm text-stone-800 dark:bg-stone-900 dark:text-stone-100">
+                                                    {showApiKey ? sessionApiKey : maskApiKey(sessionApiKey)}
+                                                </code>
+                                                <Tooltip title={showApiKey ? t("action.hide") : t("action.show")}>
+                                                    <Button type="text" icon={showApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />} onClick={() => setShowApiKey((open) => !open)} />
+                                                </Tooltip>
+                                                <Tooltip title={t("action.copy")}>
+                                                    <Button type="text" icon={<Copy className="size-4" />} onClick={() => copyText(sessionApiKey, t("config.apiKeyCopied"))} />
+                                                </Tooltip>
+                                            </div>
+                                        ) : (
+                                            <div className="flex h-8 items-center text-sm text-stone-500">{loadingUserInfo ? t("config.loading") : t("config.apiKeyEmpty")}</div>
+                                        )}
                                     </Form.Item>
                                 </div>
                             </Form>

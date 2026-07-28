@@ -77,20 +77,19 @@ export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 const CHANNEL_MODEL_SEPARATOR = "::";
 const OPENAI_BASE_URL = "/gw";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
-const DEFAULT_API_KEY = "sk-ixjnFaGQ2dKmfGkH8IRRIAbr4M7aIaVq09OgxKwgwxJkGlCf";
 const SYSTEM_BASE_URL_HOSTS = ["api.gravitex.ai", "gravitex.ai"];
 
 export const defaultConfig: AiConfig = {
     channelMode: "local",
     baseUrl: OPENAI_BASE_URL,
-    apiKey: DEFAULT_API_KEY,
+    apiKey: "",
     apiFormat: "openai",
     channels: [
         {
             id: "default",
             name: "默认渠道",
             baseUrl: OPENAI_BASE_URL,
-            apiKey: DEFAULT_API_KEY,
+            apiKey: "",
             apiFormat: "openai",
             models: [
                 { name: "gpt-image-2", capability: "image" },
@@ -194,6 +193,8 @@ type ConfigStore = {
     updateConfig: <K extends keyof AiConfig>(key: K, value: AiConfig[K]) => void;
     updateWebdavConfig: <K extends keyof WebdavSyncConfig>(key: K, value: WebdavSyncConfig[K]) => void;
     updateOssConfig: <K extends keyof OssUploadConfig>(key: K, value: OssUploadConfig[K]) => void;
+    /** 写入默认渠道 API Key（登录会话密钥）；同时同步顶层 apiKey */
+    setDefaultChannelApiKey: (apiKey: string) => void;
     isAiConfigReady: (config: AiConfig, model: string) => boolean;
     openConfigDialog: (shouldPromptContinue?: boolean, tab?: ConfigTabKey) => void;
     setConfigDialogOpen: (isOpen: boolean) => void;
@@ -245,6 +246,14 @@ function isAiConfigReady(config: AiConfig, model: string) {
     return Boolean(model.trim() && channel.baseUrl.trim() && channel.apiKey.trim());
 }
 
+/** 配置未就绪时的 i18n key；缺 API Key 时提示去平台创建 auto 密钥 */
+export function aiConfigNotReadyMessageKey(config: AiConfig, model: string): "wb.needAutoKey" | "wb.needConfig" | null {
+    if (isAiConfigReady(config, model)) return null;
+    const channel = resolveModelChannel(config, model);
+    if (model.trim() && channel.baseUrl.trim() && !channel.apiKey.trim()) return "wb.needAutoKey";
+    return "wb.needConfig";
+}
+
 export const useConfigStore = create<ConfigStore>()(
     persist(
         (set, get) => ({
@@ -275,6 +284,12 @@ export const useConfigStore = create<ConfigStore>()(
                         [key]: value,
                     },
                 })),
+            setDefaultChannelApiKey: (apiKey) =>
+                set((state) => {
+                    const nextKey = apiKey.trim();
+                    const channels = state.config.channels.map((channel) => (channel.id === "default" ? { ...channel, apiKey: nextKey } : channel));
+                    return { config: { ...state.config, apiKey: nextKey, channels } };
+                }),
             isAiConfigReady: (config, model) => isAiConfigReady(config, model),
             openConfigDialog: (shouldPromptContinue = false, configTab = "user") => set({ isConfigOpen: true, shouldPromptContinue, configTab }),
             setConfigDialogOpen: (isConfigOpen) => set({ isConfigOpen }),

@@ -65,6 +65,19 @@ type UserQuotaData = {
     usedQuota?: number;
 };
 
+type LlmTokenRow = {
+    key?: string;
+    status?: number;
+    deletedAt?: string | null;
+    userGroup?: string;
+    group?: string;
+};
+
+type LlmTokenListRaw = RuoyiResponse<LlmTokenRow[] | { rows?: LlmTokenRow[]; total?: number }> & {
+    rows?: LlmTokenRow[];
+    total?: number;
+};
+
 const NEW_API_QUOTA_PER_UNIT = 500_000;
 
 const authClient = axios.create({
@@ -109,18 +122,21 @@ export async function fetchCurrentUser(): Promise<LocalUser> {
     if (!token) throw new Error("未登录或会话已失效");
 
     const response = await authClient.get<RuoyiResponse<UserInfoData>>("/system/user/getInfo");
-    const info = unwrapRuoyi(await maybeDecrypt(response), "未登录或会话已失效");
-    const profile = info.user;
+    const raw = await maybeDecrypt(response);
+    const info = unwrapRuoyi(raw, "未登录或会话已失效") as UserInfoData & { user?: UserInfoData["user"] };
+    // 兼容 data.user / 顶层 user
+    const profile = info.user || (raw as UserInfoData).user;
     if (!profile) throw new Error("未登录或会话已失效");
 
     const username = (profile.userName || "").trim() || "用户";
     const userId = String(profile.userId ?? username);
-    const apiId = profile.apiId != null ? String(profile.apiId) : "";
+    // 余额接口仍可能需要 Nebula apiId；仅临时使用，不写入 LocalUser
+    const quotaUserId = String(profile.apiId ?? profile.userId ?? "").trim();
     if (typeof window !== "undefined") {
         window.localStorage.setItem(AUTH_USER_ID_KEY, userId);
     }
 
-    const quota = apiId ? await fetchUserQuota(apiId).catch(() => ({ quota: 0, usedQuota: 0 })) : { quota: 0, usedQuota: 0 };
+    const quota = quotaUserId ? await fetchUserQuota(quotaUserId).catch(() => ({ quota: 0, usedQuota: 0 })) : { quota: 0, usedQuota: 0 };
     return {
         id: userId,
         username,
@@ -129,6 +145,23 @@ export async function fetchCurrentUser(): Promise<LocalUser> {
         quota: quota.quota,
         usedQuota: quota.usedQuota,
     };
+}
+
+/** 凭登录 JWT 拉取当前账号启用中的第一把 group=auto 密钥（不传 userId） */
+export async function fetchAutoUserApiKey(): Promise<string | null> {
+    const response = await authClient.get<LlmTokenListRaw>("/llm/tokens/list", {
+        params: { pageNum: 1, pageSize: 100 },
+    });
+    const raw = await maybeDecrypt(response);
+    const code = (raw as RuoyiResponse)?.code;
+    if (code !== undefined && code !== 200 && code !== "200") {
+        throw new Error((raw as RuoyiResponse).msg || "获取密钥失败");
+    }
+    const rows = parseTokenRows(raw);
+    const token = rows.find((item) => !item?.deletedAt && Number(item.status) === 1 && isAutoGroup(item) && String(item.key || "").trim());
+    const key = String(token?.key || "").trim();
+    if (!key) return null;
+    return key.startsWith("sk-") ? key : `sk-${key}`;
 }
 
 export async function logoutRemote(): Promise<void> {
@@ -184,6 +217,24 @@ async function fetchUserQuota(apiId: string): Promise<{ quota: number; usedQuota
         quota: Number.isFinite(dollar) ? Math.round(dollar) : 0,
         usedQuota: Number.isFinite(used) ? Math.round(used) : 0,
     };
+}
+
+function parseTokenRows(raw: LlmTokenListRaw | unknown): LlmTokenRow[] {
+    const res = raw as LlmTokenListRaw;
+    if (Array.isArray(res?.rows)) return res.rows;
+    const data = res?.data;
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object" && Array.isArray((data as { rows?: LlmTokenRow[] }).rows)) {
+        return (data as { rows: LlmTokenRow[] }).rows;
+    }
+    return [];
+}
+
+function isAutoGroup(item: LlmTokenRow) {
+    const group = String(item.userGroup || item.group || "")
+        .trim()
+        .toLowerCase();
+    return group === "auto";
 }
 
 function unwrapRuoyi<T>(raw: RuoyiResponse<T> | T, fallback: string): T & RuoyiResponse {

@@ -10,7 +10,7 @@ import { PromptSelectDialog } from "@/components/prompts/prompt-select-dialog";
 import { AssetPickerModal, type InsertAssetPayload } from "@/components/canvas/asset-picker-modal";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { imageReferenceLabel } from "@/lib/image-reference-prompt";
-import { modelOptionLabel, useConfigStore, useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
+import { aiConfigNotReadyMessageKey, modelOptionLabel, useConfigStore, useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { nanoid } from "nanoid";
@@ -160,7 +160,7 @@ export default function ImagePage() {
             return;
         }
         if (!isAiConfigReady(effectiveConfig, model)) {
-            message.warning(t("wb.needConfig"));
+            message.warning(t(aiConfigNotReadyMessageKey(effectiveConfig, model) || "wb.needConfig"));
             openConfigDialog(true);
             if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: "生图配置不完整" });
             return;
@@ -320,7 +320,7 @@ export default function ImagePage() {
             return null;
         }
         if (!isAiConfigReady(effectiveConfig, model)) {
-            message.warning(t("wb.needConfig"));
+            message.warning(t(aiConfigNotReadyMessageKey(effectiveConfig, model) || "wb.needConfig"));
             openConfigDialog(true);
             return null;
         }

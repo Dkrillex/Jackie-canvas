@@ -19,7 +19,7 @@ import { createVideoGenerationTask, pollVideoGenerationTask, storeGeneratedVideo
 import { useRequireLogin } from "@/hooks/use-require-login";
 import { useAssetStore } from "@/stores/use-asset-store";
 import { useWorkbenchAgentStore } from "@/stores/use-workbench-agent-store";
-import { modelOptionLabel, useConfigStore, useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
+import { aiConfigNotReadyMessageKey, modelOptionLabel, useConfigStore, useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
 import { useI18n, useLocaleStore } from "@/stores/use-locale-store";
 import { useThemeStore } from "@/stores/use-theme-store";
 import type { ReferenceImage } from "@/types/image";
@@ -279,7 +279,7 @@ export default function VideoPage() {
             return null;
         }
         if (!isAiConfigReady(effectiveConfig, model)) {
-            message.warning(t("wb.needConfig"));
+            message.warning(t(aiConfigNotReadyMessageKey(effectiveConfig, model) || "wb.needConfig"));
             openConfigDialog(true);
             return null;
         }

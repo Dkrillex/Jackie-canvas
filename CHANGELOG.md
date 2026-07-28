@@ -4,6 +4,8 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 用户中心展示当前同步的 API Key（脱敏/显示/复制）；刷新时重新拉取 auto 密钥。
++ [调整][Jackie] 登录/刷新后自动拉取账号 `group=auto` 启用密钥写入默认渠道，退出清空；移除写死的内置 API Key。
 + [调整][Jackie] 登录改为 MaaS `/prod-api/auth/login`（密码登录 + JWT），会话校验走 `/system/user/getInfo`；本地/Vercel 增加 `/prod-api` 代理。
 + [调整][Jackie] 「开始生成」等生成操作需登录；未登录点击会提示并弹出登录框。
 + [新增][Jackie] 首页 hero 增加字编码莫比乌斯环装饰（风格参考 OOMOL）。
