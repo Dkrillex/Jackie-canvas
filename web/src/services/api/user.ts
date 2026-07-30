@@ -201,21 +201,23 @@ export function formatQuotaCurrency(quota: number) {
     return `$${(Math.max(0, quota) / NEW_API_QUOTA_PER_UNIT).toFixed(2)}`;
 }
 
+/**
+ * GET /api/users/{id}：与平台 Expenses 一致，quotaDollar/quota 为剩余美元余额（不是总额）。
+ * 统一换算成 New API 内部单位（500000 = $1）存入 LocalUser.quota。
+ */
 async function fetchUserQuota(apiId: string): Promise<{ quota: number; usedQuota: number }> {
     const response = await authClient.get<RuoyiResponse<UserQuotaData>>(`/api/users/${apiId}`);
     const data = unwrapRuoyi(await maybeDecrypt(response), "获取余额失败");
-    const dollar = Number(data.quotaDollar ?? data.quota);
-    const used = Number(data.usedQuota);
-    // 小数视为美元余额，整数大额视为 New API quota 单位
-    if (Number.isFinite(dollar) && Math.abs(dollar) < 1_000_000) {
-        return {
-            quota: Math.round(dollar * NEW_API_QUOTA_PER_UNIT),
-            usedQuota: Number.isFinite(used) && Math.abs(used) < 1_000_000 ? Math.round(used * NEW_API_QUOTA_PER_UNIT) : 0,
-        };
-    }
+    const remainingDollar = Number(data.quotaDollar ?? data.quota);
+    const usedRaw = Number(data.usedQuota);
+    const toInternal = (value: number) => {
+        if (!Number.isFinite(value)) return 0;
+        // 小于 1e6 视为美元；否则视为已是内部单位
+        return Math.abs(value) < 1_000_000 ? Math.round(value * NEW_API_QUOTA_PER_UNIT) : Math.round(value);
+    };
     return {
-        quota: Number.isFinite(dollar) ? Math.round(dollar) : 0,
-        usedQuota: Number.isFinite(used) ? Math.round(used) : 0,
+        quota: toInternal(remainingDollar),
+        usedQuota: toInternal(usedRaw),
     };
 }
 

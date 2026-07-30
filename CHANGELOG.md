@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] 账户剩余金额按平台 `quotaDollar/quota` 直接展示，不再误减 `usedQuota` 导致显示 $0.00。
 + [调整][Jackie] 用户中心展示当前同步的 API Key（脱敏/显示/复制）；刷新时重新拉取 auto 密钥。
 + [调整][Jackie] 登录/刷新后自动拉取账号 `group=auto` 启用密钥写入默认渠道，退出清空；移除写死的内置 API Key。
 + [调整][Jackie] 登录改为 MaaS `/prod-api/auth/login`（密码登录 + JWT），会话校验走 `/system/user/getInfo`；本地/Vercel 增加 `/prod-api` 代理。

@@ -180,12 +180,13 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const toggleAgentConnection = () => (agentEnabled ? disconnectAgent({ connectError: "" }) : connectAgent());
 
     const applySessionUserInfo = (current: NonNullable<typeof sessionUser>) => {
+        // LocalUser.quota 已是剩余额度（来自 quotaDollar/quota），不要再减 usedQuota
         setUserInfo({
             username: current.displayName || current.username,
             tokenName: current.username,
-            totalAvailable: Math.max(0, current.quota - current.usedQuota),
-            totalGranted: current.quota,
-            totalUsed: current.usedQuota,
+            totalAvailable: Math.max(0, current.quota),
+            totalGranted: Math.max(0, current.quota + current.usedQuota),
+            totalUsed: Math.max(0, current.usedQuota),
             unlimitedQuota: false,
         });
     };
