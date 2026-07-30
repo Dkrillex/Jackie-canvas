@@ -5,6 +5,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- 账户余额：用户中心「剩余金额」应与平台 `/api/users/{id}` 的 `quotaDollar`（或 `quota`）一致，不应再因减去 `usedQuota` 显示成 $0.00。
 - 会话 auto 密钥：登录或刷新后应请求 `/prod-api/llm/tokens/list`（不传 userId，仅 JWT），把第一把启用且 `group/userGroup=auto` 的 Key（`sk-` 前缀）写入默认渠道；用户中心可脱敏查看/复制；退出后默认渠道 Key 清空；用该 Key 走 `/gw` 可正常生成。
 - MaaS 登录：用平台账号密码登录应走 `/prod-api/auth/login` 成功并拉取用户信息；刷新后保持登录；退出后 token 清除；账户页能显示账号与剩余金额。
 - 生成需登录：未登录时可进入生图/视频/画布页面浏览；点击「开始生成」或画布触发生成应提示登录并弹出登录框，不发起请求；登录后再点可正常生成。
