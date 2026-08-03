@@ -89,3 +89,4 @@
 - 登录鉴权走同源 `/prod-api`（MaaS：`/auth/login` + JWT + 请求体 AES/RSA 加密），不要再走 New API 的 `/api/user/login` Cookie/`New-Api-User`。AI 请求仍走 `/gw`。
 - 登录成功与 hydrate 后，用 `/prod-api/llm/tokens/list`（仅 JWT，不传 userId）拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key 写入默认渠道；退出时清空。不要再写死内置 API Key。
 - 部署到 Vercel 时 `/gw` 与 `/prod-api` 必须走外部 rewrite 或 Middleware 代理到上游，且 SPA fallback 不能匹配这两条前缀；不要依赖未部署成功的 `/api` Serverless 回退，否则登录会 405。
+- `tennda-dev`：对外品牌为 Tennda LLM；UI 用 `displayName` / `TENNDA_MODEL_CATALOG` 展示自研名，请求仍用真实上游 `ChannelModel.name`；强制英文、隐藏语言切换，不要在演示文案里暴露真实上游模型品牌。

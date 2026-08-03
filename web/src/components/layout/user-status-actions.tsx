@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { Keyboard, Languages, Puzzle, Settings2, User } from "lucide-react";
+import { Keyboard, Puzzle, Settings2, User } from "lucide-react";
 
 import { canvasThemes } from "@/lib/canvas-theme";
 import { useConfigStore } from "@/stores/use-config-store";
@@ -15,7 +15,7 @@ type UserStatusActionsProps = {
 };
 
 export function UserStatusActions({ showConfig = true, variant = "default", onOpenShortcuts, onOpenPlugins }: UserStatusActionsProps) {
-    const { t, locale, toggleLocale } = useI18n();
+    const { t } = useI18n();
     const theme = useThemeStore((state) => state.theme);
     const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
     const user = useUserStore((state) => state.user);
@@ -26,9 +26,6 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
 
     return (
         <div className="inline-flex shrink-0 items-center gap-1">
-            <button type="button" className={naturalIconClass} style={iconStyle} onClick={toggleLocale} aria-label={t("action.language")} title={`${t("action.language")}: ${locale === "en" ? t("locale.zh") : t("locale.en")}`}>
-                <Languages className="size-4" />
-            </button>
             <button
                 type="button"
                 className={naturalIconClass}

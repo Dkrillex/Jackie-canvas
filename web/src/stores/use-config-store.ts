@@ -3,11 +3,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 
+import { TENNDA_DISPLAY_NAME_BY_MODEL, tenndaChannelModels } from "@/constant/tennda-models";
+
 export type ApiCallFormat = "openai" | "gemini";
 export type ModelCapability = "image" | "video" | "text" | "audio";
 
 export type ChannelModel = {
     name: string;
+    /** UI facade label; requests still use `name` */
+    displayName?: string;
     capability: ModelCapability;
     script?: string;
 };
@@ -87,26 +91,11 @@ export const defaultConfig: AiConfig = {
     channels: [
         {
             id: "default",
-            name: "默认渠道",
+            name: "Tennda",
             baseUrl: OPENAI_BASE_URL,
             apiKey: "",
             apiFormat: "openai",
-            models: [
-                { name: "gpt-image-2", capability: "image" },
-                { name: "gemini-3.1-flash-lite-image", capability: "image" },
-                { name: "gemini-3.1-flash-image", capability: "image" },
-                { name: "gemini-2.5-flash-image", capability: "image" },
-                { name: "seedream-5-0-260128", capability: "image" },
-                { name: "veo-3.1-lite-generate-001", capability: "video" },
-                { name: "veo-3.1-fast-generate-001", capability: "video" },
-                { name: "seedance-2-0-NSFW", capability: "video" },
-                { name: "wan2.7-t2v", capability: "video" },
-                { name: "wan2.7-i2v", capability: "video" },
-                { name: "wan2.7-r2v", capability: "video" },
-                { name: "gpt-5.5", capability: "text" },
-                { name: "gpt-5.6-sol", capability: "text" },
-                { name: "gpt-4o-mini-tts", capability: "audio" },
-            ],
+            models: tenndaChannelModels(),
         },
     ],
     model: "default::gpt-image-2",
@@ -307,7 +296,9 @@ export const useConfigStore = create<ConfigStore>()(
                 if (!Array.isArray(persistedConfig.channels)) config.channels = [];
                 // 默认渠道模型列表随代码更新（项目未上线，不保留旧默认模型）
                 const channels = normalizeChannels(config).map((channel) =>
-                    channel.id === "default" ? { ...channel, models: defaultConfig.channels[0].models.map((model) => ({ ...model })) } : channel,
+                    channel.id === "default"
+                        ? { ...channel, name: "Tennda", models: defaultConfig.channels[0].models.map((model) => ({ ...model })) }
+                        : channel,
                 );
                 const models = modelOptionsFromChannels(channels);
                 const pickModel = (value: string | undefined, fallback: string) => normalizeModelOptionValue(value, channels) || normalizeModelOptionValue(fallback, channels);
@@ -367,7 +358,9 @@ export function normalizeChannelModels(models: Array<string | ChannelModel> | un
         seen.add(name);
         const capability = typeof item === "string" ? guessCapability(name) : item.capability || guessCapability(name);
         const script = typeof item === "string" ? undefined : item.script?.trim() || undefined;
-        result.push({ name, capability, script });
+        const displayName =
+            (typeof item === "string" ? undefined : item.displayName?.trim()) || TENNDA_DISPLAY_NAME_BY_MODEL[name] || undefined;
+        result.push({ name, capability, script, displayName });
     }
     return result;
 }
@@ -381,7 +374,7 @@ export function createModelChannel(channel?: Partial<ModelChannel>): ModelChanne
             : normalizeOpenAiBaseUrl(rawBaseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat));
     return {
         id: channel?.id?.trim() || nanoid(),
-        name: channel?.name?.trim() || "新渠道",
+        name: channel?.name?.trim() || "Tennda",
         baseUrl,
         apiKey: channel?.apiKey || "",
         apiFormat,
@@ -423,9 +416,11 @@ export function modelOptionName(value: string) {
 
 export function modelOptionLabel(config: AiConfig, value: string) {
     const decoded = decodeChannelModel(value);
-    if (!decoded) return value;
+    if (!decoded) return TENNDA_DISPLAY_NAME_BY_MODEL[value] || value;
     const channel = config.channels.find((item) => item.id === decoded.channelId);
-    return channel ? `${decoded.model}（${channel.name}）` : decoded.model;
+    const model = channel?.models.find((item) => item.name === decoded.model);
+    const label = model?.displayName?.trim() || TENNDA_DISPLAY_NAME_BY_MODEL[decoded.model] || decoded.model;
+    return label;
 }
 
 export function modelOptionsFromChannels(channels: ModelChannel[]) {
@@ -448,7 +443,7 @@ export function resolveModelChannel(config: AiConfig, value: string) {
     const decoded = decodeChannelModel(value);
     const model = decoded?.model || value;
     const matched = decoded ? config.channels.find((channel) => channel.id === decoded.channelId) : config.channels.find((channel) => channel.models.some((item) => item.name === model));
-    return matched || config.channels[0] || createModelChannel({ id: "default", name: "默认渠道", baseUrl: config.baseUrl, apiKey: config.apiKey, apiFormat: config.apiFormat, models: config.models.map(modelOptionName).map((name) => ({ name, capability: guessCapability(name) })) });
+    return matched || config.channels[0] || createModelChannel({ id: "default", name: "Tennda", baseUrl: config.baseUrl, apiKey: config.apiKey, apiFormat: config.apiFormat, models: config.models.map(modelOptionName).map((name) => ({ name, capability: guessCapability(name), displayName: TENNDA_DISPLAY_NAME_BY_MODEL[name] })) });
 }
 
 export function resolveModelRequestConfig(config: AiConfig, value: string) {
@@ -468,7 +463,7 @@ function normalizeChannels(config: AiConfig) {
         createModelChannel({
             ...channel,
             id: channel.id || (index === 0 ? "default" : `channel-${index + 1}`),
-            name: channel.name || (index === 0 ? "默认渠道" : `渠道 ${index + 1}`),
+            name: channel.id === "default" || index === 0 ? "Tennda" : channel.name || `Channel ${index + 1}`,
             models: normalizeChannelModels(channel.models),
         }),
     );
@@ -476,11 +471,11 @@ function normalizeChannels(config: AiConfig) {
         channels.push(
             createModelChannel({
                 id: "default",
-                name: "默认渠道",
+                name: "Tennda",
                 baseUrl: config.baseUrl || defaultConfig.baseUrl,
                 apiKey: config.apiKey || "",
                 apiFormat: config.apiFormat || defaultConfig.apiFormat,
-                models: normalizeChannelModels([config.model, config.imageModel, config.videoModel, config.textModel, config.audioModel].map(modelOptionName)),
+                models: tenndaChannelModels(),
             }),
         );
     }
