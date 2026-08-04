@@ -39,7 +39,7 @@ export function PromptDetailDialog({ prompt, onClose, onCopy, onSaveAsset, onSav
                                     ) : null}
                                     {onSavePrompt ? (
                                         <Button icon={<BookmarkPlus className="size-4" />} onClick={() => onSavePrompt(prompt)}>
-                                            保存到我的提示词
+                                            {t("prompts.saveToMine")}
                                         </Button>
                                     ) : null}
                                 </Space>

@@ -1,15 +1,17 @@
 import { ArrowRight, ImageIcon, MessageSquare, Sparkles, Video } from "lucide-react";
-import { type ReactNode } from "react";
-import { Button, Tag } from "antd";
+import { type ReactNode, useEffect, useState } from "react";
+import { App, Button, Image, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 
 import { AsciiRing } from "@/components/home/ascii-ring";
 import { TENNDA_MODEL_CATALOG, type TenndaModelCapability } from "@/constant/tennda-models";
 import { navigationTools } from "@/constant/navigation-tools";
+import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { fetchEnglishPrompts } from "@/services/api/english-prompts";
+import type { Prompt } from "@/services/api/prompts";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
-import type { MessageKey } from "@/i18n";
 
 function Highlighter({ action, color, children }: { action: "highlight" | "underline"; color: string; children: ReactNode }) {
     return (
@@ -39,11 +41,21 @@ const capabilityLabelKey: Record<TenndaModelCapability, MessageKey> = {
 };
 
 export default function IndexPage() {
+    const { message } = App.useApp();
     const { t } = useI18n();
     const navigate = useNavigate();
     const primaryTool = navigationTools.find((tool) => tool.slug === "image") ?? navigationTools[0];
     const user = useUserStore((state) => state.user);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
+    const [promptShowcase, setPromptShowcase] = useState<Prompt[]>([]);
+    const [previewIndex, setPreviewIndex] = useState(0);
+    const [previewOpen, setPreviewOpen] = useState(false);
+
+    useEffect(() => {
+        void fetchEnglishPrompts(12)
+            .then(setPromptShowcase)
+            .catch((error) => message.error(error instanceof Error ? error.message : t("home.fetchPromptsFailed")));
+    }, [message, t]);
 
     const startUsing = () => {
         const path = `/${primaryTool.slug}`;
@@ -88,23 +100,20 @@ export default function IndexPage() {
                     </div>
                 </div>
 
-                <section className="relative mx-auto mb-20 max-w-6xl border-t border-stone-200 pt-12 dark:border-stone-800">
+                <section className="relative mx-auto mb-16 max-w-6xl border-t border-stone-200 pt-12 dark:border-stone-800">
                     <div className="mb-10 mx-auto max-w-2xl text-center">
                         <h2 className="text-3xl font-semibold text-stone-950 dark:text-stone-100">{t("home.showcaseTitle")}</h2>
                         <p className="mt-3 text-base leading-7 text-stone-500 dark:text-stone-400">{t("home.showcaseDesc")}</p>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {TENNDA_MODEL_CATALOG.map((model, index) => {
+                        {TENNDA_MODEL_CATALOG.map((model) => {
                             const Icon = capabilityIcon[model.capability];
                             return (
                                 <button
                                     key={model.name}
                                     type="button"
                                     onClick={() => openModel(model.href)}
-                                    className={cn(
-                                        "group flex flex-col items-start border border-stone-200 bg-white/70 p-5 text-left transition hover:border-stone-400 hover:bg-white dark:border-stone-800 dark:bg-stone-950/50 dark:hover:border-stone-600 dark:hover:bg-stone-900",
-                                        index === 0 && "sm:col-span-2 lg:col-span-1",
-                                    )}
+                                    className="group flex flex-col items-start border border-stone-200 bg-white/70 p-5 text-left transition hover:border-stone-400 hover:bg-white dark:border-stone-800 dark:bg-stone-950/50 dark:hover:border-stone-600 dark:hover:bg-stone-900"
                                 >
                                     <div className="mb-4 flex w-full items-center justify-between gap-3">
                                         <span className="inline-flex size-9 items-center justify-center border border-stone-200 text-stone-700 dark:border-stone-700 dark:text-stone-200">
@@ -123,7 +132,67 @@ export default function IndexPage() {
                         })}
                     </div>
                 </section>
+
+                <section className="relative mx-auto mb-20 max-w-6xl border-t border-stone-200 pt-12 dark:border-stone-800">
+                    <div className="mb-8 grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-start">
+                        <div />
+                        <div className="max-w-2xl text-center">
+                            <h2 className="text-3xl font-semibold text-stone-950 dark:text-stone-100">{t("home.promptsTitle")}</h2>
+                            <p className="mt-3 text-base leading-7 text-stone-500 dark:text-stone-400">{t("home.promptsDesc")}</p>
+                        </div>
+                        <Button type="link" onClick={() => navigate("/prompts")} className="justify-self-center md:justify-self-end" icon={<ArrowRight className="size-4" />} iconPlacement="end">
+                            {t("home.viewPrompts")}
+                        </Button>
+                    </div>
+                    <div className="grid auto-rows-[210px] gap-4 md:grid-cols-4">
+                        {promptShowcase.map((item, index) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => {
+                                    setPreviewIndex(index);
+                                    setPreviewOpen(true);
+                                }}
+                                className={cn(
+                                    "group relative cursor-pointer overflow-hidden border border-stone-200 bg-stone-100 text-left dark:border-stone-800 dark:bg-stone-900",
+                                    index === 0 && "md:col-span-2 md:row-span-2",
+                                    index === 3 && "md:col-span-2",
+                                )}
+                            >
+                                <img src={item.coverUrl} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent p-4 text-white">
+                                    <div className="mb-2 flex flex-wrap gap-1.5">
+                                        {item.tags
+                                            .filter((tag) => !tag.startsWith("@"))
+                                            .slice(0, 2)
+                                            .map((tag) => (
+                                                <Tag key={tag} variant="filled" className="m-0 bg-white/15 text-[11px] text-white backdrop-blur">
+                                                    {tag}
+                                                </Tag>
+                                            ))}
+                                    </div>
+                                    <h3 className="text-sm font-medium">{item.title}</h3>
+                                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/75">{item.prompt}</p>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </section>
             </section>
+            <Image.PreviewGroup
+                preview={{
+                    open: previewOpen,
+                    current: previewIndex,
+                    onOpenChange: setPreviewOpen,
+                    onChange: setPreviewIndex,
+                }}
+            >
+                <div className="hidden">
+                    {promptShowcase.map((item) => (
+                        <Image key={item.id} src={item.coverUrl} alt={item.title} />
+                    ))}
+                </div>
+            </Image.PreviewGroup>
         </main>
     );
 }

@@ -83,8 +83,12 @@
 - 当前画布项目和“我的素材”主要保存在浏览器本地，不要在文档中误写成已支持云同步。
 - 当前 AI API Key 存在浏览器本地，并由前端直接请求 OpenAI 兼容接口；涉及安全说明时要写清楚。
 - Docker 静态资源路径目前仍是待办项，文档中不要过度承诺生产部署已经完全验证。
-- 对外文案与渠道配置界面不要暴露底层服务品牌、域名或内置 API Key（如 gravitex）；默认 OpenAI 兼容地址用同源 `/gw`。渠道 Base URL / API Key 表单项仅 `admin` 账号渲染，普通用户不显示。
-- 顶栏配置齿轮与导航「配置」仅登录后显示。
+- 对外文案与渠道配置界面不要暴露底层服务品牌、域名或内置 API Key（如 gravitex）；默认 OpenAI 兼容地址用同源 `/gw`。渠道 Base URL / API Key 表单项仅 `admin` 账号渲染，普通用户不显示。配置弹窗中 Generation preferences / WebDAV / Agent，以及 Agent 面板 Log Tab，也仅 `admin`（`username === "admin"`）可见；普通用户配置只显示 Account。
+- 顶栏配置齿轮仅 `admin` 可见；导航「配置」仅登录后显示。普通用户通过账户入口打开 Account。
+- 画布（`/canvas`）仅 `admin` 可见可进；普通用户导航不显示，直接访问重定向到生图。
+- 提示词库保持全英：UI 用英文 i18n；内置来源走英文 README / `title_en`，不要回退到中文 registry 标题。
+- 提示词库：非 `admin` 隐藏 Category / Tags 筛选，库列表、首页示例与提示词选择弹窗仅展示 DavidWu GPT Image 2（`PUBLIC_PROMPT_CATEGORY`）；`admin` 可见全部来源与筛选。内置来源只走英文 fetcher，不要回退中文 registry。
+- 模型选择器：非 `admin` 不要显示可识别上游厂商的图标（OpenAI/Gemini 等），统一用默认图标，文案只用 Tennda 显示名；`admin` 可显示厂商图标，文案为「展示名: 实际上游模型名」。
 - 「开始生成」等会发起 AI 请求的操作按钮，未登录时应提示并弹出登录，不真正发起生成。
 - 登录鉴权走同源 `/prod-api`（MaaS：`/auth/login` + JWT + 请求体 AES/RSA 加密），不要再走 New API 的 `/api/user/login` Cookie/`New-Api-User`。AI 请求仍走 `/gw`。
 - 登录成功与 hydrate 后，用 `/prod-api/llm/tokens/list`（仅 JWT，不传 userId）拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key 写入默认渠道；退出时清空。不要再写死内置 API Key。

@@ -101,7 +101,7 @@ export const defaultConfig: AiConfig = {
     model: "default::gpt-image-2",
     imageModel: "default::gpt-image-2",
     videoModel: "default::veo-3.1-lite-generate-001",
-    textModel: "default::gpt-5.5",
+    textModel: "default::gpt-5.6-sol",
     audioModel: "default::gpt-4o-mini-tts",
     audioVoice: "alloy",
     audioFormat: "mp3",
@@ -115,36 +115,25 @@ export const defaultConfig: AiConfig = {
     models: [
         "default::gpt-image-2",
         "default::gemini-3.1-flash-lite-image",
-        "default::gemini-3.1-flash-image",
-        "default::gemini-2.5-flash-image",
         "default::seedream-5-0-260128",
         "default::veo-3.1-lite-generate-001",
         "default::veo-3.1-fast-generate-001",
         "default::seedance-2-0-NSFW",
-        "default::wan2.7-t2v",
-        "default::wan2.7-i2v",
-        "default::wan2.7-r2v",
         "default::gpt-5.4-nano",
-        "default::gpt-5.5",
         "default::gpt-5.6-sol",
         "default::gpt-4o-mini-tts",
     ],
     imageModels: [
         "default::gpt-image-2",
         "default::gemini-3.1-flash-lite-image",
-        "default::gemini-3.1-flash-image",
-        "default::gemini-2.5-flash-image",
         "default::seedream-5-0-260128",
     ],
     videoModels: [
         "default::veo-3.1-lite-generate-001",
         "default::veo-3.1-fast-generate-001",
         "default::seedance-2-0-NSFW",
-        "default::wan2.7-t2v",
-        "default::wan2.7-i2v",
-        "default::wan2.7-r2v",
     ],
-    textModels: ["default::gpt-5.4-nano", "default::gpt-5.5", "default::gpt-5.6-sol"],
+    textModels: ["default::gpt-5.4-nano", "default::gpt-5.6-sol"],
     audioModels: ["default::gpt-4o-mini-tts"],
     quality: "auto",
     size: "1:1",
@@ -415,13 +404,14 @@ export function modelOptionName(value: string) {
     return decodeChannelModel(value)?.model || value;
 }
 
-export function modelOptionLabel(config: AiConfig, value: string) {
+export function modelOptionLabel(config: AiConfig, value: string, options?: { revealUpstream?: boolean }) {
     const decoded = decodeChannelModel(value);
-    if (!decoded) return TENNDA_DISPLAY_NAME_BY_MODEL[value] || value;
-    const channel = config.channels.find((item) => item.id === decoded.channelId);
-    const model = channel?.models.find((item) => item.name === decoded.model);
-    const label = model?.displayName?.trim() || TENNDA_DISPLAY_NAME_BY_MODEL[decoded.model] || decoded.model;
-    return label;
+    const modelName = decoded?.model || value;
+    const channel = decoded ? config.channels.find((item) => item.id === decoded.channelId) : undefined;
+    const model = channel?.models.find((item) => item.name === modelName);
+    const display = model?.displayName?.trim() || TENNDA_DISPLAY_NAME_BY_MODEL[modelName] || modelName;
+    if (options?.revealUpstream && display !== modelName) return `${display}: ${modelName}`;
+    return display;
 }
 
 export function modelOptionsFromChannels(channels: ModelChannel[]) {

@@ -22,6 +22,18 @@ function maskApiKey(key: string) {
 }
 
 const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels", "prompt-sources", "oss"];
+/** Only `admin` account can see these tabs. */
+const ADMIN_ONLY_CONFIG_TABS: ConfigTabKey[] = ["preferences", "webdav", "codex"];
+
+function isAdminUser(username?: string | null) {
+    return (username || "").trim().toLowerCase() === "admin";
+}
+
+function isConfigTabVisible(tab: ConfigTabKey, isAdmin: boolean) {
+    if (HIDDEN_CONFIG_TABS.includes(tab)) return false;
+    if (!isAdmin && ADMIN_ONLY_CONFIG_TABS.includes(tab)) return false;
+    return true;
+}
 
 type ModelGroup = {
     capability: ModelCapability;
@@ -71,7 +83,9 @@ function createWebdavDomainProgress(t: (key: MessageKey, vars?: Record<string, s
 export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: { showDoneButton?: boolean; initialTab?: ConfigTabKey }) {
     const { message } = App.useApp();
     const { t } = useI18n();
-    const [activeTab, setActiveTab] = useState<ConfigTabKey>(HIDDEN_CONFIG_TABS.includes(initialTab) ? "user" : initialTab);
+    const sessionUser = useUserStore((state) => state.user);
+    const isAdmin = isAdminUser(sessionUser?.username);
+    const [activeTab, setActiveTab] = useState<ConfigTabKey>(() => (isConfigTabVisible(initialTab, isAdmin) ? initialTab : "user"));
     const [testingWebdav, setTestingWebdav] = useState(false);
     const [syncingWebdav, setSyncingWebdav] = useState(false);
     const [webdavSyncStatus, setWebdavSyncStatus] = useState("");
@@ -90,7 +104,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const shouldPromptContinue = useConfigStore((state) => state.shouldPromptContinue);
     const setConfigDialogOpen = useConfigStore((state) => state.setConfigDialogOpen);
     const clearPromptContinue = useConfigStore((state) => state.clearPromptContinue);
-    const sessionUser = useUserStore((state) => state.user);
     const setUser = useUserStore((state) => state.setUser);
     const logout = useUserStore((state) => state.logout);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
@@ -108,9 +121,13 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const disconnectAgent = useAgentStore((state) => state.disconnectAgent);
     const webdavReady = Boolean(webdav.url.trim());
     useEffect(() => {
-        // 渠道 / 提示词来源 / 对象存储 Tab 已隐藏，旧入口回退到账户
-        setActiveTab(HIDDEN_CONFIG_TABS.includes(initialTab) ? "user" : initialTab);
-    }, [initialTab]);
+        // 隐藏 Tab / 非 admin 的管理 Tab，旧入口回退到账户
+        setActiveTab(isConfigTabVisible(initialTab, isAdmin) ? initialTab : "user");
+    }, [initialTab, isAdmin]);
+
+    useEffect(() => {
+        if (!isConfigTabVisible(activeTab, isAdmin)) setActiveTab("user");
+    }, [activeTab, isAdmin]);
 
     const finishConfig = () => {
         const ready = config.channels.some((channel) => channel.baseUrl.trim() && channel.apiKey.trim() && channel.models.length);
@@ -257,14 +274,9 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
         // 仅切到账户 Tab 时拉取/填充；刷新按钮可 force 重新请求
         // eslint-disable-next-line react-hooks/exhaustive-deps -- 刻意不跟 channels / sessionUser 联动，避免重复 /self
     }, [activeTab]);
-    return (
-        <>
-            <Tabs
-                activeKey={activeTab}
-                onChange={(key) => setActiveTab(key as ConfigTabKey)}
-                items={[
+    const tabItems = [
                     {
-                        key: "user",
+                        key: "user" as const,
                         label: t("config.tab.user"),
                         children: (
                             <Form layout="vertical" requiredMark={false}>
@@ -490,8 +502,11 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                             </Form>
                         ),
                     },
-                ]}
-            />
+    ].filter((item): boolean => isConfigTabVisible(item.key as ConfigTabKey, isAdmin));
+
+    return (
+        <>
+            <Tabs activeKey={activeTab} onChange={(key) => setActiveTab(key as ConfigTabKey)} items={tabItems} />
             {showDoneButton ? (
                 <div className="mt-4 flex justify-end">
                     <Button type="primary" onClick={finishConfig}>

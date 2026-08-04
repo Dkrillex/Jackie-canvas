@@ -63,6 +63,7 @@ type AgentChatEvent = { threadId?: string; sourceClientId?: string; message?: Ag
 export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { embedded?: boolean; headless?: boolean; autoConnect?: boolean }) {
     const theme = canvasThemes[useThemeStore((state) => state.theme)];
     const user = useUserStore((state) => state.user);
+    const isAdmin = (user?.username || "").trim().toLowerCase() === "admin";
     const { t } = useI18n();
     const { message, modal } = App.useApp();
     const [searchParams] = useSearchParams();
@@ -731,17 +732,23 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         if (item) addMessage(item);
     };
 
+    useEffect(() => {
+        if (!isAdmin && activeTab === "log") setAgentState({ activeTab: "chat" });
+    }, [activeTab, isAdmin, setAgentState]);
+
+    const panelTabs = [
+        { value: "setup" as const, label: t("agent.tab.setup"), icon: <PlugZap className="size-3.5" /> },
+        { value: "chat" as const, label: t("agent.tab.chat"), icon: <MessageSquare className="size-3.5" /> },
+        { value: "history" as const, label: t("agent.tab.history"), icon: <History className="size-3.5" />, count: threads.length },
+        ...(isAdmin ? [{ value: "log" as const, label: t("agent.tab.log"), icon: <Terminal className="size-3.5" />, count: eventLogs.length }] : []),
+    ];
+
     const content = (
         <>
             <AgentPanelTabs
                 value={activeTab}
                 theme={theme}
-                items={[
-                    { value: "setup", label: t("agent.tab.setup"), icon: <PlugZap className="size-3.5" /> },
-                    { value: "chat", label: t("agent.tab.chat"), icon: <MessageSquare className="size-3.5" /> },
-                    { value: "history", label: t("agent.tab.history"), icon: <History className="size-3.5" />, count: threads.length },
-                    { value: "log", label: t("agent.tab.log"), icon: <Terminal className="size-3.5" />, count: eventLogs.length },
-                ]}
+                items={panelTabs}
                 onChange={(activeTab) => {
                     setAgentState({ activeTab });
                     if (activeTab === "history") void loadThreads();

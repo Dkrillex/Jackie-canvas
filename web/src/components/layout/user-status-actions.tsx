@@ -20,6 +20,7 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
     const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
     const user = useUserStore((state) => state.user);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
+    const isAdmin = (user?.username || "").trim().toLowerCase() === "admin";
     const canvasTheme = canvasThemes[theme];
     const naturalIconClass = "inline-flex size-7 shrink-0 items-center justify-center text-stone-600 transition hover:text-stone-950 dark:text-stone-300 dark:hover:text-white [&_svg]:size-4";
     const iconStyle: CSSProperties | undefined = variant === "canvas" ? { color: canvasTheme.node.text } : undefined;
@@ -41,7 +42,7 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
                     <Puzzle className="size-4" />
                 </button>
             ) : null}
-            {showConfig && user ? (
+            {showConfig && isAdmin ? (
                 <button type="button" className={naturalIconClass} style={iconStyle} onClick={() => openConfigDialog(false)} aria-label={t("action.config")} title={t("action.config")}>
                     <Settings2 className="size-4" />
                 </button>

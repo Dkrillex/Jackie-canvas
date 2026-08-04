@@ -1,6 +1,7 @@
 import localforage from "localforage";
 
 import { useLocaleStore } from "@/stores/use-locale-store";
+import { runEnglishPromptSource } from "./prompt-source-english";
 import { runPromptSource, type RawPrompt } from "./prompt-source-runtime";
 import { usePromptSourceStore } from "@/stores/use-prompt-source-store";
 import { usePromptStore, type PersonalPrompt } from "@/stores/use-prompt-store";
@@ -14,7 +15,7 @@ export type Prompt = RawPrompt & {
 
 /** Stable filter sentinel; render with `t("common.all")` in UI. */
 export const ALL_PROMPTS_OPTION = "all";
-export const PERSONAL_PROMPTS_CATEGORY = "我的提示词";
+export const PERSONAL_PROMPTS_CATEGORY = "My prompts";
 
 export type PromptListResponse = {
     items: Prompt[];
@@ -57,7 +58,8 @@ function enabledSources() {
 }
 
 function cacheKey(sourceId: string) {
-    return `prompt-source:${sourceId}`;
+    /** Bump prefix so Tennda English fetches are not served from old Chinese registry cache. */
+    return `prompt-source-en:${sourceId}`;
 }
 
 function sourceSignature(source: PromptSource) {
@@ -93,10 +95,20 @@ async function readSourceCache(sourceId: string) {
     return promptCacheStore.getItem<SourceCache>(cacheKey(sourceId));
 }
 
+async function loadSourceItems(source: PromptSource): Promise<RawPrompt[]> {
+    // Built-ins always use English fetchers; never fall back to Chinese registry JSON.
+    if (source.builtIn) {
+        const english = await runEnglishPromptSource(source);
+        if (english) return english;
+        throw new Error(`English prompt source unavailable: ${source.name}`);
+    }
+    return runPromptSource(source);
+}
+
 async function refreshSourceRecord(source: PromptSource): Promise<PromptSourceRefreshResult> {
     const previous = await readSourceCache(source.id);
     try {
-        const items = withSourceMeta(source, await runPromptSource(source));
+        const items = withSourceMeta(source, await loadSourceItems(source));
         const lastSuccessAt = new Date().toISOString();
         const cache: SourceCache = { sourceId: source.id, items, count: items.length, fetchedAt: Date.now(), lastSuccessAt, lastError: "", signature: sourceSignature(source) };
         await promptCacheStore.setItem(cacheKey(source.id), cache);
@@ -156,8 +168,10 @@ export async function fetchPrompts({ keyword = "", tag = [], category = ALL_PROM
     const normalizedKeyword = keyword.trim().toLowerCase();
     const normalizedPage = Math.max(1, page);
     const normalizedPageSize = Math.max(1, Math.min(100, pageSize));
-    const withoutTagFilter = filterPrompts(items, { keyword: normalizedKeyword, category, tags: [] });
-    const filtered = filterPrompts(items, { keyword: normalizedKeyword, category, tags: tag });
+    // Keep personal prompts when a library category is selected (select dialog needs both).
+    const retainPersonal = includePersonal && isActiveOption(category);
+    const withoutTagFilter = filterPrompts(items, { keyword: normalizedKeyword, category, tags: [], retainPersonal });
+    const filtered = filterPrompts(items, { keyword: normalizedKeyword, category, tags: tag, retainPersonal });
     const categories = enabledSources().map((source) => source.name);
     if (includePersonal && usePromptStore.getState().prompts.length) categories.unshift(PERSONAL_PROMPTS_CATEGORY);
 
@@ -219,9 +233,11 @@ function summarizeRefresh(results: PromptSourceRefreshResult[]): PromptSourceRef
     };
 }
 
-function filterPrompts(items: Prompt[], options: { keyword: string; category: string; tags: string[] }) {
+function filterPrompts(items: Prompt[], options: { keyword: string; category: string; tags: string[]; retainPersonal?: boolean }) {
     return items.filter((item) => {
-        if (isActiveOption(options.category) && item.category !== options.category) return false;
+        if (isActiveOption(options.category) && item.category !== options.category) {
+            if (!(options.retainPersonal && item.sourceId === "personal")) return false;
+        }
         if (options.tags.length && !options.tags.some((tag) => item.tags.includes(tag))) return false;
         if (!options.keyword) return true;
         return [item.title, item.prompt, item.description, item.category, ...item.tags].join(" ").toLowerCase().includes(options.keyword);

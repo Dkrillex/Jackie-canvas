@@ -11,11 +11,14 @@ import { cn } from "@/lib/utils";
 import { useAssetStore } from "@/stores/use-asset-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { usePromptStore, type PersonalPrompt, type PersonalPromptInput } from "@/stores/use-prompt-store";
+import { PUBLIC_PROMPT_CATEGORY } from "@/services/api/prompt-source-presets";
+import { useUserStore } from "@/stores/use-user-store";
 import { ALL_PROMPTS_OPTION, personalPromptToPrompt, type Prompt } from "@/services/api/prompts";
 
 export default function PromptsPage() {
     const { message } = App.useApp();
     const { t } = useI18n();
+    const isAdmin = (useUserStore((state) => state.user)?.username || "").trim().toLowerCase() === "admin";
     const [activeTab, setActiveTab] = useState("library");
     const [titleKeyword, setTitleKeyword] = useState("");
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -29,7 +32,9 @@ export default function PromptsPage() {
     const updatePrompt = usePromptStore((state) => state.updatePrompt);
     const removePrompt = usePromptStore((state) => state.removePrompt);
     const copyText = useCopyText();
-    const { query, items: promptItems, tags: promptTags, categories: promptCategoryOptions, total: totalPrompts } = usePromptList({ keyword: titleKeyword, tags: selectedTags, category: selectedCategory, enabled: activeTab === "library" });
+    const filterTags = isAdmin ? selectedTags : [];
+    const filterCategory = isAdmin ? selectedCategory : PUBLIC_PROMPT_CATEGORY;
+    const { query, items: promptItems, tags: promptTags, categories: promptCategoryOptions, total: totalPrompts } = usePromptList({ keyword: titleKeyword, tags: filterTags, category: filterCategory, enabled: activeTab === "library" });
     const filteredPersonalPrompts = useMemo(() => {
         const keyword = titleKeyword.trim().toLowerCase();
         if (!keyword) return personalPrompts;
@@ -52,7 +57,7 @@ export default function PromptsPage() {
 
     const saveToMyPrompts = (item: Prompt) => {
         addPrompt(toPersonalInput(item));
-        message.success("已保存到我的提示词");
+        message.success(t("prompts.savedToMine"));
     };
 
     const openNewPrompt = () => {
@@ -68,7 +73,7 @@ export default function PromptsPage() {
     const savePersonalPrompt = (input: PersonalPromptInput) => {
         if (editingPrompt) updatePrompt(editingPrompt.id, input);
         else addPrompt(input);
-        message.success(editingPrompt ? "提示词已更新" : "提示词已添加");
+        message.success(editingPrompt ? t("prompts.personalUpdated") : t("prompts.personalAdded"));
     };
 
     const handleListScroll = (event: UIEvent<HTMLDivElement>) => {
@@ -87,19 +92,27 @@ export default function PromptsPage() {
                     <div className="flex flex-wrap items-end justify-between gap-4">
                         <div>
                             <h1 className="text-3xl font-semibold text-stone-950 dark:text-stone-100">{t("page.promptsTitle")}</h1>
-                            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">当前共 {visibleCount} 条提示词</p>
+                            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{t("prompts.count", { n: visibleCount })}</p>
                         </div>
                         {activeTab === "personal" ? (
                             <Button type="primary" icon={<Plus className="size-4" />} onClick={openNewPrompt}>
-                                新增提示词
+                                {t("prompts.new")}
                             </Button>
                         ) : null}
                     </div>
-                    <Tabs className="mt-5" activeKey={activeTab} onChange={setActiveTab} items={[{ key: "library", label: "提示词库" }, { key: "personal", label: `我的提示词 (${personalPrompts.length})` }]} />
+                    <Tabs
+                        className="mt-5"
+                        activeKey={activeTab}
+                        onChange={setActiveTab}
+                        items={[
+                            { key: "library", label: t("prompts.library") },
+                            { key: "personal", label: `${t("prompts.personal")} (${personalPrompts.length})` },
+                        ]}
+                    />
                     <div className="mx-auto mt-2 w-full max-w-2xl">
                         <Input size="large" prefix={<Search className="size-4 text-stone-400" />} value={titleKeyword} placeholder={t("prompts.searchPh")} onChange={(event) => setTitleKeyword(event.target.value)} />
                     </div>
-                    {activeTab === "library" ? (
+                    {activeTab === "library" && isAdmin ? (
                         <div className="mx-auto mt-6 grid max-w-6xl gap-3 text-left">
                             <PromptFilter label={t("prompts.category")} options={promptCategoryOptions} selected={selectedCategory} onChange={setSelectedCategory} allLabel={t("common.all")} />
                             <div className="grid gap-2 sm:grid-cols-[56px_minmax(0,1fr)] sm:items-start">
@@ -107,7 +120,11 @@ export default function PromptsPage() {
                                 <div className="flex flex-wrap gap-2">
                                     {promptTags.map((tag) => {
                                         const active = tag === ALL_PROMPTS_OPTION ? selectedTags.length === 0 : selectedTags.includes(tag);
-                                        return <Tag.CheckableTag key={tag} checked={active} className={cn("prompt-filter-tag", active && "is-active")} onChange={() => toggleTag(tag)}>{tag === ALL_PROMPTS_OPTION ? t("common.all") : tag}</Tag.CheckableTag>;
+                                        return (
+                                            <Tag.CheckableTag key={tag} checked={active} className={cn("prompt-filter-tag", active && "is-active")} onChange={() => toggleTag(tag)}>
+                                                {tag === ALL_PROMPTS_OPTION ? t("common.all") : tag}
+                                            </Tag.CheckableTag>
+                                        );
                                     })}
                                 </div>
                             </div>
@@ -115,9 +132,28 @@ export default function PromptsPage() {
                     ) : null}
                 </div>
 
-                {activeTab === "library" && query.isLoading ? <div className="flex h-60 items-center justify-center"><Spin /></div> : null}
+                {activeTab === "library" && query.isLoading ? (
+                    <div className="flex h-60 items-center justify-center">
+                        <Spin />
+                    </div>
+                ) : null}
                 {activeTab === "library" && !query.isLoading ? (
-                    <PromptGrid items={promptItems} onOpen={setSelectedPrompt} renderActions={(item) => <><Button size="small" icon={<BookmarkPlus className="size-3.5" />} onClick={() => saveToMyPrompts(item)}>保存</Button><Tooltip title={t("prompts.addAsset")}><Button type="text" size="small" icon={<FolderPlus className="size-3.5" />} onClick={() => savePromptAsset(item)} /></Tooltip></>} onCopy={(item) => copyText(item.prompt, t("prompts.copied"))} emptyText={t("prompts.empty")} />
+                    <PromptGrid
+                        items={promptItems}
+                        onOpen={setSelectedPrompt}
+                        renderActions={(item) => (
+                            <>
+                                <Button size="small" icon={<BookmarkPlus className="size-3.5" />} onClick={() => saveToMyPrompts(item)}>
+                                    {t("prompts.save")}
+                                </Button>
+                                <Tooltip title={t("prompts.addAsset")}>
+                                    <Button type="text" size="small" icon={<FolderPlus className="size-3.5" />} onClick={() => savePromptAsset(item)} />
+                                </Tooltip>
+                            </>
+                        )}
+                        onCopy={(item) => copyText(item.prompt, t("prompts.copied"))}
+                        emptyText={t("prompts.empty")}
+                    />
                 ) : null}
                 {activeTab === "personal" ? (
                     <PromptGrid
@@ -126,12 +162,27 @@ export default function PromptsPage() {
                         onCopy={(item) => copyText(item.prompt, t("prompts.copied"))}
                         renderActions={(item) => {
                             const personal = personalPrompts.find((prompt) => prompt.id === item.id)!;
-                            return <Space size={0}><Tooltip title="编辑"><Button type="text" size="small" icon={<Pencil className="size-3.5" />} onClick={() => openEditPrompt(personal)} /></Tooltip><Popconfirm title="删除这条提示词？" okText="删除" cancelText="取消" onConfirm={() => removePrompt(item.id)}><Tooltip title="删除"><Button type="text" danger size="small" icon={<Trash2 className="size-3.5" />} /></Tooltip></Popconfirm></Space>;
+                            return (
+                                <Space size={0}>
+                                    <Tooltip title={t("action.edit")}>
+                                        <Button type="text" size="small" icon={<Pencil className="size-3.5" />} onClick={() => openEditPrompt(personal)} />
+                                    </Tooltip>
+                                    <Popconfirm title={t("prompts.deleteConfirm")} okText={t("action.delete")} cancelText={t("action.cancel")} onConfirm={() => removePrompt(item.id)}>
+                                        <Tooltip title={t("action.delete")}>
+                                            <Button type="text" danger size="small" icon={<Trash2 className="size-3.5" />} />
+                                        </Tooltip>
+                                    </Popconfirm>
+                                </Space>
+                            );
                         }}
-                        emptyText="还没有保存提示词"
+                        emptyText={t("prompts.emptyPersonal")}
                     />
                 ) : null}
-                {activeTab === "library" ? <div className="mx-auto mt-6 max-w-7xl text-center text-xs text-stone-500 dark:text-stone-400">{query.isFetchingNextPage ? t("common.loading") : query.hasNextPage ? t("prompts.loadMore") : promptItems.length > 0 ? t("prompts.end") : null}</div> : null}
+                {activeTab === "library" ? (
+                    <div className="mx-auto mt-6 max-w-7xl text-center text-xs text-stone-500 dark:text-stone-400">
+                        {query.isFetchingNextPage ? t("common.loading") : query.hasNextPage ? t("prompts.loadMore") : promptItems.length > 0 ? t("prompts.end") : null}
+                    </div>
+                ) : null}
             </main>
 
             <PromptDetailDialog prompt={selectedPrompt} onClose={() => setSelectedPrompt(null)} onCopy={(prompt) => copyText(prompt, t("prompts.copied"))} onSaveAsset={selectedPrompt?.sourceId === "personal" ? undefined : savePromptAsset} onSavePrompt={selectedPrompt?.sourceId === "personal" ? undefined : saveToMyPrompts} />
@@ -141,11 +192,31 @@ export default function PromptsPage() {
 }
 
 function PromptFilter({ label, options, selected, onChange, allLabel }: { label: string; options: string[]; selected: string; onChange: (value: string) => void; allLabel: string }) {
-    return <div className="grid gap-2 sm:grid-cols-[56px_minmax(0,1fr)] sm:items-start"><div className="pt-2 text-xs font-medium text-stone-500 dark:text-stone-400">{label}</div><div className="flex flex-wrap gap-2">{options.map((option) => <Tag.CheckableTag key={option} checked={selected === option} className={cn("prompt-filter-tag", selected === option && "is-active")} onChange={() => onChange(option)}>{option === ALL_PROMPTS_OPTION ? allLabel : option}</Tag.CheckableTag>)}</div></div>;
+    return (
+        <div className="grid gap-2 sm:grid-cols-[56px_minmax(0,1fr)] sm:items-start">
+            <div className="pt-2 text-xs font-medium text-stone-500 dark:text-stone-400">{label}</div>
+            <div className="flex flex-wrap gap-2">
+                {options.map((option) => (
+                    <Tag.CheckableTag key={option} checked={selected === option} className={cn("prompt-filter-tag", selected === option && "is-active")} onChange={() => onChange(option)}>
+                        {option === ALL_PROMPTS_OPTION ? allLabel : option}
+                    </Tag.CheckableTag>
+                ))}
+            </div>
+        </div>
+    );
 }
 
 function PromptGrid({ items, onOpen, onCopy, renderActions, emptyText }: { items: Prompt[]; onOpen: (item: Prompt) => void; onCopy: (item: Prompt) => void; renderActions: (item: Prompt) => ReactNode; emptyText: string }) {
-    return <div><div className="mx-auto grid max-w-7xl gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{items.map((item) => <PromptCard key={`${item.sourceId}:${item.id}`} item={item} onOpen={() => onOpen(item)} onCopy={() => onCopy(item)} extraAction={renderActions(item)} />)}</div>{items.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={emptyText} className="py-16" /> : null}</div>;
+    return (
+        <div>
+            <div className="mx-auto grid max-w-7xl gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {items.map((item) => (
+                    <PromptCard key={`${item.sourceId}:${item.id}`} item={item} onOpen={() => onOpen(item)} onCopy={() => onCopy(item)} extraAction={renderActions(item)} />
+                ))}
+            </div>
+            {items.length === 0 ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={emptyText} className="py-16" /> : null}
+        </div>
+    );
 }
 
 function toPersonalInput(item: Prompt): PersonalPromptInput {

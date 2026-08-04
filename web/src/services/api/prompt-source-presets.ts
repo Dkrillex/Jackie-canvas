@@ -23,9 +23,14 @@ export function createPromptSource(source?: Partial<PromptSource>): PromptSource
     };
 }
 
+/** Public library source for non-admin users (name used as `category` filter). */
+export const PUBLIC_PROMPT_SOURCE_ID = "davidwu-gpt-image2-prompts";
+export const PUBLIC_PROMPT_CATEGORY = "DavidWu GPT Image 2";
+
 export const DEFAULT_PROMPT_SOURCES: PromptSource[] = [
-    registrySource("banana-prompt-quicker", "Banana Prompt Quicker", "https://glidea.github.io/banana-prompt-quicker/"),
-    registrySource("davidwu-gpt-image2-prompts", "DavidWu GPT Image 2", "https://github.com/davidwuw0811-boop/awesome-gpt-image2-prompts"),
+    // Banana Quicker registry is Chinese-only; keep disabled for Tennda English demo.
+    { ...registrySource("banana-prompt-quicker", "Banana Prompt Quicker", "https://glidea.github.io/banana-prompt-quicker/"), enabled: false },
+    registrySource(PUBLIC_PROMPT_SOURCE_ID, PUBLIC_PROMPT_CATEGORY, "https://github.com/davidwuw0811-boop/awesome-gpt-image2-prompts"),
     registrySource("awesome-gpt-image", "Awesome GPT Image", "https://github.com/ZeroLu/awesome-gpt-image"),
     registrySource("awesome-gpt4o-image-prompts", "Awesome GPT-4o", "https://github.com/ImgEdify/Awesome-GPT4o-Image-Prompts"),
     registrySource("youmind-gpt-image-2", "YouMind GPT Image 2", "https://github.com/YouMind-OpenLab/awesome-gpt-image-2"),

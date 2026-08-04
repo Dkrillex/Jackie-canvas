@@ -4,6 +4,22 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] 提示词选择弹窗与公开库门控对齐；内置来源不再回退中文 registry；非 admin 点 Codex 状态打开 Agent 面板而非 Account。
++ [调整][Jackie] 首页模型 lineup 文案去掉 canvas；卡片网格与 `TENNDA_MODEL_CATALOG` 保持一致（无 Canvas/Pixel/Chat/Wan）。
++ [调整][Jackie] 默认对话模型移除 Tennda Chat（`gpt-5.5`），仅保留 Nano / Reason；默认文本模型改为 Reason。
++ [调整][Jackie] 默认生图模型移除 Tennda Canvas / Pixel（`gemini-3.1-flash-image` / `gemini-2.5-flash-image`），仅保留 Vision / Flash / Dream。
++ [调整][Jackie] 默认视频模型移除 Wan2.7 系列，仅保留 Veo 3.1 Lite/Fast 与 Seedance NSFW。
++ [修复][Jackie] 首页提示词示例与公开提示词库对齐为同一套 DavidWu GPT Image 2 数据。
++ [调整][Jackie] 提示词库 Category/Tags 筛选仅 `admin` 可见；普通用户仅展示 DavidWu GPT Image 2。
++ [调整][Jackie] 提示词库全英：UI 文案英文化；内置来源改拉英文 README / `title_en`；停用中文-only Banana Quicker。
++ [调整][Jackie] 画布功能仅 `admin` 可见：导航显示「My canvases」，可访问 `/canvas`；普通用户仍隐藏并跳转生图。
++ [调整][Jackie] `admin` 在模型选择器中显示「展示名: 实际上游模型名」；普通用户仅见 Tennda 展示名。
++ [调整][Jackie] 模型选择器厂商图标仅 `admin` 可见，普通用户统一显示默认图标，避免从图标推断上游模型。
++ [调整][Jackie] 顶栏齿轮 Settings 按钮仅 `admin` 可见；普通用户用账户入口打开 Account。
++ [新增][Jackie] 顶栏 Settings 旁增加 Hugging Face 入口，跳转模型页（`TENNDA_HUGGINGFACE_URL`）。
++ [调整][Jackie] Agent 面板 Log Tab 仅 `admin` 可见。
++ [调整][Jackie] 配置弹窗仅 `admin` 可见 Generation preferences / WebDAV / Agent，普通用户只保留 Account。
++ [调整][Jackie] 首页底部展示全英文提示词库示例（可跳转 Prompts）。
 + [调整][Jackie] 云端 Agent 对话注入 Tennda 自研文本模型 system 提示词。
 + [新增][Jackie] Agent 面板未连接本地 Agent 时可直接与 Tennda Nano（`gpt-5.4-nano`）对话；连上本地 Agent 后仍走 Codex。
 + [调整][Jackie] 隐藏画布入口：导航/首页不再展示画布，直接访问 `/canvas` 重定向到生图；登录默认进入生图。

@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 
 import { navigationTools, type NavigationToolSlug } from "@/constant/navigation-tools";
+import { TENNDA_HUGGINGFACE_URL } from "@/constant/tennda-models";
 import { AppConfigModal } from "@/components/layout/app-config-modal";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { UserStatusActions } from "@/components/layout/user-status-actions";
@@ -12,6 +13,12 @@ import { useAgentStore } from "@/stores/use-agent-store";
 import { useConfigStore } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
+
+const huggingfaceIconStyle = {
+    background: "currentColor",
+    WebkitMask: "url(/icons/huggingface.svg) center / contain no-repeat",
+    mask: "url(/icons/huggingface.svg) center / contain no-repeat",
+} as const;
 
 export function AppTopNav() {
     const { pathname } = useLocation();
@@ -27,7 +34,8 @@ export function AppTopNav() {
     const panelOpen = useAgentStore((state) => state.panelOpen);
     const hideHeader = /^\/canvas\/[^/]+/.test(pathname);
     const slug = pathname.split("/").filter(Boolean)[0];
-    const visibleTools = navigationTools.filter((tool) => tool.slug !== "canvas" && (tool.slug !== "config" || user));
+    const isAdmin = (user?.username || "").trim().toLowerCase() === "admin";
+    const visibleTools = navigationTools.filter((tool) => (tool.slug !== "canvas" || isAdmin) && (tool.slug !== "config" || user));
     const activeToolSlug = visibleTools.some((tool) => tool.slug === slug) ? (slug as NavigationToolSlug) : undefined;
 
     useEffect(() => {
@@ -76,6 +84,15 @@ export function AppTopNav() {
                                         </Link>
                                     );
                                 })}
+                                <a
+                                    href={TENNDA_HUGGINGFACE_URL}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="relative flex h-14 shrink-0 items-center gap-2 text-sm leading-6 text-stone-500 transition after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-transparent hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100"
+                                >
+                                    <span className="size-4 shrink-0" style={huggingfaceIconStyle} aria-hidden />
+                                    <span className="truncate">{t("nav.huggingface")}</span>
+                                </a>
                             </nav>
                         </div>
 
@@ -97,16 +114,24 @@ export function AppTopNav() {
 }
 function CodexStatusButton() {
     const { t } = useI18n();
+    const isAdmin = (useUserStore((state) => state.user)?.username || "").trim().toLowerCase() === "admin";
     const connected = useAgentStore((state) => state.connected);
     const enabled = useAgentStore((state) => state.enabled);
     const activity = useAgentStore((state) => state.activity);
     const connectError = useAgentStore((state) => state.connectError);
+    const openPanel = useAgentStore((state) => state.openPanel);
     const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
     const color = connectError ? "#dc2626" : connected ? "#16a34a" : enabled ? "#d97706" : "currentColor";
     const title = connectError || (connected ? activity || t("config.codexConnected") : enabled ? t("config.codexConnecting") : t("config.codexDisconnected"));
     return (
         <Tooltip title={title}>
-            <Button type="text" shape="circle" className="relative !h-8 !w-8 !min-w-8" onClick={() => openConfigDialog(false, "codex")} aria-label={t("config.codex")}>
+            <Button
+                type="text"
+                shape="circle"
+                className="relative !h-8 !w-8 !min-w-8"
+                onClick={() => (isAdmin ? openConfigDialog(false, "codex") : openPanel())}
+                aria-label={isAdmin ? t("config.codex") : t("agent.openPanel")}
+            >
                 <span className="mx-auto block size-4" style={{ background: color, WebkitMask: "url(/icons/openai.svg) center / contain no-repeat", mask: "url(/icons/openai.svg) center / contain no-repeat" }} />
                 <span className="absolute right-1 top-1 size-2 rounded-full border border-background" style={{ background: color }} />
             </Button>
