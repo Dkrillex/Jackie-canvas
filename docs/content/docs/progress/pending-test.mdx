@@ -5,6 +5,8 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- Agent 云端回退对话：未连接本地 Agent 时，右侧面板 Chat 可发消息；应走 `/gw` 的 `gpt-5.4-nano` 流式回复（UI 显示 Tennda Nano）；未登录应先弹登录；点停止应中断；连上本地 Agent 后仍走 Codex。
+- 隐藏画布：顶栏/移动端无「My canvases」；首页无「打开画布」；访问 `/canvas` 或 `/canvas/:id` 应跳到 `/image`；登录后默认进入生图。
 - Tennda LLM 故事版：品牌显示为 Tennda LLM；模型下拉仅见 Tennda 显示名，Network 请求 body 仍为真实上游模型 id（如 `gpt-image-2`）；首页为英文自研模型介绍网格；无语言切换按钮且刷新后仍为英文。
 - 账户余额：用户中心「剩余金额」应与平台 `/api/users/{id}` 的 `quotaDollar`（或 `quota`）一致，不应再因减去 `usedQuota` 显示成 $0.00。
 - 会话 auto 密钥：登录或刷新后应请求 `/prod-api/llm/tokens/list`（不传 userId，仅 JWT），把第一把启用且 `group/userGroup=auto` 的 Key（`sk-` 前缀）写入默认渠道；用户中心可脱敏查看/复制；退出后默认渠道 Key 清空；用该 Key 走 `/gw` 可正常生成。
@@ -25,7 +27,6 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 登录后配置入口：未登录时顶栏齿轮与导航「配置」不显示；登录后显示；直接访问 `/config` 未登录时提示登录。
 - 系统渠道地址：渠道 Base URL / API Key 仅登录账号为 `admin` 时渲染；普通用户渠道页不显示这两项，默认仍走同源 `/gw` 与内置密钥。
 - Vercel `/gw` 与 `/prod-api` 代理：部署后 AI 走 `/gw`、登录走 `/prod-api`，均应 rewrite/Middleware 转发到上游，不再出现 `405 Method Not Allowed`。
-- 画布入口：导航显示「我的画布」、首页有「打开画布」；「开始使用」与登录默认进入画布。
 - 多语言：默认英文；顶栏语言按钮可切换中/英；验证导航、首页、登录、配置、生图/视频工作台、提示词库、素材库、画布列表/工具栏/节点工具与常用对话框文案切换正确。
 - 提示词库语言：英文界面下首页示例与提示词库标题应为英文（如 “Celebrity in real life”）；切到中文后重新加载为中文标题；分类/标签里的「全部 / All」随语言显示。
 - 本地 Agent 连接说明：新增提醒说明只有安装 Codex 插件或手动添加 MCP 后才会增加 Codex token 消耗，直接运行 `npx -y @jackie-canvas/canvas-agent` 不会安装 MCP；需验证文案位置清晰。

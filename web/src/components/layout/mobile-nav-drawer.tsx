@@ -15,7 +15,7 @@ type MobileNavDrawerProps = {
 export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDrawerProps) {
     const { t } = useI18n();
     const user = useUserStore((state) => state.user);
-    const visibleTools = navigationTools.filter((tool) => tool.slug !== "config" || user);
+    const visibleTools = navigationTools.filter((tool) => tool.slug !== "canvas" && (tool.slug !== "config" || user));
 
     return (
         <Drawer title={t("nav.drawer")} placement="left" size={280} open={open} onClose={onClose} className="md:hidden">

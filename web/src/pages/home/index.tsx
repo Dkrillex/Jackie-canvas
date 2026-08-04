@@ -41,7 +41,7 @@ const capabilityLabelKey: Record<TenndaModelCapability, MessageKey> = {
 export default function IndexPage() {
     const { t } = useI18n();
     const navigate = useNavigate();
-    const [primaryTool] = navigationTools;
+    const primaryTool = navigationTools.find((tool) => tool.slug === "image") ?? navigationTools[0];
     const user = useUserStore((state) => state.user);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
 
@@ -83,9 +83,6 @@ export default function IndexPage() {
                         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
                             <Button type="primary" size="large" onClick={startUsing} icon={<ArrowRight className="size-4" />} iconPlacement="end">
                                 {t("home.cta")}
-                            </Button>
-                            <Button size="large" onClick={() => navigate("/canvas")}>
-                                {t("home.openCanvas")}
                             </Button>
                         </div>
                     </div>

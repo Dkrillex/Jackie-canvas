@@ -17,7 +17,7 @@ export function useRequireLogin() {
         (redirectPath?: string) => {
             if (user) return true;
             message.warning(t("login.actionRequired"));
-            openLoginModal(redirectPath || pathname || "/canvas");
+            openLoginModal(redirectPath || pathname || "/image");
             return false;
         },
         [message, openLoginModal, pathname, t, user],

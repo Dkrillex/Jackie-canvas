@@ -77,7 +77,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     activeThreadId: "",
     workspacePath: "",
     loadingThreads: false,
-    activeTab: "setup",
+    activeTab: "chat",
     confirmTools: true,
     activity: useLocaleStore.getState().t("agent.ready"),
     connectError: "",

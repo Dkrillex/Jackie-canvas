@@ -23,9 +23,10 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     { name: "wan2.7-t2v", displayName: "Tennda Clip T2V", capability: "video", tagline: "Text-to-video storytelling for narrative sequences.", href: "/video" },
     { name: "wan2.7-i2v", displayName: "Tennda Clip I2V", capability: "video", tagline: "Image-to-video motion from a single keyframe.", href: "/video" },
     { name: "wan2.7-r2v", displayName: "Tennda Clip R2V", capability: "video", tagline: "Reference-guided video for consistent character looks.", href: "/video" },
-    { name: "gpt-5.5", displayName: "Tennda Chat", capability: "text", tagline: "General dialogue, rewriting, and creative co-pilot.", href: "/canvas" },
-    { name: "gpt-5.6-sol", displayName: "Tennda Reason", capability: "text", tagline: "Deeper reasoning for plans, briefs, and structured prompts.", href: "/canvas" },
-    { name: "gpt-4o-mini-tts", displayName: "Tennda Voice", capability: "audio", tagline: "Natural speech synthesis for narrations and demos.", href: "/canvas" },
+    { name: "gpt-5.4-nano", displayName: "Tennda Nano", capability: "text", tagline: "Fast lightweight chat for quick Q&A and drafting.", href: "/image" },
+    { name: "gpt-5.5", displayName: "Tennda Chat", capability: "text", tagline: "General dialogue, rewriting, and creative co-pilot.", href: "/image" },
+    { name: "gpt-5.6-sol", displayName: "Tennda Reason", capability: "text", tagline: "Deeper reasoning for plans, briefs, and structured prompts.", href: "/image" },
+    { name: "gpt-4o-mini-tts", displayName: "Tennda Voice", capability: "audio", tagline: "Natural speech synthesis for narrations and demos.", href: "/image" },
 ];
 
 export const TENNDA_DISPLAY_NAME_BY_MODEL = Object.fromEntries(TENNDA_MODEL_CATALOG.map((item) => [item.name, item.displayName])) as Record<string, string>;

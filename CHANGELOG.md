@@ -4,6 +4,9 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 云端 Agent 对话注入 Tennda 自研文本模型 system 提示词。
++ [新增][Jackie] Agent 面板未连接本地 Agent 时可直接与 Tennda Nano（`gpt-5.4-nano`）对话；连上本地 Agent 后仍走 Codex。
++ [调整][Jackie] 隐藏画布入口：导航/首页不再展示画布，直接访问 `/canvas` 重定向到生图；登录默认进入生图。
 + [调整][Jackie] Tennda LLM 故事版：品牌更名、自研模型展示名门面、首页模型介绍、强制英文并隐藏语言切换（`tennda-dev`）。
 + [修复][Jackie] 账户剩余金额按平台 `quotaDollar/quota` 直接展示，不再误减 `usedQuota` 导致显示 $0.00。
 + [调整][Jackie] 用户中心展示当前同步的 API Key（脱敏/显示/复制）；刷新时重新拉取 auto 密钥。

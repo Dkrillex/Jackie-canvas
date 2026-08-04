@@ -9,9 +9,13 @@ import { useI18n, useLocaleStore } from "@/stores/use-locale-store";
 import type { MessageKey } from "@/i18n";
 import { imageMetadata } from "@/lib/canvas/canvas-node-factory";
 import { fitNodeSize } from "@/lib/canvas/canvas-node-size";
+import { buildGenerationConfig } from "@/lib/canvas/canvas-generation-helpers";
 import { readImageMeta } from "@/lib/image-utils";
 import { randomId } from "@/lib/utils";
+import { useRequireLogin } from "@/hooks/use-require-login";
+import { requestImageQuestion, type AiTextMessage } from "@/services/api/image";
 import { uploadImage } from "@/services/image-storage";
+import { useConfigStore, useEffectiveConfig } from "@/stores/use-config-store";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { useUserStore } from "@/stores/use-user-store";
 import { useShallow } from "zustand/react/shallow";
@@ -24,6 +28,8 @@ const MAX_ATTACHMENTS = 6;
 const MAX_ATTACHMENT_PAYLOAD_BYTES = 28 * 1024 * 1024;
 const SCROLL_BOTTOM_THRESHOLD = 48;
 const DEFAULT_AGENT_URL = "http://127.0.0.1:17371";
+/** Cloud fallback when local Agent is offline — upstream id stays gpt-5.4-nano. */
+const CLOUD_CHAT_MODEL = "default::gpt-5.4-nano";
 const AGENT_CONNECT_STEPS: Array<{ titleKey: MessageKey; textKey: MessageKey; command?: string }> = [
     { titleKey: "agent.step1.title", textKey: "agent.step1.text" },
     { titleKey: "agent.step2.title", textKey: "agent.step2.text", command: "npx -y @jackie-canvas/canvas-agent" },
@@ -61,6 +67,10 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
     const { message, modal } = App.useApp();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const requireLogin = useRequireLogin();
+    const effectiveConfig = useEffectiveConfig();
+    const isAiConfigReady = useConfigStore((state) => state.isAiConfigReady);
+    const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
     // 逐字段 selector + useShallow：只有这些字段变化时才重渲染。
     // 注意：canvasContext 不在此订阅内 —— 它在拖拽/resize 时会被 project 每帧写入，
     // 但面板只在 ref 同步与防抖 postState 中用到它、渲染层从不读它。若把它放进订阅，
@@ -105,6 +115,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
     const attachmentUrlsRef = useRef(new Set<string>());
     const clientIdRef = useRef(randomId());
     const loadThreadsSequenceRef = useRef(0);
+    const cloudAbortRef = useRef<AbortController | null>(null);
     const endpoint = useMemo(() => url.trim().replace(/\/$/, ""), [url]);
     const urlAgentAutoConnect = searchParams.has("agentUrl") && searchParams.has("agentToken");
     const loadThreads = useCallback(async (skipHistory = false) => {
@@ -290,11 +301,17 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         const text = prompt.trim();
         const files = attachments;
         const requestPrompt = promptWithAttachments(text, files);
-        if (!connected || !requestPrompt || sending || waiting) return;
+        if (!requestPrompt || sending || waiting) return;
         if (attachmentPayloadBytes(files) > MAX_ATTACHMENT_PAYLOAD_BYTES) {
             addMessage({ role: "error", title: t("agent.imageTooLarge"), text: t("agent.imageTooLargeSend") });
             return;
         }
+
+        if (!connected) {
+            await sendCloudChat(text, files);
+            return;
+        }
+
         setAgentState({ activity: t("agent.sending"), sending: true, waiting: true });
         const messageId = createId();
         addMessage({ id: messageId, role: "user", text: text || t("agent.sentImage"), attachments: files });
@@ -320,18 +337,103 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
             });
             setAgentState({ prompt: "", attachments: [] });
         } catch (error) {
-            const text = error instanceof Error ? error.message : t("agent.sendFailed");
-            const busy = text.includes("Codex 正在运行");
+            const errText = error instanceof Error ? error.message : t("agent.sendFailed");
+            const busy = errText.includes("Codex 正在运行");
             setAgentState({ activity: busy ? "Codex 正在运行" : t("agent.sendFailed"), waiting: false });
-            addMessage({ role: "error", title: busy ? "任务仍在运行" : t("agent.sendFailed"), text });
+            addMessage({ role: "error", title: busy ? "任务仍在运行" : t("agent.sendFailed"), text: errText });
             addEventLog(t("agent.sendFailed"), error);
         } finally {
             setAgentState({ sending: false });
         }
     };
 
+    const sendCloudChat = async (text: string, files: AgentAttachment[]) => {
+        if (!requireLogin()) return;
+        const chatConfig = {
+            ...buildGenerationConfig(effectiveConfig, undefined, "text"),
+            model: CLOUD_CHAT_MODEL,
+            textModel: CLOUD_CHAT_MODEL,
+            // Identity is injected via messages; clear channel systemPrompt to avoid overriding Tennda persona.
+            systemPrompt: "",
+        };
+        if (!isAiConfigReady(chatConfig, chatConfig.model)) {
+            openConfigDialog(true);
+            return;
+        }
+
+        const messageId = createId();
+        const streamId = createId();
+        const title = t("agent.cloudChatTitle");
+        const history = toCloudChatMessages(useAgentStore.getState().messages);
+        const userContent = cloudUserContent(text || t("agent.sentImage"), files);
+        const aiMessages: AiTextMessage[] = [
+            { role: "system", content: t("agent.cloudChatSystem") },
+            ...history,
+            { role: "user", content: userContent },
+        ];
+
+        cloudAbortRef.current?.abort();
+        const abort = new AbortController();
+        cloudAbortRef.current = abort;
+
+        setAgentState({ activity: t("agent.sending"), sending: true, waiting: true });
+        addMessage({ id: messageId, role: "user", text: text || t("agent.sentImage"), attachments: files });
+        addEventLog(t("agent.userSent"), { mode: "cloud", model: CLOUD_CHAT_MODEL, text });
+        files.forEach((item) => {
+            URL.revokeObjectURL(item.url);
+            attachmentUrlsRef.current.delete(item.url);
+        });
+        setAgentState({ prompt: "", attachments: [] });
+
+        try {
+            let started = false;
+            const answer = await requestImageQuestion(
+                chatConfig,
+                aiMessages,
+                (delta) => {
+                    if (!started) {
+                        started = true;
+                        setAgentState({ waiting: false, activity: title });
+                    }
+                    addMessage({ role: "assistant", title, text: delta || "…", streamId });
+                },
+                { signal: abort.signal },
+            );
+            addMessage({ role: "assistant", title, text: answer.trim() || "…", streamId });
+            const current = useAgentStore.getState().messages;
+            setAgentState({
+                activity: t("agent.ready"),
+                messages: current.map((item) => (item.streamId === streamId ? { ...item, streamId: undefined } : item)),
+            });
+            addEventLog(t("agent.received"), { mode: "cloud", model: CLOUD_CHAT_MODEL });
+        } catch (error) {
+            const canceled = abort.signal.aborted || (error instanceof Error && (error.name === "AbortError" || error.message === "请求已取消"));
+            if (canceled) {
+                setAgentState({ activity: t("agent.cloudChatCanceled") });
+                addEventLog(t("agent.userStopped"), { mode: "cloud" });
+            } else {
+                const errText = error instanceof Error ? error.message : t("agent.cloudChatFailed");
+                setAgentState({ activity: t("agent.cloudChatFailed") });
+                addMessage({ role: "error", title: t("agent.cloudChatFailed"), text: errText });
+                addEventLog(t("agent.cloudChatFailed"), error);
+            }
+            const current = useAgentStore.getState().messages;
+            setAgentState({ messages: current.map((item) => (item.streamId === streamId ? { ...item, streamId: undefined } : item)) });
+        } finally {
+            if (cloudAbortRef.current === abort) cloudAbortRef.current = null;
+            setAgentState({ sending: false, waiting: false });
+        }
+    };
+
     const stopTurn = async () => {
-        if (!connected || (!sending && !waiting)) return;
+        if (!sending && !waiting) return;
+        if (!connected) {
+            cloudAbortRef.current?.abort();
+            cloudAbortRef.current = null;
+            setAgentState({ activity: t("agent.stopped"), sending: false, waiting: false });
+            addEventLog(t("agent.userStopped"), { mode: "cloud" });
+            return;
+        }
         setAgentState({ activity: t("agent.stopping") });
         try {
             await fetch(`${endpoint}/agent/codex/interrupt?token=${encodeURIComponent(token)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ threadId: useAgentStore.getState().activeThreadId || undefined }) });
@@ -724,9 +826,8 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                     <AgentChatComposer
                         prompt={prompt}
                         attachments={attachments.map(agentAttachmentToChatAttachment)}
-                        disabled={!connected}
                         sending={sending || waiting}
-                        placeholder={t("agent.chatPlaceholder")}
+                        placeholder={connected ? t("agent.chatPlaceholder") : t("agent.chatPlaceholderCloud")}
                         theme={theme}
                         onPromptChange={(prompt) => setAgentState({ prompt })}
                         onSubmit={sendPrompt}
@@ -1192,6 +1293,25 @@ function promptWithAttachments(text: string, attachments: AgentAttachment[]) {
     if (!attachments.length) return text;
     const names = attachments.map((item) => item.name).join("、");
     return [text, useLocaleStore.getState().t("agent.uploadedImages", { n: attachments.length, names })].filter(Boolean).join("\n\n");
+}
+
+function toCloudChatMessages(items: AgentChatItem[]): AiTextMessage[] {
+    return items
+        .filter((item) => item.role === "user" || item.role === "assistant")
+        .map((item): AiTextMessage | null => {
+            if (item.role === "user") return { role: "user", content: cloudUserContent(item.text, item.attachments || []) };
+            if (!item.text.trim()) return null;
+            return { role: "assistant", content: item.text };
+        })
+        .filter((item): item is AiTextMessage => Boolean(item));
+}
+
+function cloudUserContent(text: string, attachments: AgentAttachment[]): AiTextMessage["content"] {
+    if (!attachments.length) return text;
+    return [
+        ...(text.trim() ? [{ type: "text" as const, text }] : []),
+        ...attachments.map((item) => ({ type: "image_url" as const, image_url: { url: item.dataUrl } })),
+    ];
 }
 
 function attachmentPayloadBytes(attachments: AgentAttachment[]) {
