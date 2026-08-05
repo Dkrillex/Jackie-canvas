@@ -13,6 +13,7 @@
 + [调整][Jackie] 首页 hero CTA 下方增加 Inference network online 与 Singapore / Tokyo / Frankfurt 状态行。
 + [调整][Jackie] 首页模型分组标题：图片 Tennda Vision、视频 Tennda Motion、文本 Tennda LLM、音频 Tennda Voice；原 Tennda Vision 展示名改为 Tennda Illusion；Tennda Nano → Tennda Mini；音频模型 Tennda Voice → Tennda Waves。
 + [调整][Jackie] 首页 hero CTA 改为 Explore Tennda Models（滚到模型区）与 View Model architecture（Hugging Face）。
++ [优化][Jackie] 首页模型分组头图与卡片网格排列：图标与标题对齐，卡片间距与断点列数更清晰。
 + [优化][Jackie] 首页模型 lineup 按能力分组，并补充数量统计、用途标签与工作台入口，内容更完整。
 + [调整][Jackie] 首页隐藏 Prompt library 整块展示；提示词库仍可通过导航与 hero「Browse prompts」进入。
 + [调整][Jackie] 首页 hero 装饰由 ASCII 莫比乌斯环改为 Token Stream（漂移的 LLM token 行）。

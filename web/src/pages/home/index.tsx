@@ -162,30 +162,41 @@ export default function IndexPage() {
                             if (!models.length) return null;
                             return (
                                 <div key={capability}>
-                                    <div className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-4 dark:border-stone-800">
-                                        <div className="flex min-w-0 items-start gap-3">
-                                            <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center border border-stone-300 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
-                                                <Icon className="size-4" />
-                                            </span>
-                                            <div>
-                                                <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 dark:text-stone-500">
-                                                    {capabilityCode[capability]} · {String(groupIndex + 1).padStart(2, "0")}
+                                    <div className="mb-6 flex flex-col gap-4 border-b border-stone-200 pb-5 dark:border-stone-800 sm:flex-row sm:items-end sm:justify-between">
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-3.5">
+                                                <span className="inline-flex size-11 shrink-0 items-center justify-center border border-stone-300 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
+                                                    <Icon className="size-5" />
+                                                </span>
+                                                <div className="min-w-0">
+                                                    <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 dark:text-stone-500">
+                                                        {capabilityCode[capability]} · {String(groupIndex + 1).padStart(2, "0")}
+                                                    </div>
+                                                    <h3 className="mt-0.5 text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl dark:text-stone-100">
+                                                        {t(capabilityTitleKey[capability])}
+                                                    </h3>
                                                 </div>
-                                                <h3 className="mt-1 text-xl font-semibold tracking-tight text-stone-950 dark:text-stone-100">{t(capabilityTitleKey[capability])}</h3>
-                                                <p className="mt-1 max-w-2xl text-sm leading-6 text-stone-500 dark:text-stone-400">{t(capabilityDescKey[capability])}</p>
                                             </div>
+                                            <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500 dark:text-stone-400">{t(capabilityDescKey[capability])}</p>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => openPath(capabilityHref[capability])}
-                                            className="inline-flex items-center gap-1 font-mono text-xs tracking-[0.12em] text-stone-600 transition hover:gap-2 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100"
+                                            className="inline-flex shrink-0 items-center gap-1.5 self-start font-mono text-xs tracking-[0.12em] text-stone-600 transition hover:gap-2.5 hover:text-stone-950 sm:self-auto dark:text-stone-400 dark:hover:text-stone-100"
                                         >
                                             {t("home.models.openWorkbench").toUpperCase()}
                                             <ArrowRight className="size-3.5" />
                                         </button>
                                     </div>
 
-                                    <div className={cn("grid gap-3", capability === "audio" ? "sm:grid-cols-1 lg:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3")}>
+                                    <div
+                                        className={cn(
+                                            "grid gap-4",
+                                            capability === "audio" && "sm:grid-cols-1 lg:grid-cols-2",
+                                            capability === "text" && "sm:grid-cols-2",
+                                            (capability === "image" || capability === "video") && "sm:grid-cols-2 xl:grid-cols-3",
+                                        )}
+                                    >
                                         {models.map((model, index) => (
                                             <ModelCard key={model.name} model={model} index={index} onOpen={() => openPath(model.href)} />
                                         ))}
