@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 全站主体风格对齐 tennda.com：冷灰蓝背景 `#f5f7fa`、品牌蓝主色 `#0175DA`、青点阵与顶栏光晕；营销页与顶栏悬浮胶囊同步为冷色卡片面。
 + [调整][Jackie] 顶栏一级导航改为 Models / Playground / Developer / Hugging Face；工作台工具收拢到 Playground 下拉。
 + [新增][Jackie] 模型详情页 `/models/:slug`：顶部可横向切换模型卡片，含 overview / highlights / 规格参数（上下文、最大输出、入参/出参价等），底部提供当前模型的 Python API 示例，并可跳转对应 Playground。
 + [新增][Jackie] Developer 文档页 `/developer/docs`：说明同源 `/gw` OpenAI 兼容调用与鉴权；对外仅展示 `tennda-*` 模型 id；支持按能力切换 Python / curl 示例。

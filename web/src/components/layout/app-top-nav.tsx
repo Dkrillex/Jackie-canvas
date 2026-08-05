@@ -126,14 +126,14 @@ export function AppTopNav() {
                 <header
                     className={cn(
                         "sticky top-0 z-20 shrink-0 transition-[padding,background-color] duration-300",
-                        scrolled ? "pointer-events-none bg-transparent px-3 pt-3 pb-1 md:px-6" : "h-14 bg-background/90 backdrop-blur-xl",
+                        scrolled ? "pointer-events-none bg-transparent px-3 pt-3 pb-1 md:px-6" : "h-14 bg-[linear-gradient(180deg,rgba(241,244,255,0.92)_0%,rgba(245,247,250,0.88)_100%)] backdrop-blur-xl dark:bg-[linear-gradient(180deg,rgba(42,46,60,0.92)_0%,rgba(28,31,43,0.88)_100%)]",
                     )}
                 >
                     <div
                         className={cn(
                             "mx-auto grid items-stretch transition-all duration-300 pointer-events-auto",
                             scrolled
-                                ? "h-12 max-w-5xl grid-cols-[auto_minmax(0,1fr)_auto] gap-3 rounded-full border border-stone-200/80 bg-white/90 px-4 shadow-[0_8px_30px_rgba(28,25,23,0.08)] backdrop-blur-xl md:gap-6 md:px-6 dark:border-stone-700/80 dark:bg-stone-950/90 dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
+                                ? "h-12 max-w-5xl grid-cols-[auto_minmax(0,1fr)_auto] gap-3 rounded-full border border-[#d0d5dd]/90 bg-white/92 px-4 shadow-[0_8px_30px_rgba(1,90,209,0.1)] backdrop-blur-xl md:gap-6 md:px-6 dark:border-white/10 dark:bg-[#2a2e3c]/92 dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
                                 : "h-full max-w-7xl grid-cols-[1fr_auto_1fr] gap-3 px-6 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-8",
                         )}
                     >
@@ -212,8 +212,8 @@ function navTriggerClass(active: boolean, scrolled: boolean) {
         "relative flex shrink-0 items-center gap-1 text-sm leading-6 transition",
         scrolled ? "h-12" : "h-14 after:absolute after:inset-x-0 after:bottom-0 after:h-px",
         active
-            ? cn("font-medium text-stone-950 dark:text-stone-100", !scrolled && "after:bg-stone-950 dark:after:bg-stone-100")
-            : cn("text-stone-500 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100", !scrolled && "after:bg-transparent"),
+            ? cn("font-medium text-foreground", !scrolled && "after:bg-primary")
+            : cn("text-muted-foreground hover:text-foreground", !scrolled && "after:bg-transparent"),
     );
 }
 

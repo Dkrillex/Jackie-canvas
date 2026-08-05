@@ -48,7 +48,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
     }, [model.slug]);
 
     return (
-        <main className="h-full overflow-y-auto bg-background bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] text-stone-950 dark:bg-[radial-gradient(rgba(245,245,244,.18)_1px,transparent_1px)] dark:text-stone-100">
+        <main className="tennda-page-bg h-full overflow-y-auto">
             <div className="mx-auto max-w-6xl px-4 py-8 md:px-6 md:py-12">
                 <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
                     <div>
@@ -60,7 +60,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                 </div>
 
                 {/* Compact model rail — grouped by capability */}
-                <div className="home-tech-panel home-tech-corners border border-stone-200 bg-white/80 dark:border-stone-800 dark:bg-stone-950/70">
+                <div className="home-tech-panel home-tech-corners border border-border bg-white/80 dark:border-white/10 dark:bg-card/80">
                     <div className="relative z-[2] hide-scrollbar flex gap-0 overflow-x-auto">
                         {TENNDA_CAPABILITY_ORDER.map((capability, groupIndex) => {
                             const group = TENNDA_MODEL_CATALOG.filter((item) => item.capability === capability);
@@ -70,7 +70,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                                     key={capability}
                                     className={cn(
                                         "flex shrink-0",
-                                        groupIndex > 0 && "border-l border-stone-200 dark:border-stone-800",
+                                        groupIndex > 0 && "border-l border-border dark:border-white/10",
                                     )}
                                 >
                                     <div className="flex flex-col justify-center border-r border-stone-100 px-2.5 py-3 dark:border-stone-900">
@@ -88,8 +88,8 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                                                     className={cn(
                                                         "relative flex min-w-[8.5rem] flex-col items-start px-3.5 py-3.5 text-left transition",
                                                         active
-                                                            ? "bg-stone-100 text-stone-950 dark:bg-stone-800 dark:text-stone-50"
-                                                            : "text-stone-600 hover:bg-stone-50 hover:text-stone-950 dark:text-stone-400 dark:hover:bg-stone-900 dark:hover:text-stone-100",
+                                                            ? "bg-secondary text-stone-950 dark:bg-white/10 dark:text-stone-50"
+                                                            : "text-stone-600 hover:bg-secondary/60 hover:text-stone-950 dark:text-stone-400 dark:hover:bg-white/5 dark:hover:text-stone-100",
                                                     )}
                                                 >
                                                     <span className={cn("font-mono text-[10px] tracking-[0.14em] uppercase", active ? "text-stone-500 dark:text-stone-400" : "text-stone-400")}>
@@ -98,7 +98,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                                                     <span className={cn("mt-1 truncate text-sm tracking-tight", active ? "font-semibold" : "font-medium")}>
                                                         {item.displayName.replace(/^Tennda\s+/, "")}
                                                     </span>
-                                                    {active ? <span className="absolute inset-x-0 bottom-0 h-0.5 bg-stone-950 dark:bg-stone-100" /> : null}
+                                                    {active ? <span className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" /> : null}
                                                 </button>
                                             );
                                         })}
@@ -113,7 +113,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                 <section
                     key={model.slug}
                     data-model-fade
-                    className="home-tech-panel home-tech-corners mt-6 animate-[modelFade_280ms_ease-out] border border-stone-200 bg-white/85 p-6 md:p-8 dark:border-stone-800 dark:bg-stone-950/70"
+                    className="home-tech-panel home-tech-corners mt-6 animate-[modelFade_280ms_ease-out] border border-border bg-white/85 p-6 md:p-8 dark:border-white/10 dark:bg-card/80"
                 >
                     <div className="relative z-[2] grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
                         <div className="min-w-0">
@@ -131,7 +131,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                                 {model.uses.map((use) => (
                                     <span
                                         key={use}
-                                        className="border border-stone-200 px-2 py-0.5 font-mono text-[10px] tracking-[0.08em] text-stone-500 dark:border-stone-700 dark:text-stone-400"
+                                        className="border border-border px-2 py-0.5 font-mono text-[10px] tracking-[0.08em] text-stone-500 dark:border-stone-700 dark:text-stone-400"
                                     >
                                         {use}
                                     </span>
@@ -142,7 +142,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                             <Button type="primary" size="large" icon={<ArrowRight className="size-4" />} iconPlacement="end" onClick={() => navigate(model.href)}>
                                 {t("models.tryPlayground")}
                             </Button>
-                            <div className="border border-stone-200 bg-stone-50 px-3 py-2 font-mono text-[11px] text-stone-500 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400">
+                            <div className="border border-border bg-stone-50 px-3 py-2 font-mono text-[11px] text-stone-500 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400">
                                 <div className="tracking-[0.12em] uppercase opacity-70">{t("models.apiId")}</div>
                                 <div className="mt-1 text-stone-800 dark:text-stone-200">{apiId}</div>
                             </div>
@@ -157,20 +157,20 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                 </section>
 
                 {/* Specs */}
-                <section key={`${model.slug}-specs`} data-model-fade className="home-tech-panel home-tech-corners mt-6 animate-[modelFade_300ms_ease-out] border border-stone-200 bg-white/80 p-5 md:p-6 dark:border-stone-800 dark:bg-stone-950/60">
+                <section key={`${model.slug}-specs`} data-model-fade className="home-tech-panel home-tech-corners mt-6 animate-[modelFade_300ms_ease-out] border border-border bg-white/80 p-5 md:p-6 dark:border-white/10 dark:bg-card/70">
                     <div className="relative z-[2]">
                         <div className="flex flex-wrap items-end justify-between gap-2">
                             <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{t("models.specs")}</div>
                             <p className="text-[11px] text-stone-400 dark:text-stone-500">{t("models.specs.note")}</p>
                         </div>
-                        <div className="mt-4 grid gap-px border border-stone-200 bg-stone-200 sm:grid-cols-2 lg:grid-cols-4 dark:border-stone-800 dark:bg-stone-800">
+                        <div className="mt-4 grid gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-4 dark:border-white/10 dark:bg-white/10">
                             <SpecCell label={t("models.specs.context")} value={model.specs.context} />
                             <SpecCell label={t("models.specs.maxOutput")} value={model.specs.maxOutput} />
                             <SpecCell label={t("models.specs.input")} value={model.specs.input} />
                             <SpecCell label={t("models.specs.output")} value={model.specs.output} />
                         </div>
                         {model.specs.extras?.length ? (
-                            <div className="mt-3 grid gap-px border border-stone-200 bg-stone-200 sm:grid-cols-3 dark:border-stone-800 dark:bg-stone-800">
+                            <div className="mt-3 grid gap-px border border-border bg-border sm:grid-cols-3 dark:border-white/10 dark:bg-white/10">
                                 {model.specs.extras.map((row) => (
                                     <SpecCell key={row.label} label={row.label} value={row.value} />
                                 ))}
@@ -181,7 +181,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
 
                 {/* Body */}
                 <div key={`${model.slug}-body`} data-model-fade className="mt-6 grid animate-[modelFade_320ms_ease-out] gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(240px,0.7fr)]">
-                    <article className="home-tech-panel border border-stone-200 bg-white/75 p-6 md:p-7 dark:border-stone-800 dark:bg-stone-950/55">
+                    <article className="home-tech-panel border border-border bg-white/75 p-6 md:p-7 dark:border-white/10 dark:bg-card/65">
                         <div className="relative z-[2]">
                             <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{t("models.overview")}</div>
                             <div className="mt-4 space-y-4 text-sm leading-7 text-stone-600 dark:text-stone-300">
@@ -191,13 +191,13 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                             </div>
                         </div>
                     </article>
-                    <aside className="home-tech-corners border border-stone-200 bg-white/75 p-6 dark:border-stone-800 dark:bg-stone-950/55">
+                    <aside className="home-tech-corners border border-border bg-white/75 p-6 dark:border-white/10 dark:bg-card/65">
                         <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{t("models.highlights")}</div>
                         <ol className="mt-4 space-y-0">
                             {model.highlights.map((item, index) => (
                                 <li
                                     key={item}
-                                    className="flex gap-3 border-t border-stone-100 py-3 text-sm leading-6 text-stone-600 first:border-t-0 first:pt-0 dark:border-stone-800 dark:text-stone-300"
+                                    className="flex gap-3 border-t border-stone-100 py-3 text-sm leading-6 text-stone-600 first:border-t-0 first:pt-0 dark:border-white/10 dark:text-stone-300"
                                 >
                                     <span className="mt-0.5 shrink-0 font-mono text-[11px] tracking-[0.12em] text-stone-400">
                                         {String(index + 1).padStart(2, "0")}
@@ -228,7 +228,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
 
 function SpecCell({ label, value }: { label: string; value: string }) {
     return (
-        <div className="bg-white px-4 py-3.5 dark:bg-stone-950">
+        <div className="bg-card px-4 py-3.5">
             <div className="font-mono text-[10px] tracking-[0.16em] text-stone-400 uppercase">{label}</div>
             <div className="mt-1.5 text-sm font-medium tracking-tight text-stone-900 dark:text-stone-100">{value}</div>
         </div>
@@ -245,7 +245,7 @@ function PythonApiSection({ model }: { model: TenndaModelEntry }) {
         <section
             key={`${model.slug}-python`}
             data-model-fade
-            className="home-tech-panel home-tech-corners mt-6 animate-[modelFade_340ms_ease-out] border border-stone-200 bg-white/80 p-5 md:p-6 dark:border-stone-800 dark:bg-stone-950/60"
+            className="home-tech-panel home-tech-corners mt-6 animate-[modelFade_340ms_ease-out] border border-border bg-white/80 p-5 md:p-6 dark:border-white/10 dark:bg-card/70"
         >
             <div className="relative z-[2]">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -265,7 +265,7 @@ function PythonApiSection({ model }: { model: TenndaModelEntry }) {
                         {t("models.python.copy")}
                     </Button>
                 </div>
-                <pre className="mt-4 overflow-x-auto border border-stone-200 bg-stone-50 p-4 font-mono text-[12px] leading-5 text-stone-800 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
+                <pre className="mt-4 overflow-x-auto border border-border bg-stone-50 p-4 font-mono text-[12px] leading-5 text-stone-800 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
                     {code}
                 </pre>
                 <p className="mt-3 text-[11px] leading-5 text-stone-400 dark:text-stone-500">{t("models.python.note")}</p>

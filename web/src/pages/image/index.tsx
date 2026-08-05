@@ -374,9 +374,9 @@ export default function ImagePage() {
     };
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100">
+        <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
             <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:grid-cols-[300px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)]">
-                <aside className="thin-scrollbar hidden min-h-0 overflow-y-auto rounded-lg border border-stone-200 bg-card p-4 shadow-sm dark:border-stone-800 lg:block">
+                <aside className="thin-scrollbar hidden min-h-0 overflow-y-auto rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:block">
                     <LogPanel
                         logs={logs}
                         selectedLogIds={selectedLogIds}
@@ -389,7 +389,7 @@ export default function ImagePage() {
                 </aside>
 
                 <section className="grid gap-3 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)]">
-                    <div className="thin-scrollbar flex flex-col rounded-lg border border-stone-200 bg-card p-4 shadow-sm dark:border-stone-800 lg:min-h-0 lg:overflow-y-auto">
+                    <div className="thin-scrollbar flex flex-col rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto">
                         <div>
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
@@ -443,7 +443,7 @@ export default function ImagePage() {
                                     }}
                                 >
                                     {references.map((item, index) => (
-                                        <div key={item.id} className="group relative size-20 shrink-0 overflow-hidden rounded-md border border-stone-200 dark:border-stone-800">
+                                        <div key={item.id} className="group relative size-20 shrink-0 overflow-hidden rounded-md border border-border dark:border-white/10">
                                             <img src={item.dataUrl} alt={item.name} className="size-full object-cover" />
                                             <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{imageReferenceLabel(index)}</span>
                                             <ReferenceOrderButtons index={index} total={references.length} onMove={(offset) => setReferences((value) => moveListItem(value, index, offset))} />
@@ -461,7 +461,7 @@ export default function ImagePage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-sm dark:border-stone-800 dark:bg-stone-900 sm:hidden">
+                            <div className="flex items-center justify-between rounded-lg border border-border bg-stone-50 px-3 py-2 text-sm dark:border-white/10 dark:bg-stone-900 sm:hidden">
                                 <span className="truncate text-stone-500 dark:text-stone-400">
                                     {modelOptionLabel(effectiveConfig, model)} · {effectiveConfig.size} · {effectiveConfig.quality}
                                 </span>
@@ -482,7 +482,7 @@ export default function ImagePage() {
                         </div>
                     </div>
 
-                    <div className="thin-scrollbar rounded-lg border border-stone-200 bg-card p-4 shadow-sm dark:border-stone-800 lg:min-h-0 lg:overflow-y-auto lg:p-5">
+                    <div className="thin-scrollbar rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto lg:p-5">
                         <div className="mb-4 flex items-center justify-between gap-3">
                             <div>
                                 <h2 className="text-xl font-semibold">{t("wb.results")}</h2>
@@ -578,9 +578,9 @@ function ResultImageCard({
 }) {
     const { t } = useI18n();
     return (
-        <div className="overflow-hidden rounded-lg border border-stone-200 bg-background dark:border-stone-800">
+        <div className="overflow-hidden rounded-lg border border-border bg-background dark:border-white/10">
             <Image src={image.dataUrl} alt={t("wb.resultAlt", { n: index + 1 })} className="aspect-square object-cover" />
-            <div className="space-y-2 border-t border-stone-200 px-3 py-2.5 dark:border-stone-800">
+            <div className="space-y-2 border-t border-border px-3 py-2.5 dark:border-white/10">
                 <div className="flex min-w-0 gap-x-2 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
                     <span>
                         {image.width}x{image.height}
@@ -617,7 +617,7 @@ function PendingImageCard() {
             <div
                 className="absolute inset-0 opacity-60"
                 style={{
-                    backgroundImage: "radial-gradient(circle, rgba(120,113,108,0.35) 1.4px, transparent 1.6px)",
+                    backgroundImage: "radial-gradient(circle, rgba(1,117,218,0.22) 1.4px, transparent 1.6px)",
                     backgroundSize: "16px 16px",
                 }}
             />
@@ -716,7 +716,7 @@ function LogCard({ log, selected, active, onSelectedChange, onClick }: { log: Ge
     return (
         <button
             type="button"
-            className={`block w-full rounded-lg border p-2 text-left transition ${active ? "border-stone-900 bg-blue-50 dark:border-stone-100 dark:bg-blue-950/20" : "border-stone-200 bg-background hover:bg-stone-50 dark:border-stone-800 dark:hover:bg-stone-900"}`}
+            className={`block w-full rounded-lg border p-2 text-left transition ${active ? "border-stone-900 bg-blue-50 dark:border-stone-100 dark:bg-blue-950/20" : "border-border bg-background hover:bg-stone-50 dark:border-white/10 dark:hover:bg-stone-900"}`}
             onClick={onClick}
         >
             <div className="grid grid-cols-[minmax(128px,1fr)_auto] gap-2">

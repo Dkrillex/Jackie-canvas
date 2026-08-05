@@ -224,13 +224,13 @@ export default function AgentStudioPage() {
     };
 
     const panelStyle = {
-        background: themeName === "dark" ? theme.node.panel : "#f5f5f4",
-        borderColor: theme.node.stroke,
-        color: theme.node.text,
+        background: themeName === "dark" ? "#2a2e3c" : "#ffffff",
+        borderColor: themeName === "dark" ? "rgba(255,255,255,0.1)" : "#e4e7ec",
+        color: themeName === "dark" ? "#ffffff" : "#1f2937",
     };
 
     return (
-        <main className="flex h-full flex-col overflow-hidden bg-white text-stone-900 dark:bg-stone-950 dark:text-stone-100">
+        <main className="flex h-full flex-col overflow-hidden bg-background text-foreground">
             <div className="mx-auto flex h-full w-full max-w-[1440px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-6 md:py-7">
                 <header className="flex items-center justify-between gap-3 px-1">
                     <div className="flex min-w-0 items-center gap-3">

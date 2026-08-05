@@ -5,11 +5,12 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- 视觉主题：浅色背景应为冷灰蓝 `#f5f7fa`（非暖石色），主按钮/链接为品牌蓝 `#0175DA`；首页/模型/Developer 有淡蓝顶光 + 蓝点阵；滚动后顶栏胶囊为白底冷灰描边（非暖石色）；深色模式底为 `#1c1f2b`、卡片 `#2a2e3c`。
 - 顶栏 IA：桌面一级为 Models / Playground / Developer / Hugging Face；Models 下拉进 `/models/:slug`；Playground 下拉含 Agent/Image/Video/Prompts/Assets（登录可见 Settings，admin 可见 My canvases）；Developer 进 `/developer/docs`；HF 外链。移动端抽屉按同样四组展示。
 - 模型详情：打开 `/models/illusion`（或其它 slug）顶部可横向切换模型卡；有 Specifications（Context / Max output / Input / Output + extras）；正文有 Overview / Highlights；底部有当前模型的 Python API 示例（`tennda-*` id，可复制，链到 `/developer/docs`）；「Open in Playground」跳到该模型对应工作台；无效 slug 应落到第一个模型。
 - Developer 文档：`/developer/docs` 展示 Base URL `/gw`、Bearer 鉴权；可切换 Text/Image/Video/Audio 与 Python/curl；示例下方有 Method/Path、Request/Response body、参数表与可选值目录（image size/n/quality、video seconds/size、audio voice/speed 等 Tennda 自研口径）；不应出现 gpt-/gemini-/veo-/seedream 或 OpenAI 音色名。
 - 首页模型卡片：点 Try 进 `/models/{slug}` 详情，不再直接进工作台；分组「Open workbench」与底部 CTA 仍直达工作台/Agent。
-- Agent Studio：导航 Playground 下有 Agent Studio，进入 `/agent`；页面白底 + 大圆角对话/侧栏；空状态有建议卡片可点入输入框；底部输入区为圆角卡片（与侧栏 Agent 一致），模型选择在输入区左侧；未登录发送应弹登录；对话与产物刷新后应从 IndexedDB 恢复，点 Clear 后清空；应能调用内置工具与远程 HTTP MCP；右侧栏本地 Codex Agent 仍独立可用。
+- Agent Studio：导航 Playground 下有 Agent Studio，进入 `/agent`；页面冷灰蓝底 + 白/深色圆角对话壳与侧栏；空状态有建议卡片可点入输入框；底部输入区为圆角卡片（与侧栏 Agent 一致），模型选择在输入区左侧；未登录发送应弹登录；对话与产物刷新后应从 IndexedDB 恢复，点 Clear 后清空；应能调用内置工具与远程 HTTP MCP；右侧栏本地 Codex Agent 仍独立可用。
 - 首页模型 lineup：底部有 Open Agent Studio 主按钮；分组 Open workbench：Text/Audio → `/agent`，Image/Video → 对应工作台。
 - 首页 hero：标题背后应为缓慢左右漂移的 Token Stream（`attn` / `embed` / `ctx` 等），中心镂空不压字；不再是 ASCII 莫比乌斯环。
 - 品牌 Logo：浏览器标签页应为新蓝色像素风图标（`favicon.png`）；顶栏显示 `/logo.png`（透明底），首页 hero 上方不放 Logo；不再是旧三角 SVG。

@@ -23,7 +23,7 @@ export function ImageGenerationPending({ className, label, compact = false }: { 
             <div
                 className="absolute inset-0 opacity-60"
                 style={{
-                    backgroundImage: "radial-gradient(circle, rgba(120,113,108,0.35) 1.4px, transparent 1.6px)",
+                    backgroundImage: "radial-gradient(circle, rgba(1,117,218,0.22) 1.4px, transparent 1.6px)",
                     backgroundSize: "16px 16px",
                     maskImage: "radial-gradient(ellipse at 38% 68%, black 0%, black 28%, transparent 60%)",
                 }}

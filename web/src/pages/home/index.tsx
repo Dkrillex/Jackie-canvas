@@ -92,7 +92,7 @@ export default function IndexPage() {
     };
 
     return (
-        <main className="relative h-full overflow-y-auto bg-background bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] text-stone-950 dark:bg-[radial-gradient(rgba(245,245,244,.18)_1px,transparent_1px)] dark:text-stone-100">
+        <main className="tennda-page-bg relative h-full overflow-y-auto">
             <section className="relative mx-auto min-h-[calc(100vh-4rem)] max-w-7xl overflow-x-clip px-6">
                 <div className="relative flex min-h-[640px] flex-col items-center justify-center overflow-visible pt-10 text-center">
                     <TokenStream />
@@ -100,11 +100,11 @@ export default function IndexPage() {
                         <h1 className="ai-title-aurora font-heading max-w-5xl text-balance text-5xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">Tennda LLM</h1>
                         <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">
                             {t("home.hero.before")}{" "}
-                            <Highlighter action="underline" color="#FF9800">
+                            <Highlighter action="underline" color="#0175DA">
                                 Tennda LLM
                             </Highlighter>
                             {t("home.hero.mid")}
-                            <Highlighter action="highlight" color="#87CEFA">
+                            <Highlighter action="highlight" color="#66fff9">
                                 {t("home.hero.highlight")}
                             </Highlighter>
                             {t("home.hero.after")}
@@ -127,7 +127,7 @@ export default function IndexPage() {
                     </div>
                 </div>
 
-                <section id="tennda-models" className="relative mx-auto mb-24 max-w-6xl border-t border-stone-200 pt-14 dark:border-stone-800">
+                <section id="tennda-models" className="relative mx-auto mb-24 max-w-6xl border-t border-border pt-14 dark:border-white/10">
                     <div className="mb-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
                         <div>
                             <div className="mb-3 font-mono text-[11px] tracking-[0.22em] text-stone-400 dark:text-stone-500">
@@ -136,7 +136,7 @@ export default function IndexPage() {
                             <h2 className="max-w-xl text-3xl font-semibold tracking-tight text-stone-950 sm:text-4xl dark:text-stone-100">{t("home.showcaseTitle")}</h2>
                             <p className="mt-4 max-w-2xl text-base leading-7 text-stone-500 dark:text-stone-400">{t("home.showcaseDesc")}</p>
                         </div>
-                        <div className="home-tech-corners grid grid-cols-2 gap-px border border-stone-200 bg-stone-200 sm:grid-cols-4 dark:border-stone-800 dark:bg-stone-800">
+                        <div className="home-tech-corners grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4 dark:border-white/10 dark:bg-white/10">
                             {TENNDA_CAPABILITY_ORDER.map((capability) => {
                                 const count = modelsByCapability(capability).length;
                                 return (
@@ -144,7 +144,7 @@ export default function IndexPage() {
                                         key={capability}
                                         type="button"
                                         onClick={() => openPath(capabilityHref[capability])}
-                                        className="bg-white px-4 py-3 text-left transition hover:bg-stone-50 dark:bg-stone-950 dark:hover:bg-stone-900"
+                                        className="bg-card px-4 py-3 text-left transition hover:bg-secondary/60 dark:hover:bg-white/5"
                                     >
                                         <div className="font-mono text-[10px] tracking-[0.18em] text-stone-400 dark:text-stone-500">{capabilityCode[capability]}</div>
                                         <div className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-stone-950 dark:text-stone-100">{count}</div>
@@ -162,7 +162,7 @@ export default function IndexPage() {
                             if (!models.length) return null;
                             return (
                                 <div key={capability}>
-                                    <div className="mb-6 flex flex-col gap-4 border-b border-stone-200 pb-5 dark:border-stone-800 sm:flex-row sm:items-end sm:justify-between">
+                                    <div className="mb-6 flex flex-col gap-4 border-b border-border pb-5 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between">
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-3.5">
                                                 <span className="inline-flex size-11 shrink-0 items-center justify-center border border-stone-300 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
@@ -206,7 +206,7 @@ export default function IndexPage() {
                         })}
                     </div>
 
-                    <div className="home-tech-panel home-tech-corners mt-14 border border-stone-200 bg-white/80 p-6 md:p-8 dark:border-stone-800 dark:bg-stone-950/60">
+                    <div className="home-tech-panel home-tech-corners mt-14 border border-border bg-white/80 p-6 md:p-8 dark:border-white/10 dark:bg-card/70">
                         <div className="relative z-[2] grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,0.8fr)] lg:items-end lg:gap-10">
                             <div className="min-w-0">
                                 <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 dark:text-stone-500">{t("home.models.footerIndex")}</div>
@@ -240,7 +240,7 @@ function ModelCard({ model, index, onOpen }: { model: TenndaModelEntry; index: n
         <button
             type="button"
             onClick={onOpen}
-            className="home-tech-panel home-tech-corners group flex min-h-[240px] flex-col items-start border border-stone-200 bg-white/75 p-5 text-left transition duration-200 hover:border-stone-400 hover:bg-white dark:border-stone-800 dark:bg-stone-950/55 dark:hover:border-stone-500 dark:hover:bg-stone-900"
+            className="home-tech-panel home-tech-corners group flex min-h-[240px] flex-col items-start border border-border bg-white/75 p-5 text-left transition duration-200 hover:border-primary/40 hover:bg-white dark:border-white/10 dark:bg-card/65 dark:hover:border-primary/50 dark:hover:bg-white/5"
         >
             <div className="relative z-[2] mb-4 flex w-full items-center justify-between gap-3">
                 <span className="border border-stone-300 bg-stone-50 px-2 py-0.5 font-mono text-[10px] tracking-[0.16em] text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
@@ -256,7 +256,7 @@ function ModelCard({ model, index, onOpen }: { model: TenndaModelEntry; index: n
                 {model.uses.map((use) => (
                     <span
                         key={use}
-                        className="border border-stone-200 px-2 py-0.5 font-mono text-[10px] tracking-[0.08em] text-stone-500 dark:border-stone-700 dark:text-stone-400"
+                        className="border border-border px-2 py-0.5 font-mono text-[10px] tracking-[0.08em] text-stone-500 dark:border-stone-700 dark:text-stone-400"
                     >
                         {use}
                     </span>
