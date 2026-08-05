@@ -73,8 +73,8 @@ export function TokenStream({ className }: TokenStreamProps) {
                             className={cn("token-stream-track inline-flex min-w-max gap-3 font-mono text-[11px] tracking-[0.14em] sm:text-xs", row.reverse && "token-stream-track-reverse")}
                             style={{ animationDuration: `${row.duration}s` }}
                         >
-                            <TokenChunk tokens={row.tokens} accentEvery={row.accentEvery} />
-                            <TokenChunk tokens={row.tokens} accentEvery={row.accentEvery} />
+                            <TokenChunk prefix={`${row.id}-a`} tokens={row.tokens} accentEvery={row.accentEvery} />
+                            <TokenChunk prefix={`${row.id}-b`} tokens={row.tokens} accentEvery={row.accentEvery} />
                         </div>
                     </div>
                 ))}
@@ -83,12 +83,12 @@ export function TokenStream({ className }: TokenStreamProps) {
     );
 }
 
-function TokenChunk({ tokens, accentEvery }: { tokens: string[]; accentEvery: number }) {
+function TokenChunk({ prefix, tokens, accentEvery }: { prefix: string; tokens: string[]; accentEvery: number }) {
     return (
         <span className="inline-flex gap-3 text-stone-400/55 dark:text-stone-500/45">
             {tokens.map((token, index) => (
                 <span
-                    key={`${token}-${index}`}
+                    key={`${prefix}-${index}`}
                     className={cn(index % accentEvery === 0 && "text-sky-600/55 dark:text-sky-400/45")}
                 >
                     {token}

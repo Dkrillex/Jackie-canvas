@@ -1,6 +1,6 @@
 import { ArrowRight, ImageIcon, MessageSquare, Sparkles, Video } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
-import { App, Button, Image, Tag } from "antd";
+import { App, Button, Image } from "antd";
 import { useNavigate } from "react-router-dom";
 
 import { TokenStream } from "@/components/home/token-stream";
@@ -185,16 +185,6 @@ export default function IndexPage() {
                                     PMT · {String(index + 1).padStart(2, "0")}
                                 </div>
                                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent p-4 text-white">
-                                    <div className="mb-2 flex flex-wrap gap-1.5">
-                                        {item.tags
-                                            .filter((tag) => !tag.startsWith("@"))
-                                            .slice(0, 2)
-                                            .map((tag) => (
-                                                <Tag key={tag} variant="filled" className="m-0 border border-white/15 bg-white/10 font-mono text-[10px] tracking-wide text-white backdrop-blur">
-                                                    {tag}
-                                                </Tag>
-                                            ))}
-                                    </div>
                                     <h3 className="text-sm font-medium tracking-tight">{item.title}</h3>
                                     <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/75">{item.prompt}</p>
                                 </div>
