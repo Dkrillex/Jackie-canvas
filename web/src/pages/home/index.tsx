@@ -4,7 +4,7 @@ import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
 
 import { TokenStream } from "@/components/home/token-stream";
-import { TENNDA_CAPABILITY_ORDER, TENNDA_HUGGINGFACE_URL, TENNDA_MODEL_CATALOG, type TenndaModelCapability, type TenndaModelEntry } from "@/constant/tennda-models";
+import { TENNDA_CAPABILITY_ORDER, TENNDA_HUGGINGFACE_URL, TENNDA_MODEL_CATALOG, tenndaModelDetailPath, type TenndaModelCapability, type TenndaModelEntry } from "@/constant/tennda-models";
 import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/stores/use-locale-store";
@@ -198,7 +198,7 @@ export default function IndexPage() {
                                         )}
                                     >
                                         {models.map((model, index) => (
-                                            <ModelCard key={model.name} model={model} index={index} onOpen={() => openPath(model.href)} />
+                                            <ModelCard key={model.name} model={model} index={index} onOpen={() => openPath(tenndaModelDetailPath(model.slug))} />
                                         ))}
                                     </div>
                                 </div>

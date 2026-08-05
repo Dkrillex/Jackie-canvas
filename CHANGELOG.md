@@ -4,6 +4,10 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 顶栏一级导航改为 Models / Playground / Developer / Hugging Face；工作台工具收拢到 Playground 下拉。
++ [新增][Jackie] 模型详情页 `/models/:slug`：顶部可横向切换模型卡片，含 overview / highlights / 规格参数（上下文、最大输出、入参/出参价等），底部提供当前模型的 Python API 示例，并可跳转对应 Playground。
++ [新增][Jackie] Developer 文档页 `/developer/docs`：说明同源 `/gw` OpenAI 兼容调用与鉴权；对外仅展示 `tennda-*` 模型 id；支持按能力切换 Python / curl 示例。
++ [调整][Jackie] 首页模型卡片 Try 进入模型详情，不再直接跳工作台。
 + [新增][Jackie] Agent Studio（`/agent`）：云端工具循环对话，内置生图/视频/TTS 与站点工具，支持远程 HTTP MCP；全员可用，发送需登录。
 + [调整][Jackie] Agent Studio 对话输入区复用侧栏 `AgentChatComposer`（圆角卡片、圆形发送/停止、模型选择在输入区左侧）。
 + [新增][Jackie] Agent Studio 对话与产物历史写入 IndexedDB（localforage），刷新后可恢复；Clear 可清空。

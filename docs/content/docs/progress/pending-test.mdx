@@ -5,8 +5,12 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
-- Agent Studio：导航有 Agent Studio，进入 `/agent`；页面白底 + 大圆角对话/侧栏；空状态有建议卡片可点入输入框；底部输入区为圆角卡片（与侧栏 Agent 一致），模型选择在输入区左侧；未登录发送应弹登录；对话与产物刷新后应从 IndexedDB 恢复，点 Clear 后清空；应能调用内置工具与远程 HTTP MCP；右侧栏本地 Codex Agent 仍独立可用。
-- 首页模型 lineup：底部有 Open Agent Studio 主按钮；点 Text / Audio 分组或 Mini / Reason / Waves 卡片应进 `/agent`；Image / Video 仍进对应工作台。
+- 顶栏 IA：桌面一级为 Models / Playground / Developer / Hugging Face；Models 下拉进 `/models/:slug`；Playground 下拉含 Agent/Image/Video/Prompts/Assets（登录可见 Settings，admin 可见 My canvases）；Developer 进 `/developer/docs`；HF 外链。移动端抽屉按同样四组展示。
+- 模型详情：打开 `/models/illusion`（或其它 slug）顶部可横向切换模型卡；有 Specifications（Context / Max output / Input / Output + extras）；正文有 Overview / Highlights；底部有当前模型的 Python API 示例（`tennda-*` id，可复制，链到 `/developer/docs`）；「Open in Playground」跳到该模型对应工作台；无效 slug 应落到第一个模型。
+- Developer 文档：`/developer/docs` 展示 Base URL `/gw`、Bearer 鉴权；可切换 Text/Image/Video/Audio 与 Python/curl；示例下方有 Method/Path、Request/Response body、参数表与可选值目录（image size/n/quality、video seconds/size、audio voice/speed 等 Tennda 自研口径）；不应出现 gpt-/gemini-/veo-/seedream 或 OpenAI 音色名。
+- 首页模型卡片：点 Try 进 `/models/{slug}` 详情，不再直接进工作台；分组「Open workbench」与底部 CTA 仍直达工作台/Agent。
+- Agent Studio：导航 Playground 下有 Agent Studio，进入 `/agent`；页面白底 + 大圆角对话/侧栏；空状态有建议卡片可点入输入框；底部输入区为圆角卡片（与侧栏 Agent 一致），模型选择在输入区左侧；未登录发送应弹登录；对话与产物刷新后应从 IndexedDB 恢复，点 Clear 后清空；应能调用内置工具与远程 HTTP MCP；右侧栏本地 Codex Agent 仍独立可用。
+- 首页模型 lineup：底部有 Open Agent Studio 主按钮；分组 Open workbench：Text/Audio → `/agent`，Image/Video → 对应工作台。
 - 首页 hero：标题背后应为缓慢左右漂移的 Token Stream（`attn` / `embed` / `ctx` 等），中心镂空不压字；不再是 ASCII 莫比乌斯环。
 - 品牌 Logo：浏览器标签页应为新蓝色像素风图标（`favicon.png`）；顶栏显示 `/logo.png`（透明底），首页 hero 上方不放 Logo；不再是旧三角 SVG。
 - 全站英文：登录失败/会话失效 Toast、生图透明背景开关、视频生成错误、配置弹窗 WebDAV 进度、模型选择弹窗、画布侧栏/工具栏/导出、Agent 活动文案等应为英文；不应再弹出中文硬编码提示。本地 Agent 若返回中文「Codex 正在运行」，面板展示仍为英文。
@@ -17,7 +21,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 提示词库全英：`/prompts` Tab/按钮/弹窗应为英文；卡片标题应为英文（如 Celebrity in real life / title_en），不应再出现「实物+手绘…」等中文 registry 标题；Banana Quicker 默认关闭。
 - 画布权限：`admin` 顶栏/移动端可见「My canvases」，可进入 `/canvas` 与 `/canvas/:id`；非 `admin`（含未登录）导航无画布入口，直接访问应跳到 `/image`。
 - 顶栏齿轮：仅 `admin` 登录后可见右上角 Settings 齿轮；普通用户不应看到该按钮，可用用户图标打开 Account。
-- 顶栏 Hugging Face：桌面导航 Settings 旁与移动端抽屉末尾有 Hugging Face 入口；点击应新开 `https://huggingface.co/Tennda`（或 `TENNDA_HUGGINGFACE_URL` 当前值）。
+- 顶栏 Hugging Face：桌面一级导航与移动端抽屉均有 Hugging Face 入口；点击应新开 `https://huggingface.co/Tennda`（或 `TENNDA_HUGGINGFACE_URL` 当前值）。
 - Agent 云端回退对话：未连接本地 Agent 时，右侧面板 Chat 可发消息；应走 `/gw` 的 `gpt-5.4-nano` 流式回复（UI 显示 Tennda Mini）；未登录应先弹登录；点停止应中断；连上本地 Agent 后仍走 Codex。
 - Tennda LLM 故事版：品牌显示为 Tennda LLM；模型下拉仅见 Tennda 显示名，Network 请求 body 仍为真实上游模型 id（如 `gpt-image-2`）；首页为英文自研模型介绍网格；无语言切换按钮且刷新后仍为英文。
 - 首页：模型 lineup 下方不再展示 Prompt library 区块；hero 主按钮滚到模型区，次按钮打开 Hugging Face；导航仍可进入 `/prompts`。

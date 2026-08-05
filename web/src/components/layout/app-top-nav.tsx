@@ -1,10 +1,10 @@
-import { Bot, Cpu, Menu } from "lucide-react";
-import { Button, Tooltip } from "antd";
+import { Bot, ChevronDown, Cpu, Menu } from "lucide-react";
+import { Button, Dropdown, Tooltip } from "antd";
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
-import { navigationTools, type NavigationToolSlug } from "@/constant/navigation-tools";
-import { TENNDA_HUGGINGFACE_URL } from "@/constant/tennda-models";
+import { filterPlaygroundTools, type NavigationToolSlug } from "@/constant/navigation-tools";
+import { TENNDA_HUGGINGFACE_URL, TENNDA_MODEL_CATALOG, tenndaModelDetailPath } from "@/constant/tennda-models";
 import { AppConfigModal } from "@/components/layout/app-config-modal";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { UserStatusActions } from "@/components/layout/user-status-actions";
@@ -14,16 +14,13 @@ import { useConfigStore } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 
-const huggingfaceIconStyle = {
-    background: "currentColor",
-    WebkitMask: "url(/icons/huggingface.svg) center / contain no-repeat",
-    mask: "url(/icons/huggingface.svg) center / contain no-repeat",
-} as const;
+const SCROLL_PILL_THRESHOLD = 24;
 
 export function AppTopNav() {
     const { pathname } = useLocation();
     const { t } = useI18n();
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const autoConnectRef = useRef(false);
     const user = useUserStore((state) => state.user);
     const agentToken = useAgentStore((state) => state.token);
@@ -35,8 +32,18 @@ export function AppTopNav() {
     const hideHeader = /^\/canvas\/[^/]+/.test(pathname);
     const slug = pathname.split("/").filter(Boolean)[0];
     const isAdmin = (user?.username || "").trim().toLowerCase() === "admin";
-    const visibleTools = navigationTools.filter((tool) => (tool.slug !== "canvas" || isAdmin) && (tool.slug !== "config" || user));
-    const activeToolSlug = visibleTools.some((tool) => tool.slug === slug) ? (slug as NavigationToolSlug) : undefined;
+    const playgroundTools = filterPlaygroundTools({ isAdmin, loggedIn: Boolean(user) });
+    const activeToolSlug = playgroundTools.some((tool) => tool.slug === slug) ? (slug as NavigationToolSlug) : undefined;
+    const modelsActive = pathname.startsWith("/models");
+    const developerActive = pathname.startsWith("/developer");
+    const playgroundActive = Boolean(activeToolSlug);
+
+    const onScrollCapture = useEffectEvent((event: Event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (!target.closest("[data-app-scroll-root]")) return;
+        setScrolled(target.scrollTop > SCROLL_PILL_THRESHOLD);
+    });
 
     useEffect(() => {
         if (autoConnectRef.current || agentEnabled || agentConnected || !agentToken.trim()) return;
@@ -44,60 +51,125 @@ export function AppTopNav() {
         connectAgent({ silent: true });
     }, [agentConnected, agentEnabled, agentToken, connectAgent]);
 
+    useEffect(() => {
+        setScrolled(false);
+        const root = document.querySelector("[data-app-scroll-root]");
+        const scroller = root?.querySelector<HTMLElement>(".overflow-y-auto, [data-scroll-container]");
+        if (scroller) setScrolled(scroller.scrollTop > SCROLL_PILL_THRESHOLD);
+    }, [pathname]);
+
+    useEffect(() => {
+        document.addEventListener("scroll", onScrollCapture, true);
+        return () => document.removeEventListener("scroll", onScrollCapture, true);
+    }, [onScrollCapture]);
+
+    const modelsMenu = {
+        items: TENNDA_MODEL_CATALOG.map((model) => ({
+            key: model.slug,
+            label: (
+                <Link to={tenndaModelDetailPath(model.slug)} className="block min-w-[12rem]">
+                    <div className="font-medium text-stone-900 dark:text-stone-100">{model.displayName}</div>
+                    <div className="text-[11px] capitalize text-stone-400">{model.capability}</div>
+                </Link>
+            ),
+        })),
+    };
+
+    const playgroundMenu = {
+        items: playgroundTools.map((tool) => {
+            const Icon = tool.icon;
+            return {
+                key: tool.slug,
+                label: (
+                    <Link to={`/${tool.slug}`} className="flex items-center gap-2">
+                        <Icon className="size-3.5 opacity-70" />
+                        <span>{t(tool.labelKey)}</span>
+                    </Link>
+                ),
+            };
+        }),
+    };
+
+    const developerMenu = {
+        items: [
+            {
+                key: "docs",
+                label: <Link to="/developer/docs">{t("nav.developer.docs")}</Link>,
+            },
+        ],
+    };
+
     return (
         <>
             {!hideHeader ? (
-                <header className="sticky top-0 z-20 h-14 shrink-0 border-b border-stone-200 bg-background/90 backdrop-blur-xl dark:border-stone-800">
-                    <div className="mx-auto flex h-full max-w-7xl items-stretch justify-between gap-5 px-6">
-                        <div className="flex min-w-0 items-center">
+                <header
+                    className={cn(
+                        "sticky top-0 z-20 shrink-0 transition-[padding,background-color] duration-300",
+                        scrolled ? "pointer-events-none bg-transparent px-3 pt-3 pb-1 md:px-6" : "h-14 bg-background/90 backdrop-blur-xl",
+                    )}
+                >
+                    <div
+                        className={cn(
+                            "mx-auto grid items-stretch transition-all duration-300 pointer-events-auto",
+                            scrolled
+                                ? "h-12 max-w-5xl grid-cols-[auto_minmax(0,1fr)_auto] gap-3 rounded-full border border-stone-200/80 bg-white/90 px-4 shadow-[0_8px_30px_rgba(28,25,23,0.08)] backdrop-blur-xl md:gap-6 md:px-6 dark:border-stone-700/80 dark:bg-stone-950/90 dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
+                                : "h-full max-w-7xl grid-cols-[1fr_auto_1fr] gap-3 px-6 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-8",
+                        )}
+                    >
+                        <div className="flex min-w-0 items-center justify-self-start">
                             <Link to="/" className="flex h-full shrink-0 items-center gap-2.5 text-sm font-semibold leading-none tracking-tight text-stone-950 transition hover:opacity-80 dark:text-stone-100">
-                                <img src="/logo.png" alt="Tennda LLM" className="h-7 w-auto rounded-sm" />
-                                <span className="text-base font-medium">Tennda LLM</span>
+                                <img src="/logo.png" alt="Tennda LLM" className={cn("w-auto rounded-sm transition-all", scrolled ? "h-6" : "h-7")} />
+                                <span className={cn("font-medium", scrolled ? "text-sm" : "text-base")}>Tennda LLM</span>
                             </Link>
-
                             <button
                                 type="button"
-                                className="ml-3 inline-flex size-8 shrink-0 items-center justify-center text-stone-600 transition hover:text-stone-950 md:hidden dark:text-stone-300 dark:hover:text-white"
+                                className="ml-2 inline-flex size-8 shrink-0 items-center justify-center text-stone-600 transition hover:text-stone-950 md:hidden dark:text-stone-300 dark:hover:text-white"
                                 onClick={() => setMobileNavOpen(true)}
                                 aria-label={t("nav.menu")}
                                 title={t("nav.drawer")}
                             >
                                 <Menu className="size-5" />
                             </button>
-
-                            <nav className="hide-scrollbar ml-8 hidden h-14 min-w-0 items-center gap-7 overflow-x-auto md:flex">
-                                {visibleTools.map((tool) => {
-                                    const Icon = tool.icon;
-                                    const active = tool.slug === activeToolSlug;
-                                    return (
-                                        <Link
-                                            key={tool.slug}
-                                            to={`/${tool.slug}`}
-                                            className={cn(
-                                                "relative flex h-14 shrink-0 items-center gap-2 text-sm leading-6 transition after:absolute after:inset-x-0 after:bottom-0 after:h-px",
-                                                active
-                                                    ? "font-medium text-stone-950 after:bg-stone-950 dark:text-stone-100 dark:after:bg-stone-100"
-                                                    : "text-stone-500 after:bg-transparent hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100",
-                                            )}
-                                        >
-                                            <Icon className="size-4" />
-                                            <span className="truncate">{t(tool.labelKey)}</span>
-                                        </Link>
-                                    );
-                                })}
-                                <a
-                                    href={TENNDA_HUGGINGFACE_URL}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="relative flex h-14 shrink-0 items-center gap-2 text-sm leading-6 text-stone-500 transition after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-transparent hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100"
-                                >
-                                    <span className="size-4 shrink-0" style={huggingfaceIconStyle} aria-hidden />
-                                    <span className="truncate">{t("nav.huggingface")}</span>
-                                </a>
-                            </nav>
                         </div>
 
-                        <div className="my-auto flex h-9 min-w-0 items-center justify-end gap-2 justify-self-end whitespace-nowrap">
+                        <nav
+                            className={cn(
+                                "hide-scrollbar hidden min-w-0 items-center justify-evenly self-center overflow-x-auto md:flex",
+                                scrolled ? "h-12 px-2 lg:px-6" : "h-14 px-6 lg:px-16 xl:px-24",
+                            )}
+                        >
+                            <Dropdown menu={modelsMenu} trigger={["hover", "click"]}>
+                                <button type="button" className={navTriggerClass(modelsActive, scrolled)}>
+                                    {t("nav.models")}
+                                    <ChevronDown className="size-3.5 opacity-60" />
+                                </button>
+                            </Dropdown>
+                            <Dropdown menu={playgroundMenu} trigger={["hover", "click"]}>
+                                <button type="button" className={navTriggerClass(playgroundActive, scrolled)}>
+                                    {t("nav.playground")}
+                                    <ChevronDown className="size-3.5 opacity-60" />
+                                </button>
+                            </Dropdown>
+                            <Dropdown menu={developerMenu} trigger={["hover", "click"]}>
+                                <button type="button" className={navTriggerClass(developerActive, scrolled)}>
+                                    {t("nav.developer")}
+                                    <ChevronDown className="size-3.5 opacity-60" />
+                                </button>
+                            </Dropdown>
+                            <a
+                                href={TENNDA_HUGGINGFACE_URL}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={cn(
+                                    "relative flex shrink-0 items-center text-sm leading-6 text-stone-500 transition hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100",
+                                    scrolled ? "h-12" : "h-14 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-transparent",
+                                )}
+                            >
+                                <span className="truncate">{t("nav.huggingface")}</span>
+                            </a>
+                        </nav>
+
+                        <div className="my-auto flex h-9 min-w-0 items-center justify-end gap-1.5 justify-self-end whitespace-nowrap md:gap-2">
                             <CodexStatusButton />
                             <Tooltip title={panelOpen ? t("agent.collapsePanel") : t("agent.openPanel")}>
                                 <Button type="text" shape="circle" className="!h-8 !w-8 !min-w-8" icon={<Bot className="size-4" />} onClick={togglePanel} aria-label={t("agent.openPanel")} />
@@ -113,6 +185,17 @@ export function AppTopNav() {
         </>
     );
 }
+
+function navTriggerClass(active: boolean, scrolled: boolean) {
+    return cn(
+        "relative flex shrink-0 items-center gap-1 text-sm leading-6 transition",
+        scrolled ? "h-12" : "h-14 after:absolute after:inset-x-0 after:bottom-0 after:h-px",
+        active
+            ? cn("font-medium text-stone-950 dark:text-stone-100", !scrolled && "after:bg-stone-950 dark:after:bg-stone-100")
+            : cn("text-stone-500 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100", !scrolled && "after:bg-transparent"),
+    );
+}
+
 function CodexStatusButton() {
     const { t } = useI18n();
     const isAdmin = (useUserStore((state) => state.user)?.username || "").trim().toLowerCase() === "admin";

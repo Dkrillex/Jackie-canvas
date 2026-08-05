@@ -13,7 +13,9 @@ export default function UserLayout({ children }: { children: ReactNode }) {
         <div className="flex h-dvh overflow-hidden bg-background text-foreground">
             <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
                 <AppTopNav />
-                <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
+                <div className="min-h-0 flex-1 overflow-hidden" data-app-scroll-root>
+                    {children}
+                </div>
             </div>
             {/* 面板收起卸载后仍保持 SSE，方便 WorkBuddy / Codex MCP 继续操作画布 */}
             {!panelMounted ? <CanvasLocalAgentPanel headless autoConnect /> : null}

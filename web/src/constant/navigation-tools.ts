@@ -2,7 +2,8 @@ import { Bot, FileText, ImagePlus, Images, Maximize2, Settings2, Video } from "l
 
 import type { MessageKey } from "@/i18n";
 
-export const navigationTools = [
+/** Functional tools nested under Playground in the top nav. */
+export const playgroundTools = [
     {
         slug: "canvas",
         labelKey: "nav.canvas" as MessageKey,
@@ -40,4 +41,11 @@ export const navigationTools = [
     },
 ] as const;
 
-export type NavigationToolSlug = (typeof navigationTools)[number]["slug"];
+/** @deprecated Use playgroundTools — kept for call sites that still import navigationTools. */
+export const navigationTools = playgroundTools;
+
+export type NavigationToolSlug = (typeof playgroundTools)[number]["slug"];
+
+export function filterPlaygroundTools(options: { isAdmin: boolean; loggedIn: boolean }) {
+    return playgroundTools.filter((tool) => (tool.slug !== "canvas" || options.isAdmin) && (tool.slug !== "config" || options.loggedIn));
+}
