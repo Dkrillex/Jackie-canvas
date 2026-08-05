@@ -4,8 +4,7 @@ import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
 
 import { TokenStream } from "@/components/home/token-stream";
-import { TENNDA_CAPABILITY_ORDER, TENNDA_MODEL_CATALOG, type TenndaModelCapability, type TenndaModelEntry } from "@/constant/tennda-models";
-import { navigationTools } from "@/constant/navigation-tools";
+import { TENNDA_CAPABILITY_ORDER, TENNDA_HUGGINGFACE_URL, TENNDA_MODEL_CATALOG, type TenndaModelCapability, type TenndaModelEntry } from "@/constant/tennda-models";
 import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/stores/use-locale-store";
@@ -73,17 +72,11 @@ function modelsByCapability(capability: TenndaModelCapability) {
 export default function IndexPage() {
     const { t } = useI18n();
     const navigate = useNavigate();
-    const primaryTool = navigationTools.find((tool) => tool.slug === "image") ?? navigationTools[0];
     const user = useUserStore((state) => state.user);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
 
-    const startUsing = () => {
-        const path = `/${primaryTool.slug}`;
-        if (user) {
-            navigate(path);
-            return;
-        }
-        openLoginModal(path);
+    const exploreModels = () => {
+        document.getElementById("tennda-models")?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
 
     const openPath = (href: string) => {
@@ -117,17 +110,24 @@ export default function IndexPage() {
                             {t("home.hero.after")}
                         </p>
                         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-                            <Button type="primary" size="large" onClick={startUsing} icon={<ArrowRight className="size-4" />} iconPlacement="end">
+                            <Button type="primary" size="large" onClick={exploreModels} icon={<ArrowRight className="size-4" />} iconPlacement="end">
                                 {t("home.cta")}
                             </Button>
-                            <Button type="default" size="large" onClick={() => navigate("/prompts")}>
+                            <Button type="default" size="large" href={TENNDA_HUGGINGFACE_URL} target="_blank" rel="noreferrer">
                                 {t("home.ctaSecondary")}
                             </Button>
+                        </div>
+                        <div className="mt-6 flex flex-col items-center gap-1.5">
+                            <div className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.14em] text-stone-500 uppercase dark:text-stone-400">
+                                <span className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.18)]" aria-hidden />
+                                {t("home.networkStatus")}
+                            </div>
+                            <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 dark:text-stone-500">{t("home.networkRegions")}</div>
                         </div>
                     </div>
                 </div>
 
-                <section className="relative mx-auto mb-24 max-w-6xl border-t border-stone-200 pt-14 dark:border-stone-800">
+                <section id="tennda-models" className="relative mx-auto mb-24 max-w-6xl border-t border-stone-200 pt-14 dark:border-stone-800">
                     <div className="mb-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
                         <div>
                             <div className="mb-3 font-mono text-[11px] tracking-[0.22em] text-stone-400 dark:text-stone-500">

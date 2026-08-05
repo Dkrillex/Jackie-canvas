@@ -50,7 +50,7 @@ export const BUILTIN_TOOL_DEFS: StudioToolDef[] = [
         builtin: true,
         enabled: true,
         name: "generate_speech",
-        description: "Synthesize speech audio with Tennda Voice (TTS).",
+        description: "Synthesize speech audio with Tennda Waves (TTS).",
         parameters: {
             type: "object",
             properties: {

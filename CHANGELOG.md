@@ -9,6 +9,10 @@
 + [新增][Jackie] Agent Studio 对话与产物历史写入 IndexedDB（localforage），刷新后可恢复；Clear 可清空。
 + [优化][Jackie] Agent Studio 页面视觉：画布主题氛围底、圆角对话壳、侧栏 Tab 与建议提示卡片。
 + [调整][Jackie] 首页模型 lineup 底部增加 Agent Studio 入口；文本/语音模型卡片引导至 `/agent`。
++ [调整][Jackie] 首页 hero 副文案改为 Built and trained by Tennda… unified multimodal engine。
++ [调整][Jackie] 首页 hero CTA 下方增加 Inference network online 与 Singapore / Tokyo / Frankfurt 状态行。
++ [调整][Jackie] 首页模型分组标题：图片 Tennda Vision、视频 Tennda Motion、文本 Tennda LLM、音频 Tennda Voice；原 Tennda Vision 展示名改为 Tennda Illusion；Tennda Nano → Tennda Mini；音频模型 Tennda Voice → Tennda Waves。
++ [调整][Jackie] 首页 hero CTA 改为 Explore Tennda Models（滚到模型区）与 View Model architecture（Hugging Face）。
 + [优化][Jackie] 首页模型 lineup 按能力分组，并补充数量统计、用途标签与工作台入口，内容更完整。
 + [调整][Jackie] 首页隐藏 Prompt library 整块展示；提示词库仍可通过导航与 hero「Browse prompts」进入。
 + [调整][Jackie] 首页 hero 装饰由 ASCII 莫比乌斯环改为 Token Stream（漂移的 LLM token 行）。

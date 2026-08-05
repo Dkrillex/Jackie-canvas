@@ -1,4 +1,4 @@
-import { Bot, Menu } from "lucide-react";
+import { Bot, Cpu, Menu } from "lucide-react";
 import { Button, Tooltip } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
@@ -133,7 +133,7 @@ function CodexStatusButton() {
                 onClick={() => (isAdmin ? openConfigDialog(false, "codex") : openPanel())}
                 aria-label={isAdmin ? t("config.codex") : t("agent.openPanel")}
             >
-                <span className="mx-auto block size-4" style={{ background: color, WebkitMask: "url(/icons/openai.svg) center / contain no-repeat", mask: "url(/icons/openai.svg) center / contain no-repeat" }} />
+                <Cpu className="size-4" style={{ color }} />
                 <span className="absolute right-1 top-1 size-2 rounded-full border border-background" style={{ background: color }} />
             </Button>
         </Tooltip>

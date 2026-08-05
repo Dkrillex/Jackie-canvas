@@ -18,7 +18,7 @@ export type TenndaModelEntry = {
 export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     {
         name: "gpt-image-2",
-        displayName: "Tennda Vision",
+        displayName: "Tennda Illusion",
         capability: "image",
         tagline: "Flagship image generation for posters, product shots, and brand art with strong prompt adherence.",
         focus: "Quality",
@@ -72,7 +72,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "gpt-5.4-nano",
-        displayName: "Tennda Nano",
+        displayName: "Tennda Mini",
         capability: "text",
         tagline: "Fast lightweight chat for quick Q&A, rewriting, and lightweight drafting.",
         focus: "Chat",
@@ -90,7 +90,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "gpt-4o-mini-tts",
-        displayName: "Tennda Voice",
+        displayName: "Tennda Waves",
         capability: "audio",
         tagline: "Natural speech synthesis for narrations, product demos, and spoken walkthroughs.",
         focus: "Speech",
