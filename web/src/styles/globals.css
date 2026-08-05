@@ -169,24 +169,45 @@
         }
     }
 
-    .ascii-ring-shimmer {
-        animation: ascii-ring-shimmer 10s ease-in-out infinite;
-        /* 仅边缘轻微淡出，避免把上半环裁成缺口 */
-        mask-image: radial-gradient(ellipse 96% 92% at 50% 48%, #000 58%, transparent 88%);
-        will-change: transform, opacity, filter;
+    .token-stream-mask {
+        mask-image: radial-gradient(ellipse 78% 62% at 50% 48%, transparent 18%, #000 52%, #000 72%, transparent 96%);
+        -webkit-mask-image: radial-gradient(ellipse 78% 62% at 50% 48%, transparent 18%, #000 52%, #000 72%, transparent 96%);
+        opacity: 0.9;
     }
 
-    @keyframes ascii-ring-shimmer {
-        0%,
-        100% {
-            opacity: 0.42;
-            transform: translateY(2px) scale(0.97);
-            filter: blur(0.2px);
+    .token-stream-track {
+        animation-name: token-stream-scroll;
+        animation-timing-function: linear;
+        animation-iteration-count: infinite;
+        will-change: transform;
+    }
+
+    .token-stream-track-reverse {
+        animation-name: token-stream-scroll-reverse;
+    }
+
+    @keyframes token-stream-scroll {
+        from {
+            transform: translateX(0);
         }
-        50% {
-            opacity: 1;
-            transform: translateY(-6px) scale(1.04);
-            filter: blur(0);
+        to {
+            transform: translateX(-50%);
+        }
+    }
+
+    @keyframes token-stream-scroll-reverse {
+        from {
+            transform: translateX(-50%);
+        }
+        to {
+            transform: translateX(0);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .token-stream-track,
+        .token-stream-track-reverse {
+            animation: none;
         }
     }
 

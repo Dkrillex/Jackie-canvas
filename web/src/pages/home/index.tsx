@@ -3,7 +3,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { App, Button, Image, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 
-import { AsciiRing } from "@/components/home/ascii-ring";
+import { TokenStream } from "@/components/home/token-stream";
 import { TENNDA_MODEL_CATALOG, type TenndaModelCapability } from "@/constant/tennda-models";
 import { navigationTools } from "@/constant/navigation-tools";
 import type { MessageKey } from "@/i18n";
@@ -85,7 +85,7 @@ export default function IndexPage() {
         <main className="relative h-full overflow-y-auto bg-background bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] text-stone-950 dark:bg-[radial-gradient(rgba(245,245,244,.18)_1px,transparent_1px)] dark:text-stone-100">
             <section className="relative mx-auto min-h-[calc(100vh-4rem)] max-w-7xl overflow-x-clip px-6">
                 <div className="relative flex min-h-[640px] flex-col items-center justify-center overflow-visible pt-10 text-center">
-                    <AsciiRing />
+                    <TokenStream />
                     <div className="relative z-10 flex flex-col items-center">
                         <h1 className="ai-title-aurora max-w-5xl text-balance text-5xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">Tennda LLM</h1>
                         <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">

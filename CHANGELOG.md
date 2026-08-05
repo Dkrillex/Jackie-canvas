@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 首页 hero 装饰由 ASCII 莫比乌斯环改为 Token Stream（漂移的 LLM token 行）。
 + [调整][Jackie] 更换 Tennda 品牌 Logo（透明底）：顶栏展示新图，浏览器 favicon 与 apple-touch-icon 同步更新；首页 hero 不放 Logo。
 + [调整][Jackie] 清理登录/API/Toast/配置/画布/Agent 等用户可见中文硬编码，统一英文展示（`zh.ts` 目录保留但不生效）。
 + [优化][Jackie] 首页在原石色点阵上加强科技感：角标卡片、扫描线与编号标签。
