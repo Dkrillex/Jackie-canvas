@@ -1,15 +1,13 @@
-import { ArrowRight, ImageIcon, MessageSquare, Sparkles, Video } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
-import { App, Button, Image } from "antd";
+import { ArrowRight, Bot, ImageIcon, MessageSquare, Sparkles, Video } from "lucide-react";
+import { type ReactNode } from "react";
+import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
 
 import { TokenStream } from "@/components/home/token-stream";
-import { TENNDA_MODEL_CATALOG, type TenndaModelCapability } from "@/constant/tennda-models";
+import { TENNDA_CAPABILITY_ORDER, TENNDA_MODEL_CATALOG, type TenndaModelCapability, type TenndaModelEntry } from "@/constant/tennda-models";
 import { navigationTools } from "@/constant/navigation-tools";
 import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { fetchEnglishPrompts } from "@/services/api/english-prompts";
-import type { Prompt } from "@/services/api/prompts";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 
@@ -40,6 +38,20 @@ const capabilityLabelKey: Record<TenndaModelCapability, MessageKey> = {
     audio: "home.models.capability.audio",
 };
 
+const capabilityTitleKey: Record<TenndaModelCapability, MessageKey> = {
+    image: "home.models.group.imageTitle",
+    video: "home.models.group.videoTitle",
+    text: "home.models.group.textTitle",
+    audio: "home.models.group.audioTitle",
+};
+
+const capabilityDescKey: Record<TenndaModelCapability, MessageKey> = {
+    image: "home.models.group.imageDesc",
+    video: "home.models.group.videoDesc",
+    text: "home.models.group.textDesc",
+    audio: "home.models.group.audioDesc",
+};
+
 const capabilityCode: Record<TenndaModelCapability, string> = {
     image: "IMG",
     video: "VID",
@@ -47,22 +59,23 @@ const capabilityCode: Record<TenndaModelCapability, string> = {
     audio: "AUD",
 };
 
+const capabilityHref: Record<TenndaModelCapability, string> = {
+    image: "/image",
+    video: "/video",
+    text: "/agent",
+    audio: "/agent",
+};
+
+function modelsByCapability(capability: TenndaModelCapability) {
+    return TENNDA_MODEL_CATALOG.filter((model) => model.capability === capability);
+}
+
 export default function IndexPage() {
-    const { message } = App.useApp();
     const { t } = useI18n();
     const navigate = useNavigate();
     const primaryTool = navigationTools.find((tool) => tool.slug === "image") ?? navigationTools[0];
     const user = useUserStore((state) => state.user);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
-    const [promptShowcase, setPromptShowcase] = useState<Prompt[]>([]);
-    const [previewIndex, setPreviewIndex] = useState(0);
-    const [previewOpen, setPreviewOpen] = useState(false);
-
-    useEffect(() => {
-        void fetchEnglishPrompts(12)
-            .then(setPromptShowcase)
-            .catch((error) => message.error(error instanceof Error ? error.message : t("home.fetchPromptsFailed")));
-    }, [message, t]);
 
     const startUsing = () => {
         const path = `/${primaryTool.slug}`;
@@ -73,7 +86,11 @@ export default function IndexPage() {
         openLoginModal(path);
     };
 
-    const openModel = (href: string) => {
+    const openPath = (href: string) => {
+        if (href === "/agent" || href === "/prompts") {
+            navigate(href);
+            return;
+        }
         if (user) {
             navigate(href);
             return;
@@ -110,103 +127,134 @@ export default function IndexPage() {
                     </div>
                 </div>
 
-                <section className="relative mx-auto mb-16 max-w-6xl border-t border-stone-200 pt-14 dark:border-stone-800">
-                    <div className="mb-10 mx-auto max-w-2xl text-center">
-                        <div className="mb-3 font-mono text-[11px] tracking-[0.22em] text-stone-400 dark:text-stone-500">
-                            {t("home.showcaseIndex")} / MODELS
+                <section className="relative mx-auto mb-24 max-w-6xl border-t border-stone-200 pt-14 dark:border-stone-800">
+                    <div className="mb-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+                        <div>
+                            <div className="mb-3 font-mono text-[11px] tracking-[0.22em] text-stone-400 dark:text-stone-500">
+                                {t("home.showcaseIndex")} / MODELS
+                            </div>
+                            <h2 className="max-w-xl text-3xl font-semibold tracking-tight text-stone-950 sm:text-4xl dark:text-stone-100">{t("home.showcaseTitle")}</h2>
+                            <p className="mt-4 max-w-2xl text-base leading-7 text-stone-500 dark:text-stone-400">{t("home.showcaseDesc")}</p>
                         </div>
-                        <h2 className="text-3xl font-semibold tracking-tight text-stone-950 dark:text-stone-100">{t("home.showcaseTitle")}</h2>
-                        <p className="mt-3 text-base leading-7 text-stone-500 dark:text-stone-400">{t("home.showcaseDesc")}</p>
+                        <div className="home-tech-corners grid grid-cols-2 gap-px border border-stone-200 bg-stone-200 sm:grid-cols-4 dark:border-stone-800 dark:bg-stone-800">
+                            {TENNDA_CAPABILITY_ORDER.map((capability) => {
+                                const count = modelsByCapability(capability).length;
+                                return (
+                                    <button
+                                        key={capability}
+                                        type="button"
+                                        onClick={() => openPath(capabilityHref[capability])}
+                                        className="bg-white px-4 py-3 text-left transition hover:bg-stone-50 dark:bg-stone-950 dark:hover:bg-stone-900"
+                                    >
+                                        <div className="font-mono text-[10px] tracking-[0.18em] text-stone-400 dark:text-stone-500">{capabilityCode[capability]}</div>
+                                        <div className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-stone-950 dark:text-stone-100">{count}</div>
+                                        <div className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{t(capabilityLabelKey[capability])}</div>
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {TENNDA_MODEL_CATALOG.map((model, index) => {
-                            const Icon = capabilityIcon[model.capability];
+
+                    <div className="space-y-14">
+                        {TENNDA_CAPABILITY_ORDER.map((capability, groupIndex) => {
+                            const models = modelsByCapability(capability);
+                            const Icon = capabilityIcon[capability];
+                            if (!models.length) return null;
                             return (
-                                <button
-                                    key={model.name}
-                                    type="button"
-                                    onClick={() => openModel(model.href)}
-                                    className="home-tech-panel home-tech-corners group flex min-h-[204px] flex-col items-start border border-stone-200 bg-white/75 p-5 text-left transition duration-200 hover:border-stone-400 hover:bg-white dark:border-stone-800 dark:bg-stone-950/55 dark:hover:border-stone-500 dark:hover:bg-stone-900"
-                                >
-                                    <div className="relative z-[2] mb-4 flex w-full items-center justify-between gap-3">
-                                        <span className="inline-flex size-9 items-center justify-center border border-stone-300 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
-                                            <Icon className="size-4" />
-                                        </span>
-                                        <span className="font-mono text-[11px] tracking-[0.16em] text-stone-400 dark:text-stone-500">
-                                            {capabilityCode[model.capability]} · {String(index + 1).padStart(2, "0")}
-                                        </span>
+                                <div key={capability}>
+                                    <div className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-4 dark:border-stone-800">
+                                        <div className="flex min-w-0 items-start gap-3">
+                                            <span className="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center border border-stone-300 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
+                                                <Icon className="size-4" />
+                                            </span>
+                                            <div>
+                                                <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 dark:text-stone-500">
+                                                    {capabilityCode[capability]} · {String(groupIndex + 1).padStart(2, "0")}
+                                                </div>
+                                                <h3 className="mt-1 text-xl font-semibold tracking-tight text-stone-950 dark:text-stone-100">{t(capabilityTitleKey[capability])}</h3>
+                                                <p className="mt-1 max-w-2xl text-sm leading-6 text-stone-500 dark:text-stone-400">{t(capabilityDescKey[capability])}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => openPath(capabilityHref[capability])}
+                                            className="inline-flex items-center gap-1 font-mono text-xs tracking-[0.12em] text-stone-600 transition hover:gap-2 hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100"
+                                        >
+                                            {t("home.models.openWorkbench").toUpperCase()}
+                                            <ArrowRight className="size-3.5" />
+                                        </button>
                                     </div>
-                                    <div className="relative z-[2] mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-stone-400 dark:text-stone-500">
-                                        {t(capabilityLabelKey[model.capability])}
+
+                                    <div className={cn("grid gap-3", capability === "audio" ? "sm:grid-cols-1 lg:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3")}>
+                                        {models.map((model, index) => (
+                                            <ModelCard key={model.name} model={model} index={index} onOpen={() => openPath(model.href)} />
+                                        ))}
                                     </div>
-                                    <h3 className="relative z-[2] text-lg font-semibold tracking-tight text-stone-950 dark:text-stone-100">{model.displayName}</h3>
-                                    <p className="relative z-[2] mt-2 flex-1 text-sm leading-6 text-stone-500 dark:text-stone-400">{model.tagline}</p>
-                                    <span className="relative z-[2] mt-5 inline-flex items-center gap-1 font-mono text-xs tracking-[0.12em] text-stone-700 transition group-hover:gap-2 dark:text-stone-300">
-                                        {t("home.models.try").toUpperCase()}
-                                        <ArrowRight className="size-3.5" />
-                                    </span>
-                                </button>
+                                </div>
                             );
                         })}
                     </div>
-                </section>
 
-                <section className="relative mx-auto mb-20 max-w-6xl border-t border-stone-200 pt-14 dark:border-stone-800">
-                    <div className="mb-8 grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-start">
-                        <div />
-                        <div className="max-w-2xl text-center">
-                            <div className="mb-3 font-mono text-[11px] tracking-[0.22em] text-stone-400 dark:text-stone-500">
-                                {t("home.promptsIndex")} / PROMPTS
+                    <div className="home-tech-panel home-tech-corners mt-14 border border-stone-200 bg-white/80 p-6 md:p-8 dark:border-stone-800 dark:bg-stone-950/60">
+                        <div className="relative z-[2] grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,0.8fr)] lg:items-end lg:gap-10">
+                            <div className="min-w-0">
+                                <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 dark:text-stone-500">{t("home.models.footerIndex")}</div>
+                                <h3 className="mt-2 text-xl font-semibold tracking-tight text-stone-950 dark:text-stone-100">{t("home.models.footerTitle")}</h3>
+                                <p className="mt-2 max-w-lg text-sm leading-6 text-stone-500 dark:text-stone-400">{t("home.models.footerDesc")}</p>
                             </div>
-                            <h2 className="text-3xl font-semibold tracking-tight text-stone-950 dark:text-stone-100">{t("home.promptsTitle")}</h2>
-                            <p className="mt-3 text-base leading-7 text-stone-500 dark:text-stone-400">{t("home.promptsDesc")}</p>
+                            <div className="flex w-full flex-col gap-2 sm:max-w-sm lg:max-w-none lg:justify-self-end">
+                                <Button type="primary" size="large" block onClick={() => openPath("/agent")} icon={<Bot className="size-4" />}>
+                                    {t("home.models.openAgent")}
+                                </Button>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button size="large" block onClick={() => openPath("/image")}>
+                                        {t("home.models.openImage")}
+                                    </Button>
+                                    <Button size="large" block onClick={() => openPath("/video")}>
+                                        {t("home.models.openVideo")}
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-                        <Button type="link" onClick={() => navigate("/prompts")} className="justify-self-center md:justify-self-end" icon={<ArrowRight className="size-4" />} iconPlacement="end">
-                            {t("home.viewPrompts")}
-                        </Button>
-                    </div>
-                    <div className="grid auto-rows-[220px] gap-3 md:grid-cols-4">
-                        {promptShowcase.map((item, index) => (
-                            <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => {
-                                    setPreviewIndex(index);
-                                    setPreviewOpen(true);
-                                }}
-                                className={cn(
-                                    "home-tech-corners group relative cursor-pointer overflow-hidden border border-stone-200 bg-stone-100 text-left dark:border-stone-800 dark:bg-stone-900",
-                                    index === 0 && "md:col-span-2 md:row-span-2",
-                                    index === 3 && "md:col-span-2",
-                                )}
-                            >
-                                <img src={item.coverUrl} alt={item.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
-                                <div className="absolute left-3 top-3 z-[2] border border-white/25 bg-black/35 px-2 py-0.5 font-mono text-[10px] tracking-[0.16em] text-white/85 backdrop-blur-sm">
-                                    PMT · {String(index + 1).padStart(2, "0")}
-                                </div>
-                                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent p-4 text-white">
-                                    <h3 className="text-sm font-medium tracking-tight">{item.title}</h3>
-                                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/75">{item.prompt}</p>
-                                </div>
-                            </button>
-                        ))}
                     </div>
                 </section>
             </section>
-            <Image.PreviewGroup
-                preview={{
-                    open: previewOpen,
-                    current: previewIndex,
-                    onOpenChange: setPreviewOpen,
-                    onChange: setPreviewIndex,
-                }}
-            >
-                <div className="hidden">
-                    {promptShowcase.map((item) => (
-                        <Image key={item.id} src={item.coverUrl} alt={item.title} />
-                    ))}
-                </div>
-            </Image.PreviewGroup>
         </main>
+    );
+}
+
+function ModelCard({ model, index, onOpen }: { model: TenndaModelEntry; index: number; onOpen: () => void }) {
+    const { t } = useI18n();
+    return (
+        <button
+            type="button"
+            onClick={onOpen}
+            className="home-tech-panel home-tech-corners group flex min-h-[240px] flex-col items-start border border-stone-200 bg-white/75 p-5 text-left transition duration-200 hover:border-stone-400 hover:bg-white dark:border-stone-800 dark:bg-stone-950/55 dark:hover:border-stone-500 dark:hover:bg-stone-900"
+        >
+            <div className="relative z-[2] mb-4 flex w-full items-center justify-between gap-3">
+                <span className="border border-stone-300 bg-stone-50 px-2 py-0.5 font-mono text-[10px] tracking-[0.16em] text-stone-600 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
+                    {model.focus.toUpperCase()}
+                </span>
+                <span className="font-mono text-[11px] tracking-[0.16em] text-stone-400 dark:text-stone-500">
+                    {capabilityCode[model.capability]} · {String(index + 1).padStart(2, "0")}
+                </span>
+            </div>
+            <h4 className="relative z-[2] text-lg font-semibold tracking-tight text-stone-950 dark:text-stone-100">{model.displayName}</h4>
+            <p className="relative z-[2] mt-2 flex-1 text-sm leading-6 text-stone-500 dark:text-stone-400">{model.tagline}</p>
+            <div className="relative z-[2] mt-4 flex flex-wrap gap-1.5">
+                {model.uses.map((use) => (
+                    <span
+                        key={use}
+                        className="border border-stone-200 px-2 py-0.5 font-mono text-[10px] tracking-[0.08em] text-stone-500 dark:border-stone-700 dark:text-stone-400"
+                    >
+                        {use}
+                    </span>
+                ))}
+            </div>
+            <span className="relative z-[2] mt-5 inline-flex items-center gap-1 font-mono text-xs tracking-[0.12em] text-stone-700 transition group-hover:gap-2 dark:text-stone-300">
+                {t("home.models.try").toUpperCase()}
+                <ArrowRight className="size-3.5" />
+            </span>
+        </button>
     );
 }

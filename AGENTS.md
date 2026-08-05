@@ -87,10 +87,11 @@
 - 顶栏配置齿轮仅 `admin` 可见；导航「配置」仅登录后显示。普通用户通过账户入口打开 Account。
 - 画布（`/canvas`）仅 `admin` 可见可进；普通用户导航不显示，直接访问重定向到生图。
 - 提示词库保持全英：UI 用英文 i18n；内置来源走英文 README / `title_en`，不要回退到中文 registry 标题。
-- 提示词库：非 `admin` 隐藏 Category / Tags 筛选，库列表、首页示例与提示词选择弹窗仅展示 DavidWu GPT Image 2（`PUBLIC_PROMPT_CATEGORY`）；`admin` 可见全部来源与筛选。内置来源只走英文 fetcher，不要回退中文 registry。
+- 提示词库：非 `admin` 隐藏 Category / Tags 筛选，库列表与提示词选择弹窗仅展示 DavidWu GPT Image 2（`PUBLIC_PROMPT_CATEGORY`）；`admin` 可见全部来源与筛选。内置来源只走英文 fetcher，不要回退中文 registry。首页不展示 Prompt library 区块。
 - 模型选择器：非 `admin` 不要显示可识别上游厂商的图标（OpenAI/Gemini 等），统一用默认图标，文案只用 Tennda 显示名；`admin` 可显示厂商图标，文案为「展示名: 实际上游模型名」。
 - 「开始生成」等会发起 AI 请求的操作按钮，未登录时应提示并弹出登录，不真正发起生成。
 - 登录鉴权走同源 `/prod-api`（MaaS：`/auth/login` + JWT + 请求体 AES/RSA 加密），不要再走 New API 的 `/api/user/login` Cookie/`New-Api-User`。AI 请求仍走 `/gw`。
 - 登录成功与 hydrate 后，用 `/prod-api/llm/tokens/list`（仅 JWT，不传 userId）拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key 写入默认渠道；退出时清空。不要再写死内置 API Key。
 - 部署到 Vercel 时 `/gw` 与 `/prod-api` 必须走外部 rewrite 或 Middleware 代理到上游，且 SPA fallback 不能匹配这两条前缀；不要依赖未部署成功的 `/api` Serverless 回退，否则登录会 405。
 - `tennda-dev` / `tennda-dev-one`：对外品牌为 Tennda LLM；UI 用 `displayName` / `TENNDA_MODEL_CATALOG` 展示自研名，请求仍用真实上游 `ChannelModel.name`；强制英文、隐藏语言切换，不要在演示文案里暴露真实上游模型品牌；隐藏画布入口（导航/首页），`/canvas` 重定向到 `/image`，登录默认进生图；Agent 面板未连本地 Agent 时默认用 `gpt-5.4-nano`（Tennda Nano）走 `/gw` 对话，连上后仍走本地 Codex。
+- Agent Studio（`/agent`）全员可用：云端 `/gw` function calling 工具循环（不依赖本机 Codex）；内置图/视频/TTS/站点工具；MCP 仅支持浏览器可访问的远程 HTTP MCP（不做 stdio）；发送/生成需登录。右侧栏本地 Agent 面板保留且不与 Studio 混用运行时。

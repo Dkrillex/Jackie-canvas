@@ -1,4 +1,4 @@
-import { FileText, ImagePlus, Images, Maximize2, Settings2, Video } from "lucide-react";
+import { Bot, FileText, ImagePlus, Images, Maximize2, Settings2, Video } from "lucide-react";
 
 import type { MessageKey } from "@/i18n";
 
@@ -7,6 +7,11 @@ export const navigationTools = [
         slug: "canvas",
         labelKey: "nav.canvas" as MessageKey,
         icon: Maximize2,
+    },
+    {
+        slug: "agent",
+        labelKey: "nav.agent" as MessageKey,
+        icon: Bot,
     },
     {
         slug: "image",

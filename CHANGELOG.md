@@ -4,7 +4,13 @@
 
 ### Jackie（本分支定制）
 
-+ [调整][Jackie] 首页提示词卡片隐藏 tags，仅保留标题与摘要。
++ [新增][Jackie] Agent Studio（`/agent`）：云端工具循环对话，内置生图/视频/TTS 与站点工具，支持远程 HTTP MCP；全员可用，发送需登录。
++ [调整][Jackie] Agent Studio 对话输入区复用侧栏 `AgentChatComposer`（圆角卡片、圆形发送/停止、模型选择在输入区左侧）。
++ [新增][Jackie] Agent Studio 对话与产物历史写入 IndexedDB（localforage），刷新后可恢复；Clear 可清空。
++ [优化][Jackie] Agent Studio 页面视觉：画布主题氛围底、圆角对话壳、侧栏 Tab 与建议提示卡片。
++ [调整][Jackie] 首页模型 lineup 底部增加 Agent Studio 入口；文本/语音模型卡片引导至 `/agent`。
++ [优化][Jackie] 首页模型 lineup 按能力分组，并补充数量统计、用途标签与工作台入口，内容更完整。
++ [调整][Jackie] 首页隐藏 Prompt library 整块展示；提示词库仍可通过导航与 hero「Browse prompts」进入。
 + [调整][Jackie] 首页 hero 装饰由 ASCII 莫比乌斯环改为 Token Stream（漂移的 LLM token 行）。
 + [调整][Jackie] 更换 Tennda 品牌 Logo（透明底）：顶栏展示新图，浏览器 favicon 与 apple-touch-icon 同步更新；首页 hero 不放 Logo。
 + [调整][Jackie] 清理登录/API/Toast/配置/画布/Agent 等用户可见中文硬编码，统一英文展示（`zh.ts` 目录保留但不生效）。

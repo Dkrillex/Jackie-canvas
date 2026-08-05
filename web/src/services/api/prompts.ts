@@ -169,7 +169,7 @@ export async function fetchPrompts({ keyword = "", tag = [], category = ALL_PROM
     const normalizedPage = Math.max(1, page);
     const normalizedPageSize = Math.max(1, Math.min(100, pageSize));
     // Keep personal prompts when a library category is selected (select dialog needs both).
-    const retainPersonal = includePersonal && isActiveOption(category);
+    const retainPersonal = Boolean(includePersonal && isActiveOption(category));
     const withoutTagFilter = filterPrompts(items, { keyword: normalizedKeyword, category, tags: [], retainPersonal });
     const filtered = filterPrompts(items, { keyword: normalizedKeyword, category, tags: tag, retainPersonal });
     const categories = enabledSources().map((source) => source.name);

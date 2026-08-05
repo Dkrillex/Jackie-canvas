@@ -912,6 +912,98 @@ export async function requestImageQuestion(config: AiConfig, messages: AiTextMes
     }
 }
 
+export type AgentToolDefinition = {
+    name: string;
+    description?: string;
+    parameters: Record<string, unknown>;
+};
+
+export type AgentTurnMessage =
+    | AiTextMessage
+    | { role: "tool"; tool_call_id: string; content: string }
+    | { type: "function_call"; call_id: string; name: string; arguments: string; thoughtSignature?: string };
+
+export type AgentToolCall = {
+    id: string;
+    name: string;
+    arguments: string;
+    thoughtSignature?: string;
+};
+
+export type AgentTurnResult = {
+    content: string;
+    toolCalls: AgentToolCall[];
+};
+
+/** One model turn with optional function tools (Responses / Gemini). */
+export async function requestAgentTurn(
+    config: AiConfig,
+    messages: AgentTurnMessage[],
+    tools: AgentToolDefinition[],
+    onDelta: (text: string) => void,
+    options?: RequestOptions & { toolChoice?: ToolChoice },
+): Promise<AgentTurnResult> {
+    const requestConfig = resolveModelRequestConfig(config, config.model || config.textModel);
+    const script = resolveModelScript(config, config.model || config.textModel);
+    if (script) {
+        throw new Error("Model scripts do not support Agent Studio tool calling yet. Pick a native text model.");
+    }
+    const functionTools: ResponseFunctionTool[] = tools.map((tool) => ({
+        type: "function",
+        function: {
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.parameters,
+        },
+    }));
+    const toolChoice = options?.toolChoice || "auto";
+    try {
+        if (requestConfig.apiFormat === "gemini") {
+            const result = await requestGeminiStreamingResponse(
+                requestConfig,
+                toGeminiBody(requestConfig, messages as ResponseInputMessage[], toGeminiToolOptions(functionTools, toolChoice)),
+                onDelta,
+                options,
+            );
+            return {
+                content: result.content || "",
+                toolCalls: result.toolCalls.map((call) => ({
+                    id: call.id,
+                    name: call.function.name,
+                    arguments: call.function.arguments,
+                    ...(call.thoughtSignature ? { thoughtSignature: call.thoughtSignature } : {}),
+                })),
+            };
+        }
+        const result = await requestStreamingResponse(
+            requestConfig,
+            {
+                model: requestConfig.model,
+                input: toResponseInput(withSystemMessage(requestConfig, messages as ResponseInputMessage[])),
+                ...(functionTools.length
+                    ? {
+                          tools: functionTools.map(toResponseTool),
+                          tool_choice: typeof toolChoice === "object" ? { type: "function", name: toolChoice.name } : toolChoice,
+                      }
+                    : {}),
+            },
+            onDelta,
+            options,
+        );
+        return {
+            content: result.content || "",
+            toolCalls: result.toolCalls.map((call) => ({
+                id: call.id,
+                name: call.function.name,
+                arguments: call.function.arguments,
+                ...(call.thoughtSignature ? { thoughtSignature: call.thoughtSignature } : {}),
+            })),
+        };
+    } catch (error) {
+        throw new Error(readAxiosError(error, "Request failed"));
+    }
+}
+
 export async function fetchImageModels(config: Pick<AiConfig, "baseUrl" | "apiKey" | "apiFormat">) {
     try {
         if (config.apiFormat === "gemini") {
