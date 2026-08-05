@@ -8,7 +8,7 @@ export function PromptCard({
     item,
     onOpen,
     onCopy,
-    actionLabel = "复制",
+    actionLabel = "Copy",
     actionIcon = <Copy className="size-3.5" />,
     actionType = "text",
     extraAction,

@@ -24,9 +24,9 @@ export async function requestAudioGeneration(config: AiConfig, prompt: string, o
     const format = normalizeAudioFormatValue(config.audioFormat);
     const script = resolveModelScript(config, config.model || config.audioModel);
     if (script) {
-        if (!model) throw new Error("请先配置音频模型");
-        if (!requestConfig.baseUrl.trim()) throw new Error("请先配置 Base URL");
-        if (!requestConfig.apiKey.trim()) throw new Error("请先配置 API Key");
+        if (!model) throw new Error("Please configure an audio model first");
+        if (!requestConfig.baseUrl.trim()) throw new Error("Please configure Base URL first");
+        if (!requestConfig.apiKey.trim()) throw new Error("Please configure API Key first");
         try {
             const result = await runModelPlugin({
                 capability: "audio",
@@ -38,7 +38,7 @@ export async function requestAudioGeneration(config: AiConfig, prompt: string, o
             });
             return await audioPluginBlob(result, format);
         } catch (error) {
-            throw new Error(readAxiosError(error, "音频生成失败"));
+            throw new Error(readAxiosError(error, "Audio generation failed"));
         }
     }
     assertAudioConfig(requestConfig, model);
@@ -60,7 +60,7 @@ export async function requestAudioGeneration(config: AiConfig, prompt: string, o
         await assertAudioBlob(response.data);
         return response.data.type.startsWith("audio/") ? response.data : new Blob([response.data], { type: audioMimeType(format) });
     } catch (error) {
-        throw new Error(readAxiosError(error, "音频生成失败"));
+        throw new Error(readAxiosError(error, "Audio generation failed"));
     }
 }
 
@@ -72,7 +72,7 @@ async function audioPluginBlob(result: unknown, format: string): Promise<Blob> {
         const record = result as Record<string, unknown>;
         source = typeof record.b64_json === "string" ? record.b64_json : typeof record.data === "string" ? record.data : typeof record.url === "string" ? record.url : "";
     }
-    if (!source) throw new Error("模型调用脚本没有返回音频");
+    if (!source) throw new Error("Model script did not return audio");
     const url = source.startsWith("data:") || /^https?:/i.test(source) ? source : `data:${audioMimeType(format)};base64,${source}`;
     const blob = await (await fetch(url)).blob();
     return blob.type.startsWith("audio/") ? blob : new Blob([blob], { type: audioMimeType(format) });
@@ -84,10 +84,10 @@ export async function storeGeneratedAudio(blob: Blob, format = "mp3"): Promise<U
 }
 
 function assertAudioConfig(config: AiConfig, model: string) {
-    if (!model) throw new Error("请先配置音频模型");
-    if (!config.baseUrl.trim()) throw new Error("请先配置 Base URL");
-    if (!config.apiKey.trim()) throw new Error("请先配置 API Key");
-    if (config.apiFormat === "gemini") throw new Error("Gemini 调用格式暂不支持音频生成，请使用 OpenAI 格式渠道");
+    if (!model) throw new Error("Please configure an audio model first");
+    if (!config.baseUrl.trim()) throw new Error("Please configure Base URL first");
+    if (!config.apiKey.trim()) throw new Error("Please configure API Key first");
+    if (config.apiFormat === "gemini") throw new Error("Gemini API format does not support audio generation. Use an OpenAI-format channel.");
 }
 
 async function assertAudioBlob(blob: Blob) {
@@ -98,12 +98,12 @@ async function assertAudioBlob(blob: Blob) {
     } catch {
         return;
     }
-    if (typeof payload.code === "number" && payload.code !== 0) throw new Error(payload.msg || "音频生成失败");
+    if (typeof payload.code === "number" && payload.code !== 0) throw new Error(payload.msg || "Audio generation failed");
     if (payload.error?.message) throw new Error(payload.error.message);
 }
 
 function readAxiosError(error: unknown, fallback: string) {
-    if (axios.isCancel(error)) return "请求已取消";
+    if (axios.isCancel(error)) return "Request cancelled";
     if (axios.isAxiosError<{ error?: { message?: string }; msg?: string; code?: number }>(error)) {
         const responseData = error.response?.data;
         return responseData?.msg || responseData?.error?.message || statusMessage(error.response?.status, fallback);
@@ -112,7 +112,7 @@ function readAxiosError(error: unknown, fallback: string) {
 }
 
 function statusMessage(status: number | undefined, fallback: string) {
-    if (status === 401 || status === 403) return "鉴权失败，请检查 API Key、套餐权限或模型权限";
-    if (status === 429) return "请求被限流或额度不足，请稍后重试";
-    return status ? `${fallback}（${status}）` : fallback;
+    if (status === 401 || status === 403) return "Authentication failed. Check API Key, plan permissions, or model access.";
+    if (status === 429) return "Rate limited or quota exceeded. Please try again later.";
+    return status ? `${fallback} (${status})` : fallback;
 }

@@ -12,10 +12,10 @@ const apiFormatOptions: Array<{ label: string; value: ApiCallFormat }> = [
 ];
 
 const capabilityOptions: Array<{ label: string; value: ModelCapability }> = [
-    { label: "生图", value: "image" },
-    { label: "视频", value: "video" },
-    { label: "文本", value: "text" },
-    { label: "音频", value: "audio" },
+    { label: "Image", value: "image" },
+    { label: "Video", value: "video" },
+    { label: "Text", value: "text" },
+    { label: "Audio", value: "audio" },
 ];
 
 type ScriptTarget = { name: string; capability: ModelCapability; value: string };
@@ -49,7 +49,7 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
     const removeModel = (name: string) => setModels(draft.models.filter((model) => model.name !== name));
 
     const save = () => {
-        onSave({ ...draft, name: draft.name.trim() || "未命名渠道", models: normalizeChannelModels(draft.models) });
+        onSave({ ...draft, name: draft.name.trim() || "Untitled channel", models: normalizeChannelModels(draft.models) });
         onClose();
     };
 
@@ -57,29 +57,29 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
         <Drawer
             open={open}
             width={640}
-            title="编辑渠道"
+            title="Edit channel"
             onClose={onClose}
             styles={{ body: { paddingTop: 16 } }}
             extra={
                 <Space>
-                    <Button onClick={onClose}>取消</Button>
+                    <Button onClick={onClose}>Cancel</Button>
                     <Button type="primary" onClick={save}>
-                        保存
+                        Save
                     </Button>
                 </Space>
             }
         >
             <div className="grid gap-4 md:grid-cols-2">
                 <label className="block">
-                    <span className="mb-1 block text-sm font-medium">渠道名称</span>
+                    <span className="mb-1 block text-sm font-medium">Channel name</span>
                     <Input value={draft.name} onChange={(event) => patch({ name: event.target.value })} />
                 </label>
                 <label className="block">
-                    <span className="mb-1 block text-sm font-medium">协议</span>
+                    <span className="mb-1 block text-sm font-medium">Protocol</span>
                     <Select className="w-full" value={draft.apiFormat} options={apiFormatOptions} onChange={changeApiFormat} />
                 </label>
                 <label className="block md:col-span-2">
-                    <span className="mb-1 block text-sm font-medium">接口地址</span>
+                    <span className="mb-1 block text-sm font-medium">Base URL</span>
                     <Input value={draft.baseUrl} onChange={(event) => patch({ baseUrl: event.target.value })} placeholder="https://api.example.com" />
                 </label>
                 <label className="block md:col-span-2">
@@ -90,11 +90,11 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
 
             <div className="mt-6 mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                    <div className="text-sm font-semibold">渠道模型</div>
-                    <div className="mt-0.5 text-xs text-stone-500">已选 {draft.models.length} 个；为每个模型指定能力并可自定义调用脚本。</div>
+                    <div className="text-sm font-semibold">Channel models</div>
+                    <div className="mt-0.5 text-xs text-stone-500">{draft.models.length} selected; set capability per model and optional call scripts.</div>
                 </div>
                 <Button type="primary" icon={<ListPlus className="size-4" />} onClick={() => setSelectOpen(true)}>
-                    选择模型
+                    Select models
                 </Button>
             </div>
 
@@ -108,14 +108,14 @@ export function ChannelEditorDrawer({ open, channel, onSave, onClose }: { open: 
                             <div className="flex shrink-0 items-center gap-2">
                                 <Segmented size="small" value={model.capability} options={capabilityOptions} onChange={(value) => setCapability(model.name, value as ModelCapability)} />
                                 <Button size="small" type={model.script ? "primary" : "default"} ghost={Boolean(model.script)} onClick={() => setScriptTarget({ name: model.name, capability: model.capability, value: model.script || "" })}>
-                                    {model.script ? "脚本已设" : "调用脚本"}
+                                    {model.script ? "Script set" : "Call script"}
                                 </Button>
                                 <Button size="small" danger type="text" icon={<Trash2 className="size-3.5" />} onClick={() => removeModel(model.name)} />
                             </div>
                         </div>
                     ))
                 ) : (
-                    <div className="px-2 py-8 text-center text-sm text-stone-500">点击「选择模型」拉取或手动增加模型。</div>
+                    <div className="px-2 py-8 text-center text-sm text-stone-500">Click "Select models" to fetch or add models.</div>
                 )}
             </div>
 

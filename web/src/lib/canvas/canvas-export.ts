@@ -30,11 +30,11 @@ export async function exportCanvasProjects(projects: CanvasProject[], fileName =
     saveAs(zip, `${safeFileName(fileName)}.zip`);
 }
 
-export async function exportCanvasNodes(nodes: CanvasNodeData[], fileName = "画布元素") {
+export async function exportCanvasNodes(nodes: CanvasNodeData[], fileName = "canvas-elements") {
     const zipFiles: { name: string; data: BlobPart }[] = [];
     const used = new Set<string>();
     const uniqueName = (base: string, ext: string) => {
-        const safe = safeFileName(base) || "元素";
+        const safe = safeFileName(base) || "element";
         let name = `${safe}.${ext}`;
         for (let i = 1; used.has(name); i += 1) name = `${safe}-${i}.${ext}`;
         used.add(name);

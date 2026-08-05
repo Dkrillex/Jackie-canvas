@@ -110,25 +110,25 @@ export async function loginWithPassword(username: string, password: string): Pro
         headers: { "encrypt-key": encryptKey },
         transformRequest: [(data) => data],
     });
-    const login = unwrapRuoyi(await maybeDecrypt(response), "登录失败") as LoginData;
+    const login = unwrapRuoyi(await maybeDecrypt(response), "Login failed") as LoginData;
     const token = login.access_token;
-    if (!token) throw new Error("登录失败：未返回 access_token");
+    if (!token) throw new Error("Login failed: no access_token returned");
     setAuthToken(token);
     return fetchCurrentUser();
 }
 
 export async function fetchCurrentUser(): Promise<LocalUser> {
     const token = getAuthToken();
-    if (!token) throw new Error("未登录或会话已失效");
+    if (!token) throw new Error("Not logged in or session expired");
 
     const response = await authClient.get<RuoyiResponse<UserInfoData>>("/system/user/getInfo");
     const raw = await maybeDecrypt(response);
-    const info = unwrapRuoyi(raw, "未登录或会话已失效") as UserInfoData & { user?: UserInfoData["user"] };
+    const info = unwrapRuoyi(raw, "Not logged in or session expired") as UserInfoData & { user?: UserInfoData["user"] };
     // 兼容 data.user / 顶层 user
     const profile = info.user || (raw as UserInfoData).user;
-    if (!profile) throw new Error("未登录或会话已失效");
+    if (!profile) throw new Error("Not logged in or session expired");
 
-    const username = (profile.userName || "").trim() || "用户";
+    const username = (profile.userName || "").trim() || "User";
     const userId = String(profile.userId ?? username);
     // 余额接口仍可能需要 Nebula apiId；仅临时使用，不写入 LocalUser
     const quotaUserId = String(profile.apiId ?? profile.userId ?? "").trim();
@@ -155,7 +155,7 @@ export async function fetchAutoUserApiKey(): Promise<string | null> {
     const raw = await maybeDecrypt(response);
     const code = (raw as RuoyiResponse)?.code;
     if (code !== undefined && code !== 200 && code !== "200") {
-        throw new Error((raw as RuoyiResponse).msg || "获取密钥失败");
+        throw new Error((raw as RuoyiResponse).msg || "Failed to get API key");
     }
     const rows = parseTokenRows(raw);
     const token = rows.find((item) => !item?.deletedAt && Number(item.status) === 1 && isAutoGroup(item) && String(item.key || "").trim());
@@ -170,8 +170,8 @@ export async function logoutRemote(): Promise<void> {
 }
 
 export async function fetchUserCenterInfo(config: Pick<AiConfig, "baseUrl" | "apiKey">): Promise<UserCenterInfo> {
-    if (!config.baseUrl.trim()) throw new Error("请先配置 Base URL");
-    if (!config.apiKey.trim()) throw new Error("请先配置 API Key");
+    if (!config.baseUrl.trim()) throw new Error("Please configure Base URL first");
+    if (!config.apiKey.trim()) throw new Error("Please configure API Key first");
 
     const headers = { Authorization: `Bearer ${config.apiKey}` };
     const [usageResponse, logResponse] = await Promise.all([
@@ -180,11 +180,11 @@ export async function fetchUserCenterInfo(config: Pick<AiConfig, "baseUrl" | "ap
     ]);
 
     const usage = usageResponse.data;
-    if (!usage?.data || usage.code === false) throw new Error(usage?.message || "获取用户信息失败");
+    if (!usage?.data || usage.code === false) throw new Error(usage?.message || "Failed to get user info");
 
     const username = logResponse?.data?.data?.[0]?.username?.trim() || "";
     return {
-        username: username || usage.data.name || "未知用户",
+        username: username || usage.data.name || "Unknown user",
         tokenName: usage.data.name || "",
         totalAvailable: Number(usage.data.total_available) || 0,
         totalGranted: Number(usage.data.total_granted) || 0,
@@ -207,7 +207,7 @@ export function formatQuotaCurrency(quota: number) {
  */
 async function fetchUserQuota(apiId: string): Promise<{ quota: number; usedQuota: number }> {
     const response = await authClient.get<RuoyiResponse<UserQuotaData>>(`/api/users/${apiId}`);
-    const data = unwrapRuoyi(await maybeDecrypt(response), "获取余额失败");
+    const data = unwrapRuoyi(await maybeDecrypt(response), "Failed to get balance");
     const remainingDollar = Number(data.quotaDollar ?? data.quota);
     const usedRaw = Number(data.usedQuota);
     const toInternal = (value: number) => {

@@ -20,7 +20,7 @@ export function encryptRequestBody(payload: unknown): { body: string; encryptKey
     const rsa = new JSEncrypt();
     rsa.setPublicKey(AUTH_RSA_PUBLIC_KEY);
     const encryptKey = rsa.encrypt(CryptoJS.enc.Base64.stringify(aesKey));
-    if (!encryptKey) throw new Error("请求加密失败");
+    if (!encryptKey) throw new Error("Request encryption failed");
 
     return { body: encryptedBody, encryptKey };
 }
@@ -29,13 +29,13 @@ export function decryptResponseBody(encryptedBody: string, encryptKeyHeader: str
     const rsa = new JSEncrypt();
     rsa.setPrivateKey(AUTH_RSA_PRIVATE_KEY);
     const base64Key = rsa.decrypt(encryptKeyHeader);
-    if (!base64Key) throw new Error("响应解密失败");
+    if (!base64Key) throw new Error("Response decryption failed");
 
     const aesKey = CryptoJS.enc.Base64.parse(base64Key);
     const decrypted = CryptoJS.AES.decrypt(encryptedBody, aesKey, {
         mode: CryptoJS.mode.ECB,
         padding: CryptoJS.pad.Pkcs7,
     }).toString(CryptoJS.enc.Utf8);
-    if (!decrypted) throw new Error("响应解密失败");
+    if (!decrypted) throw new Error("Response decryption failed");
     return JSON.parse(decrypted);
 }

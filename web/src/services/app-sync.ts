@@ -81,13 +81,13 @@ type LogStore = typeof imageLogStore;
 const storageKeyPattern = /^(image|video|audio|file|video-reference|audio-reference):/;
 
 export async function syncAppDataToWebdav(config: WebdavSyncConfig, onProgress?: AppSyncProgress): Promise<AppSyncResult> {
-    emitProgress(onProgress, { stage: "等待本地数据加载" });
+    emitProgress(onProgress, { stage: "Waiting for local data" });
     await Promise.all([waitForHydration(useCanvasStore), waitForHydration(useAssetStore)]);
 
     const [canvas, assets, imageLogs, videoLogs] = await Promise.all([
         syncDomain<CanvasDomainData>(config, onProgress, {
             key: "canvas",
-            label: "画布",
+            label: "Canvas",
             emptyData: { projects: [] },
             localData: async () => ({ projects: useCanvasStore.getState().projects }),
             mergeData: (local, remote) => ({ projects: mergeById(local.projects, remote.projects, "updatedAt") }),
@@ -95,7 +95,7 @@ export async function syncAppDataToWebdav(config: WebdavSyncConfig, onProgress?:
         }),
         syncDomain<AssetDomainData>(config, onProgress, {
             key: "assets",
-            label: "我的资产",
+            label: "Assets",
             emptyData: { assets: [] },
             localData: async () => ({ assets: useAssetStore.getState().assets }),
             mergeData: (local, remote) => ({ assets: mergeById(local.assets, remote.assets, "updatedAt") }),
@@ -103,7 +103,7 @@ export async function syncAppDataToWebdav(config: WebdavSyncConfig, onProgress?:
         }),
         syncDomain<LogDomainData>(config, onProgress, {
             key: "image-workbench",
-            label: "生图工作台",
+            label: "Image Studio",
             emptyData: { logs: [] },
             localData: async () => ({ logs: await readStoredLogs(imageLogStore) }),
             mergeData: (local, remote) => ({ logs: mergeById(local.logs, remote.logs, "createdAt") }),
@@ -111,7 +111,7 @@ export async function syncAppDataToWebdav(config: WebdavSyncConfig, onProgress?:
         }),
         syncDomain<LogDomainData>(config, onProgress, {
             key: "video-workbench",
-            label: "视频创作台",
+            label: "Video Studio",
             emptyData: { logs: [] },
             localData: async () => ({ logs: await readStoredLogs(videoLogStore) }),
             mergeData: (local, remote) => ({ logs: mergeById(local.logs, remote.logs, "createdAt") }),
@@ -131,32 +131,32 @@ export async function syncAppDataToWebdav(config: WebdavSyncConfig, onProgress?:
         uploadedFiles: canvas.uploadedFiles + assets.uploadedFiles + imageLogs.uploadedFiles + videoLogs.uploadedFiles,
         uploadedBytes: canvas.uploadedBytes + assets.uploadedBytes + imageLogs.uploadedBytes + videoLogs.uploadedBytes,
     };
-    emitProgress(onProgress, { stage: "同步完成", status: "success" });
+    emitProgress(onProgress, { stage: "Sync complete", status: "success" });
     return result;
 }
 
 async function syncDomain<T>(config: WebdavSyncConfig, onProgress: AppSyncProgress | undefined, options: SyncDomainOptions<T>): Promise<SyncDomainResult<T>> {
     try {
-        emitProgress(onProgress, { domain: options.key, label: options.label, stage: "读取远端清单", status: "active" });
+        emitProgress(onProgress, { domain: options.key, label: options.label, stage: "Reading remote manifest", status: "active" });
         const remoteManifest = await readDomainManifest(config, options.key, options.emptyData);
-        emitProgress(onProgress, { domain: options.key, label: options.label, stage: "读取本地数据", status: "active" });
+        emitProgress(onProgress, { domain: options.key, label: options.label, stage: "Reading local data", status: "active" });
         const localData = await options.localData();
         const mergedData = remoteManifest ? options.mergeData(localData, remoteManifest.data) : localData;
 
         if (remoteManifest) {
-            emitProgress(onProgress, { domain: options.key, label: options.label, stage: "下载缺失媒体", status: "active" });
+            emitProgress(onProgress, { domain: options.key, label: options.label, stage: "Downloading missing media", status: "active" });
             await downloadMissingFiles(config, options.key, mergedData, remoteManifest.files, onProgress);
-            emitProgress(onProgress, { domain: options.key, label: options.label, stage: "写入本地合并结果", status: "active" });
+            emitProgress(onProgress, { domain: options.key, label: options.label, stage: "Writing merged local data", status: "active" });
             await options.applyData?.(mergedData);
         }
 
-        emitProgress(onProgress, { domain: options.key, label: options.label, stage: "上传新增媒体", status: "active" });
+        emitProgress(onProgress, { domain: options.key, label: options.label, stage: "Uploading new media", status: "active" });
         const uploaded = await uploadChangedFiles(config, options.key, mergedData, remoteManifest?.files || [], onProgress);
         const manifest: DomainManifest<T> = { app: "infinite-canvas", version: 1, domain: options.key, exportedAt: new Date().toISOString(), data: mergedData, files: uploaded.files };
         const manifestFile = new Blob([JSON.stringify(manifest, null, 2)], { type: "application/json" });
-        emitProgress(onProgress, { domain: options.key, label: options.label, stage: `上传清单 ${formatBytes(manifestFile.size)}`, status: "active" });
+        emitProgress(onProgress, { domain: options.key, label: options.label, stage: `Uploading manifest ${formatBytes(manifestFile.size)}`, status: "active" });
         await uploadWebdavFile(config, domainPath(options.key, WEBDAV_MANIFEST_FILE_NAME), manifestFile, "application/json");
-        emitProgress(onProgress, { domain: options.key, label: options.label, stage: "完成", current: 1, total: 1, status: "success" });
+        emitProgress(onProgress, { domain: options.key, label: options.label, stage: "Done", current: 1, total: 1, status: "success" });
 
         return {
             data: mergedData,
@@ -167,7 +167,7 @@ async function syncDomain<T>(config: WebdavSyncConfig, onProgress: AppSyncProgre
             uploadedBytes: uploaded.uploadedBytes,
         };
     } catch (error) {
-        emitProgress(onProgress, { domain: options.key, label: options.label, stage: error instanceof Error ? error.message : "同步失败", status: "exception" });
+        emitProgress(onProgress, { domain: options.key, label: options.label, stage: error instanceof Error ? error.message : "Sync failed", status: "exception" });
         throw error;
     }
 }
@@ -176,7 +176,7 @@ async function readDomainManifest<T>(config: WebdavSyncConfig, domain: DomainKey
     const file = await downloadWebdavFile(config, domainPath(domain, WEBDAV_MANIFEST_FILE_NAME));
     if (!file) return null;
     const data = JSON.parse(await file.text()) as DomainManifest<T>;
-    if (data.app !== "infinite-canvas" || data.domain !== domain) throw new Error(`${domain} 同步清单不是当前应用的数据`);
+    if (data.app !== "infinite-canvas" || data.domain !== domain) throw new Error(`${domain} sync manifest is not for this app`);
     return {
         app: "infinite-canvas",
         version: 1,
@@ -196,15 +196,15 @@ async function downloadMissingFiles<T>(config: WebdavSyncConfig, domain: DomainK
         const localBlob = storageKey.startsWith("image:") ? await getImageBlob(storageKey) : await getMediaBlob(storageKey);
         scanned += 1;
         if (localBlob) {
-            emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "检查缺失媒体", current: scanned, total: storageKeys.length, status: "active" });
+            emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "Checking missing media", current: scanned, total: storageKeys.length, status: "active" });
             continue;
         }
         const remoteFile = remoteFileMap.get(storageKey);
         if (remoteFile) tasks.push(remoteFile);
-        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "检查缺失媒体", current: scanned, total: storageKeys.length, status: "active" });
+        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "Checking missing media", current: scanned, total: storageKeys.length, status: "active" });
     }
     if (!tasks.length) {
-        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "媒体已齐全", current: 1, total: 1, status: "active" });
+        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "Media up to date", current: 1, total: 1, status: "active" });
         return;
     }
     let downloaded = 0;
@@ -214,7 +214,7 @@ async function downloadMissingFiles<T>(config: WebdavSyncConfig, domain: DomainK
         const typedBlob = blob.type ? blob : blob.slice(0, blob.size, remoteFile.mimeType);
         await (remoteFile.storageKey.startsWith("image:") ? setImageBlob(remoteFile.storageKey, typedBlob) : setMediaBlob(remoteFile.storageKey, typedBlob));
         downloaded += 1;
-        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "下载媒体", current: downloaded, total: tasks.length, status: "active" });
+        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "Downloading media", current: downloaded, total: tasks.length, status: "active" });
     });
 }
 
@@ -233,7 +233,7 @@ async function uploadChangedFiles<T>(config: WebdavSyncConfig, domain: DomainKey
         if (!blob) {
             if (remoteFile) files.push(remoteFile);
             scanned += 1;
-            emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "检查本地媒体", current: scanned, total: storageKeys.length, status: "active" });
+            emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "Checking local media", current: scanned, total: storageKeys.length, status: "active" });
             continue;
         }
         const item: AppSyncFile = {
@@ -245,11 +245,11 @@ async function uploadChangedFiles<T>(config: WebdavSyncConfig, domain: DomainKey
         files.push(item);
         if (!remoteFile || remoteFile.bytes !== blob.size) tasks.push({ item, blob });
         scanned += 1;
-        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "检查本地媒体", current: scanned, total: storageKeys.length, status: "active" });
+        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "Checking local media", current: scanned, total: storageKeys.length, status: "active" });
     }
 
     if (!tasks.length) {
-        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "媒体无需上传", current: 1, total: 1, status: "active" });
+        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: "No media to upload", current: 1, total: 1, status: "active" });
         return { files, uploadedFiles, uploadedBytes };
     }
 
@@ -257,7 +257,7 @@ async function uploadChangedFiles<T>(config: WebdavSyncConfig, domain: DomainKey
         await uploadWebdavFile(config, item.path, blob, item.mimeType);
         uploadedFiles += 1;
         uploadedBytes += blob.size;
-        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: `上传媒体 ${formatBytes(blob.size)}`, current: uploadedFiles, total: tasks.length, status: "active" });
+        emitProgress(onProgress, { domain, label: domainLabel(domain), stage: `Uploading media ${formatBytes(blob.size)}`, current: uploadedFiles, total: tasks.length, status: "active" });
     });
 
     return { files, uploadedFiles, uploadedBytes };
@@ -322,10 +322,10 @@ function domainPath(domain: DomainKey, path: string) {
 }
 
 function domainLabel(domain: DomainKey) {
-    if (domain === "canvas") return "画布";
-    if (domain === "assets") return "我的资产";
-    if (domain === "image-workbench") return "生图工作台";
-    return "视频创作台";
+    if (domain === "canvas") return "Canvas";
+    if (domain === "assets") return "Assets";
+    if (domain === "image-workbench") return "Image Studio";
+    return "Video Studio";
 }
 
 function emitProgress(onProgress: AppSyncProgress | undefined, event: AppSyncProgressEvent) {

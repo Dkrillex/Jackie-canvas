@@ -45,7 +45,7 @@ export function isRegisteredNodeType(type: string) {
     return definitions.has(type);
 }
 
-const FALLBACK_SPEC = { width: 340, height: 240, title: "节点", metadata: {} as CanvasNodeDefinition["defaultMetadata"] };
+const FALLBACK_SPEC = { width: 340, height: 240, title: "Node", metadata: {} as CanvasNodeDefinition["defaultMetadata"] };
 
 // 提供默认尺寸/标题/初始 metadata,createCanvasNode 与 agent-ops 复用
 export function getNodeSpec(type: string) {

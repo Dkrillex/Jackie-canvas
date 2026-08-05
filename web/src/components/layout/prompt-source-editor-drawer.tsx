@@ -18,9 +18,9 @@ export function PromptSourceEditorDrawer({ open, source, onSave, onClose }: { op
     const save = () => {
         const name = draft.name.trim();
         const url = draft.url.trim();
-        if (!name) return message.warning("请输入来源名称");
-        if (!isHttpUrl(url)) return message.warning("请输入有效的 JSON URL");
-        if (draft.homepage.trim() && !isHttpUrl(draft.homepage.trim())) return message.warning("请输入有效的主页地址");
+        if (!name) return message.warning("Enter a source name");
+        if (!isHttpUrl(url)) return message.warning("Enter a valid JSON URL");
+        if (draft.homepage.trim() && !isHttpUrl(draft.homepage.trim())) return message.warning("Enter a valid homepage URL");
         onSave({ ...draft, name, url, homepage: draft.homepage.trim(), builtIn: false });
         onClose();
     };
@@ -29,46 +29,46 @@ export function PromptSourceEditorDrawer({ open, source, onSave, onClose }: { op
         <Drawer
             open={open}
             width={560}
-            title={source?.name === "新来源" ? "新增提示词来源" : "编辑提示词来源"}
+            title={source?.name === "New source" ? "Add prompt source" : "Edit prompt source"}
             onClose={onClose}
             styles={{ body: { paddingTop: 16 } }}
             extra={
                 <Space>
-                    <Button onClick={onClose}>取消</Button>
+                    <Button onClick={onClose}>Cancel</Button>
                     <Button type="primary" onClick={save}>
-                        保存
+                        Save
                     </Button>
                 </Space>
             }
         >
             <div className="space-y-5">
                 <label className="block">
-                    <span className="mb-1.5 block text-sm font-medium">来源名称</span>
-                    <Input value={draft.name} onChange={(event) => patch({ name: event.target.value })} placeholder="用于分类展示" />
+                    <span className="mb-1.5 block text-sm font-medium">Source name</span>
+                    <Input value={draft.name} onChange={(event) => patch({ name: event.target.value })} placeholder="Shown as category" />
                 </label>
                 <label className="block">
                     <span className="mb-1.5 block text-sm font-medium">JSON URL</span>
                     <Input value={draft.url} onChange={(event) => patch({ url: event.target.value })} placeholder="https://example.com/prompts.json" />
                 </label>
                 <label className="block">
-                    <span className="mb-1.5 block text-sm font-medium">来源主页（可选）</span>
+                    <span className="mb-1.5 block text-sm font-medium">Homepage (optional)</span>
                     <Input value={draft.homepage} onChange={(event) => patch({ homepage: event.target.value })} placeholder="https://example.com" />
                 </label>
                 <div className="flex items-center justify-between border-y border-stone-200 py-3 dark:border-stone-800">
-                    <span className="text-sm font-medium">启用来源</span>
+                    <span className="text-sm font-medium">Enable source</span>
                     <Switch checked={draft.enabled} onChange={(enabled) => patch({ enabled })} />
                 </div>
                 <div>
-                    <div className="mb-2 text-sm font-medium">JSON 格式</div>
+                    <div className="mb-2 text-sm font-medium">JSON format</div>
                     <pre className="overflow-x-auto rounded-md bg-stone-100 p-3 text-xs leading-5 text-stone-600 dark:bg-stone-900 dark:text-stone-300">{`[
   {
     "id": "product-photo-1",
-    "title": "白底商品图",
-    "prompt": "生成专业白底商品摄影图",
+    "title": "White background product shot",
+    "prompt": "Generate a professional white-background product photo",
     "description": "",
     "coverUrl": "",
     "referenceImageUrls": [],
-    "tags": ["商品", "摄影"]
+    "tags": ["product", "photography"]
   }
 ]`}</pre>
                 </div>

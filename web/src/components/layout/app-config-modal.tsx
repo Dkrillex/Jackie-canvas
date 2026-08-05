@@ -74,7 +74,7 @@ function createWebdavDomainProgress(t: (key: MessageKey, vars?: Record<string, s
     return webdavDomainKeys.reduce(
         (progress, key) => ({
             ...progress,
-            [key]: { label: t(webdavDomainLabelKeys[key]), stage: "等待同步" },
+            [key]: { label: t(webdavDomainLabelKeys[key]), stage: "Waiting to sync" },
         }),
         {} as Record<AppSyncDomainKey, WebdavDomainProgress>,
     );
@@ -579,14 +579,14 @@ function getWebdavProgressPercent(item: WebdavDomainProgress) {
     if (item.status === "success") return 100;
     if (item.total) return Math.min(100, Math.round(((item.current || 0) / item.total) * 100));
     if (item.status === "exception") return 100;
-    if (item.stage === "等待同步") return 0;
-    if (item.stage === "读取远端清单") return 12;
-    if (item.stage === "读取本地数据") return 24;
-    if (item.stage === "下载缺失媒体") return 36;
-    if (item.stage === "写入本地合并结果") return 58;
-    if (item.stage === "上传新增媒体") return 66;
-    if (item.stage === "媒体已齐全" || item.stage === "媒体无需上传") return 74;
-    if (item.stage.startsWith("上传清单")) return 90;
+    if (item.stage === "Waiting to sync") return 0;
+    if (item.stage === "Reading remote manifest") return 12;
+    if (item.stage === "Reading local data") return 24;
+    if (item.stage === "Downloading missing media") return 36;
+    if (item.stage === "Writing merged local data") return 58;
+    if (item.stage === "Uploading new media") return 66;
+    if (item.stage === "Media up to date" || item.stage === "No media to upload") return 74;
+    if (item.stage.startsWith("Uploading manifest")) return 90;
     return item.status === "active" ? 30 : 0;
 }
 

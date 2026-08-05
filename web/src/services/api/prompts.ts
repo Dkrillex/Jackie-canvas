@@ -185,13 +185,13 @@ export async function fetchPrompts({ keyword = "", tag = [], category = ALL_PROM
 
 export async function fetchSourcePrompts(sourceId: string): Promise<Prompt[]> {
     const source = usePromptSourceStore.getState().sources.find((item) => item.id === sourceId);
-    if (!source) throw new Error("提示词来源不存在");
+    if (!source) throw new Error("Prompt source not found");
     return getSourcePrompts(source);
 }
 
 export async function refreshSource(sourceId: string): Promise<PromptSourceRefreshResult> {
     const source = usePromptSourceStore.getState().sources.find((item) => item.id === sourceId);
-    if (!source) throw new Error("提示词来源不存在");
+    if (!source) throw new Error("Prompt source not found");
     const result = await getOrStartRefresh(source);
     if (!result.success) throw new Error(result.lastError);
     return result;
@@ -249,7 +249,7 @@ function collectTags(items: Prompt[]) {
 }
 
 function isActiveOption(value: string) {
-    return value && value !== ALL_PROMPTS_OPTION && value !== "全部";
+    return value && value !== ALL_PROMPTS_OPTION;
 }
 
 export function formatPromptDate(value: string) {

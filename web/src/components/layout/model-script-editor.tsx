@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { PLUGIN_RETURNS, PLUGIN_TEMPLATES, PLUGIN_VARIABLES } from "@/services/api/model-plugin";
 import type { ModelCapability } from "@/stores/use-config-store";
 
-const capabilityLabels: Record<ModelCapability, string> = { image: "生图", video: "视频", text: "文本", audio: "音频" };
+const capabilityLabels: Record<ModelCapability, string> = { image: "Image", video: "Video", text: "Text", audio: "Audio" };
 
 function isDarkMode() {
     return typeof document !== "undefined" && document.documentElement.classList.contains("dark");
@@ -29,7 +29,7 @@ export function ModelScriptEditor({ open, capability, modelName, value, onSave, 
                         {capabilityLabels[capability]}
                         {modelName ? ` - ${modelName}` : ""}
                     </div>
-                    <div className="mt-1 text-xs font-normal text-stone-500">脚本是一段异步函数体，直接使用下方变量，最后 return 结果；留空则使用系统默认调用。</div>
+                    <div className="mt-1 text-xs font-normal text-stone-500">The script is an async function body. Use the variables below and return the result. Leave empty to use the system default call.</div>
                 </div>
             }
             width={1080}
@@ -41,15 +41,15 @@ export function ModelScriptEditor({ open, capability, modelName, value, onSave, 
                     <div className="flex flex-wrap items-center gap-2">
                         {PLUGIN_TEMPLATES[capability].map((template) => (
                             <Button key={template.label} size="small" onClick={() => setDraft(template.script)}>
-                                插入{template.label}模板
+                                Insert {template.label} template
                             </Button>
                         ))}
                         <Button size="small" danger onClick={() => setDraft("")}>
-                            恢复默认调用
+                            Restore default call
                         </Button>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button onClick={onClose}>取消</Button>
+                        <Button onClick={onClose}>Cancel</Button>
                         <Button
                             type="primary"
                             onClick={() => {
@@ -57,7 +57,7 @@ export function ModelScriptEditor({ open, capability, modelName, value, onSave, 
                                 onClose();
                             }}
                         >
-                            保存
+                            Save
                         </Button>
                     </div>
                 </div>
@@ -66,13 +66,13 @@ export function ModelScriptEditor({ open, capability, modelName, value, onSave, 
             <div className="flex h-[60vh] min-h-[420px] border-t border-stone-200 dark:border-stone-800">
                 <aside className="flex w-[320px] shrink-0 flex-col overflow-y-auto border-r border-stone-200 bg-stone-50/80 dark:border-stone-800 dark:bg-stone-900/40">
                     <div className="border-b border-stone-200/70 px-4 py-3 dark:border-stone-800/70">
-                        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">返回要求</div>
+                        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-stone-400">Return requirements</div>
                         <div className="text-xs leading-6 text-stone-600 dark:text-stone-300">{PLUGIN_RETURNS[capability]}</div>
                     </div>
                     <div className="px-4 py-3">
                         <div className="mb-2.5 flex items-center justify-between">
-                            <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">可用变量</span>
-                            <span className="text-[10px] text-stone-400">点击插入</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">Available variables</span>
+                            <span className="text-[10px] text-stone-400">Click to insert</span>
                         </div>
                         <div className="space-y-1.5">
                             {variables.map((variable) => (
@@ -101,7 +101,7 @@ export function ModelScriptEditor({ open, capability, modelName, value, onSave, 
                         height="100%"
                         theme={isDarkMode() ? "dark" : "light"}
                         extensions={[javascript()]}
-                        placeholder={"// 留空使用系统默认调用；点击右下角「插入模板」查看示例。"}
+                        placeholder={"// Leave empty to use the system default call; click Insert template below for examples."}
                         style={{ height: "100%", fontSize: 13 }}
                         className="h-full [&_.cm-editor]:h-full [&_.cm-gutters]:border-none [&_.cm-scroller]:overflow-auto"
                     />

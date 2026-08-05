@@ -60,7 +60,7 @@ export function ModelSelectModal({ open, channel, selectedNames, onConfirm, onCl
     const fetchModels = async () => {
         if (!channel) return;
         if (!channel.baseUrl.trim() || !channel.apiKey.trim()) {
-            message.error("请先填写接口地址和 API Key");
+            message.error("Enter Base URL and API Key first");
             return;
         }
         setLoading(true);
@@ -68,9 +68,9 @@ export function ModelSelectModal({ open, channel, selectedNames, onConfirm, onCl
             const models = await fetchChannelModels(channel);
             setFetched(models);
             setActiveTab("new");
-            message.success(`已拉取 ${models.length} 个模型`);
+            message.success(`Fetched ${models.length} models`);
         } catch (error) {
-            message.error(error instanceof Error ? error.message : "拉取模型失败");
+            message.error(error instanceof Error ? error.message : "Failed to fetch models");
         } finally {
             setLoading(false);
         }
@@ -90,47 +90,47 @@ export function ModelSelectModal({ open, channel, selectedNames, onConfirm, onCl
             onCancel={onClose}
             title={
                 <span>
-                    选择渠道模型 <span className="ml-2 text-xs font-normal text-stone-500">已选择 {selected.size} / {new Set([...existing, ...fetched]).size}</span>
+                    Select channel models <span className="ml-2 text-xs font-normal text-stone-500">Selected {selected.size} / {new Set([...existing, ...fetched]).size}</span>
                 </span>
             }
             styles={{ body: { maxHeight: "62vh", overflowY: "auto" } }}
             footer={[
                 <Button key="cancel" onClick={onClose}>
-                    取消
+                    Cancel
                 </Button>,
                 <Button key="confirm" type="primary" onClick={confirm}>
-                    确定
+                    OK
                 </Button>,
             ]}
         >
             <div className="flex flex-wrap items-center gap-3">
-                <Input className="min-w-[200px] flex-1" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索模型" prefix={<Search className="size-4 text-stone-400" />} allowClear />
-                <Input className="min-w-[180px] flex-1" value={manual} onChange={(event) => setManual(event.target.value)} onPressEnter={addManual} placeholder="输入模型名称" />
-                <Button onClick={addManual}>增加模型</Button>
+                <Input className="min-w-[200px] flex-1" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search models" prefix={<Search className="size-4 text-stone-400" />} allowClear />
+                <Input className="min-w-[180px] flex-1" value={manual} onChange={(event) => setManual(event.target.value)} onPressEnter={addManual} placeholder="Model name" />
+                <Button onClick={addManual}>Add model</Button>
                 <Button icon={<RefreshCw className="size-4" />} loading={loading} onClick={() => void fetchModels()}>
-                    拉取模型列表
+                    Fetch models
                 </Button>
             </div>
-            <div className="mt-2 text-xs text-stone-500">如果上游不提供 OpenAI /models 模型列表接口，请在这里手动增加模型名称。</div>
+            <div className="mt-2 text-xs text-stone-500">If the upstream has no OpenAI /models endpoint, add model names manually here.</div>
 
             <Tabs
                 className="mt-3"
                 activeKey={activeTab}
                 onChange={setActiveTab}
                 items={[
-                    { key: "new", label: `新获取的模型 (${fetched.length})` },
-                    { key: "existing", label: `已有的模型 (${existing.length})` },
+                    { key: "new", label: `Fetched (${fetched.length})` },
+                    { key: "existing", label: `Existing (${existing.length})` },
                 ]}
             />
 
             <div className="mb-3 flex items-center justify-between gap-2">
-                <span className="text-xs text-stone-500">当前列表已选择 {visibleSelectedCount} / {visibleList.length}</span>
+                <span className="text-xs text-stone-500">Selected in list {visibleSelectedCount} / {visibleList.length}</span>
                 <div className="flex gap-2">
                     <Button size="small" disabled={!visibleList.length} onClick={() => selectVisible(true)}>
-                        全选当前列表
+                        Select all in list
                     </Button>
                     <Button size="small" disabled={!visibleSelectedCount} onClick={() => selectVisible(false)}>
-                        取消当前列表
+                        Clear list selection
                     </Button>
                 </div>
             </div>
@@ -146,7 +146,7 @@ export function ModelSelectModal({ open, channel, selectedNames, onConfirm, onCl
                     ))}
                 </div>
             ) : (
-                <div className="py-8 text-center text-sm text-stone-500">{activeTab === "new" ? "点击「拉取模型列表」获取上游模型，或手动增加模型名称。" : "暂无已选择的模型。"}</div>
+                <div className="py-8 text-center text-sm text-stone-500">{activeTab === "new" ? 'Click "Fetch models" to load upstream models, or add a name manually.' : "No selected models yet."}</div>
             )}
         </Modal>
     );

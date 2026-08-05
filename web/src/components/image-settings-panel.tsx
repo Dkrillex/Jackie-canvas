@@ -121,9 +121,9 @@ export function ImageSettingsPanel({ config, onConfigChange, theme, showTitle = 
                 </div>
                 <div className="flex items-center justify-between gap-3">
                     <div className="space-y-0.5">
-                        <SettingTitle color={theme.node.muted}>透明背景</SettingTitle>
+                        <SettingTitle color={theme.node.muted}>Transparent background</SettingTitle>
                         <div className="text-xs" style={{ color: theme.node.muted, opacity: 0.75 }}>
-                            开启后生成无背景的透明图像(仅部分模型可用)
+                            Generate images with a transparent background (available on some models only)
                         </div>
                     </div>
                     <span onMouseDown={(event) => event.stopPropagation()}>

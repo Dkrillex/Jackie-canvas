@@ -8,7 +8,7 @@ export async function testWebdavConnection(config: WebdavSyncConfig) {
     await ensureWebdavDirectory(config);
     const response = await webdavFetch(config, "", { method: "PROPFIND", headers: { Depth: "0" } });
     if (response.ok || response.status === 207) return;
-    await throwWebdavError(response, "WebDAV 连接测试失败");
+    await throwWebdavError(response, "WebDAV connection test failed");
 }
 
 export async function downloadWebdavSyncFile(config: WebdavSyncConfig) {
@@ -19,8 +19,8 @@ export async function downloadWebdavFile(config: WebdavSyncConfig, path: string)
     await ensureWebdavDirectory(config);
     const response = await webdavFetch(config, path, { method: "GET" });
     if (response.status === 404) return null;
-    if (!response.ok) await throwWebdavError(response, "读取 WebDAV 同步文件失败");
-    const file = await withTimeout(response.blob(), "读取 WebDAV 同步文件超时");
+    if (!response.ok) await throwWebdavError(response, "Failed to read WebDAV sync file");
+    const file = await withTimeout(response.blob(), "Timed out reading WebDAV sync file");
     return file.size ? file : null;
 }
 
@@ -29,7 +29,7 @@ export async function uploadWebdavSyncFile(config: WebdavSyncConfig, file: Blob)
 }
 
 export async function uploadWebdavFile(config: WebdavSyncConfig, path: string, file: Blob, contentType = "application/octet-stream") {
-    if (!file.size) throw new Error("上传文件为空，已取消上传");
+    if (!file.size) throw new Error("Upload cancelled: file is empty");
     await ensureWebdavDirectory(config);
     await ensureWebdavSubdirectory(config, path);
     const response = await webdavFetch(config, path, {
@@ -37,7 +37,7 @@ export async function uploadWebdavFile(config: WebdavSyncConfig, path: string, f
         headers: { "Content-Type": contentType },
         body: file,
     });
-    if (!response.ok) await throwWebdavError(response, "上传 WebDAV 同步文件失败");
+    if (!response.ok) await throwWebdavError(response, "Failed to upload WebDAV sync file");
 }
 
 async function ensureWebdavDirectory(config: WebdavSyncConfig) {
@@ -60,7 +60,7 @@ async function ensureWebdavDirectoryPath(config: WebdavSyncConfig, directory: st
         path = path ? `${path}/${part}` : part;
         const response = await webdavFetch({ ...config, directory: "" }, path, { method: "MKCOL" });
         if (response.ok || ((response.status === 405 || response.status === 423) && (await webdavDirectoryExists(config, path)))) continue;
-        await throwWebdavError(response, "创建 WebDAV 远程目录失败");
+        await throwWebdavError(response, "Failed to create WebDAV remote directory");
     }
     ensuredDirectories.add(cacheKey);
 }
@@ -79,8 +79,8 @@ async function webdavFetch(config: WebdavSyncConfig, path: string, init: Request
         const url = buildWebdavUrl(config, path);
         return await fetch(url, { ...init, headers, signal: controller.signal });
     } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") throw new Error("WebDAV 请求超时，请检查网络或远端服务状态");
-        if (error instanceof TypeError) throw new Error("无法连接 WebDAV，请检查地址、HTTPS 证书、CORS 或网络状态");
+        if (error instanceof Error && error.name === "AbortError") throw new Error("WebDAV request timed out — check network or remote service status");
+        if (error instanceof TypeError) throw new Error("Cannot connect to WebDAV — check URL, HTTPS certificate, CORS, or network");
         throw error;
     } finally {
         window.clearTimeout(timer);
@@ -99,14 +99,14 @@ function normalizePath(path: string) {
 }
 
 function assertWebdavConfig(config: WebdavSyncConfig) {
-    if (!config.url.trim()) throw new Error("请先填写 WebDAV 地址");
+    if (!config.url.trim()) throw new Error("Please enter a WebDAV URL first");
 }
 
 async function throwWebdavError(response: Response, fallback: string): Promise<never> {
     const detail = await response.text().catch(() => "");
-    if (response.status === 401 || response.status === 403) throw new Error("WebDAV 认证失败，请检查用户名、密码或应用密码");
-    if (response.status === 404) throw new Error("WebDAV 路径不存在，请检查地址和远程目录");
-    throw new Error(`${fallback}：${response.status}${detail ? ` ${detail.slice(0, 120)}` : ""}`);
+    if (response.status === 401 || response.status === 403) throw new Error("WebDAV authentication failed — check username, password, or app password");
+    if (response.status === 404) throw new Error("WebDAV path not found — check URL and remote directory");
+    throw new Error(`${fallback}: ${response.status}${detail ? ` ${detail.slice(0, 120)}` : ""}`);
 }
 
 function encodeBasicAuth(value: string) {

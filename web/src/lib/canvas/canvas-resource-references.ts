@@ -76,7 +76,7 @@ function labelForKind(kind: CanvasResourceKind, index: number) {
     if (kind === "image") return imageReferenceLabel(index);
     if (kind === "video") return seedanceReferenceLabel("video", index);
     if (kind === "audio") return seedanceReferenceLabel("audio", index);
-    return `文本${index + 1}`;
+    return `Text ${index + 1}`;
 }
 
 function isResourceNode(node: CanvasNodeData) {

@@ -18,15 +18,15 @@ function builtinResource(node: CanvasNodeData): CanvasNodeResource | null {
 const iconClass = "size-5";
 
 const BUILTIN_DEFINITIONS: CanvasNodeDefinition[] = [
-    { type: CanvasNodeType.Text, title: "文本", icon: <FileText className={iconClass} />, minimapColor: undefined, resource: builtinResource },
-    { type: CanvasNodeType.Image, title: "图片", icon: <ImageIcon className={iconClass} />, minimapColor: "#10b981", keepAspectRatio: (node: CanvasNodeData) => !node.metadata?.freeResize, resource: builtinResource },
-    { type: CanvasNodeType.Video, title: "视频", icon: <Video className={iconClass} />, minimapColor: "#f97316", keepAspectRatio: () => true, resource: builtinResource },
-    { type: CanvasNodeType.Audio, title: "音频", icon: <Music2 className={iconClass} />, minimapColor: "#a855f7", resource: builtinResource },
-    { type: CanvasNodeType.Config, title: "生成配置", icon: <Settings2 className={iconClass} />, minimapColor: "#60a5fa", hasSourceHandle: false },
-    { type: CanvasNodeType.Group, title: "组", icon: <Group className={iconClass} />, minimapColor: "#94a3b8" },
+    { type: CanvasNodeType.Text, title: "Text", icon: <FileText className={iconClass} />, minimapColor: undefined, resource: builtinResource },
+    { type: CanvasNodeType.Image, title: "Image", icon: <ImageIcon className={iconClass} />, minimapColor: "#10b981", keepAspectRatio: (node: CanvasNodeData) => !node.metadata?.freeResize, resource: builtinResource },
+    { type: CanvasNodeType.Video, title: "Video", icon: <Video className={iconClass} />, minimapColor: "#f97316", keepAspectRatio: () => true, resource: builtinResource },
+    { type: CanvasNodeType.Audio, title: "Audio", icon: <Music2 className={iconClass} />, minimapColor: "#a855f7", resource: builtinResource },
+    { type: CanvasNodeType.Config, title: "Generation config", icon: <Settings2 className={iconClass} />, minimapColor: "#60a5fa", hasSourceHandle: false },
+    { type: CanvasNodeType.Group, title: "Group", icon: <Group className={iconClass} />, minimapColor: "#94a3b8" },
 ].map((def) => {
     const spec = NODE_SPECS[def.type];
-    return { ...def, title: spec.title, defaultSize: { width: spec.width, height: spec.height }, defaultMetadata: spec.metadata };
+    return { ...def, defaultSize: { width: spec.width, height: spec.height }, defaultMetadata: spec.metadata };
 });
 
 let registered = false;

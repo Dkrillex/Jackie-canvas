@@ -23,8 +23,8 @@ async function evaluatePluginSource(source: string): Promise<CanvasPlugin> {
 
 function assertPlugin(plugin: unknown): asserts plugin is CanvasPlugin {
     const value = plugin as Partial<CanvasPlugin> | null;
-    if (!value || typeof value !== "object") throw new Error("插件未导出有效对象");
-    if (!value.id || !Array.isArray(value.nodes) || !value.nodes.length) throw new Error("插件缺少 id 或 nodes");
+    if (!value || typeof value !== "object") throw new Error("Plugin did not export a valid object");
+    if (!value.id || !Array.isArray(value.nodes) || !value.nodes.length) throw new Error("Plugin is missing id or nodes");
 }
 
 export function activatePlugin(plugin: CanvasPlugin) {
@@ -46,7 +46,7 @@ export function deactivatePlugin(pluginId: string) {
 
 async function fetchPluginSource(url: string) {
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`下载失败 (HTTP ${response.status})`);
+    if (!response.ok) throw new Error(`Download failed (HTTP ${response.status})`);
     return response.text();
 }
 
@@ -105,7 +105,7 @@ export async function ensurePluginsLoaded() {
                 const source = record.local ? await fetchPluginSource(withCacheBust(record.url)) : record.source;
                 activatePlugin(await evaluatePluginSource(source));
             } catch (error) {
-                console.error(`[plugin] 加载失败: ${record.id}`, error);
+                console.error(`[plugin] load failed: ${record.id}`, error);
             }
         }),
     );
@@ -144,7 +144,7 @@ async function loadLocalPlugins() {
                     local: true,
                 });
             } catch (error) {
-                console.error(`[plugin] 本地插件发现失败: ${url}`, error);
+                console.error(`[plugin] local plugin discovery failed: ${url}`, error);
             }
         }),
     );
@@ -163,9 +163,9 @@ async function loadDevPlugins() {
                 const plugin = await evaluatePluginSource(source);
                 deactivatePlugin(plugin.id);
                 activatePlugin(plugin);
-                console.info(`[plugin] dev 插件已加载: ${plugin.id} (${url})`);
+                console.info(`[plugin] dev plugin loaded: ${plugin.id} (${url})`);
             } catch (error) {
-                console.error(`[plugin] dev 插件加载失败: ${url}`, error);
+                console.error(`[plugin] dev plugin load failed: ${url}`, error);
             }
         }),
     );

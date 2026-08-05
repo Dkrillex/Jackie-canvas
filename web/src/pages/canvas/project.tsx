@@ -989,14 +989,14 @@ function InfiniteCanvasPage() {
 
     const exportCurrentProject = useCallback(async () => {
         const project = useCanvasStore.getState().projects.find((item) => item.id === projectId);
-        if (!project) return message.error("未找到当前画布");
-        const hide = message.loading("正在导出当前画布…", 0);
+        if (!project) return message.error("Current canvas not found");
+        const hide = message.loading("Exporting current canvas…", 0);
         try {
-            await exportCanvasProjects([project], project.title || "无限画布");
-            message.success("已导出当前画布");
+            await exportCanvasProjects([project], project.title || "Infinite canvas");
+            message.success("Canvas exported");
         } catch (error) {
             console.error(error);
-            message.error("导出失败，请重试");
+            message.error("Export failed, please retry");
         } finally {
             hide();
         }
@@ -2015,7 +2015,7 @@ function InfiniteCanvasPage() {
                     setDialogNodeId(null);
                 } catch (error) {
                     if (!isGenerationCanceled(error)) {
-                        const errorDetails = error instanceof Error ? error.message : "生成失败";
+                        const errorDetails = error instanceof Error ? error.message : "Generation failed";
                         message.error(errorDetails);
                         setNodes((prev) => prev.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, status: NODE_STATUS_ERROR, errorDetails } } : node)));
                     }

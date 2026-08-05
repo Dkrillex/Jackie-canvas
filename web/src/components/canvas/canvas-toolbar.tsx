@@ -119,7 +119,7 @@ export function CanvasToolbar({
                 {extensionDefs.length ? (
                     <ToolbarButton
                         id="tool-extensions"
-                        label="扩展节点"
+                        label="Extension nodes"
                         active={extensionsOpen}
                         hovered={hovered}
                         activeStyle={activeStyle}
@@ -177,7 +177,7 @@ export function CanvasToolbar({
                     className="thin-scrollbar pointer-events-auto absolute bottom-[72px] z-30 max-h-[50vh] w-[240px] -translate-x-1/2 overflow-y-auto rounded-xl border p-2 shadow-xl backdrop-blur"
                     style={{ left: extPanelX || "50%", background: theme.toolbar.panel, borderColor: theme.toolbar.border, color: theme.toolbar.item }}
                 >
-                    <div className="px-1.5 pb-1.5 text-[11px] font-medium opacity-50">扩展节点</div>
+                    <div className="px-1.5 pb-1.5 text-[11px] font-medium opacity-50">Extension nodes</div>
                     <div className="grid gap-0.5">
                         {extensionDefs.map((def) => (
                             <button

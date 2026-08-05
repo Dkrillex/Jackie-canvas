@@ -97,7 +97,7 @@ function createPoll(signal?: AbortSignal) {
             if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
             const result = extract(await request());
             if (result !== null && result !== undefined && result !== false) return result;
-            if (performance.now() >= deadline) throw new Error("插件轮询超时，请检查调用脚本或稍后重试");
+            if (performance.now() >= deadline) throw new Error("Plugin poll timed out — check the call script or try again later");
             await sleep(intervalMs, signal);
         }
     };
@@ -153,7 +153,7 @@ export async function runModelPlugin<T = unknown>(args: RunPluginArgs): Promise<
         if (error instanceof DOMException && error.name === "AbortError") throw error;
         if (axios.isCancel(error)) throw error;
         const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`模型调用脚本执行失败：${message}`);
+        throw new Error(`Model call script failed: ${message}`);
     }
 }
 
@@ -161,27 +161,27 @@ export type PluginVariable = { name: string; type: string; desc: string; capabil
 
 /** Documentation surface shown in the script editor. */
 export const PLUGIN_VARIABLES: PluginVariable[] = [
-    { name: "prompt", type: "string", desc: "用户输入的提示词（已拼接系统提示词）", capabilities: ["image", "video", "audio"] },
-    { name: "images", type: "string[]", desc: "参考图，dataURL 数组（改图 / 图生视频时有值）", capabilities: ["image", "video"] },
-    { name: "messages", type: "{ role, content }[]", desc: "对话消息数组，含系统消息", capabilities: ["text"] },
-    { name: "params", type: "object", desc: "生成参数：生图 {size,quality,count}、视频 {seconds,size,resolution,ratio,generateAudio,watermark}、音频 {voice,format,speed,instructions}" },
-    { name: "model", type: "string", desc: "模型名称（不含渠道前缀）" },
-    { name: "baseUrl", type: "string", desc: "渠道接口地址（原样，未拼 /v1）" },
-    { name: "apiKey", type: "string", desc: "渠道 API Key，请求头里自己带上" },
-    { name: "systemPrompt", type: "string", desc: "系统提示词原文" },
-    { name: "http", type: "object", desc: "便捷请求：http.post(path, body, {headers,params,responseType})、http.get(path, opts)、http.url(path)；默认带 Authorization: Bearer apiKey，可用 headers 覆盖；path 相对时按 baseUrl 拼 /v1" },
-    { name: "request", type: "function", desc: "原始请求 request({ method, url, headers, params, data, responseType })，不加任何默认头，鉴权头自己写；url 相对时按 baseUrl 拼接（不加 /v1）" },
-    { name: "poll", type: "function", desc: "轮询 poll(request, extract, {intervalMs,timeoutMs})，extract 返回真值即结束" },
-    { name: "sleep", type: "function", desc: "sleep(ms) 延时" },
-    { name: "signal", type: "AbortSignal", desc: "取消信号，可透传给 http/request" },
-    { name: "onDelta", type: "function", desc: "onDelta(text) 推送流式文本（文本模型）", capabilities: ["text"] },
+    { name: "prompt", type: "string", desc: "User prompt (already merged with system prompt)", capabilities: ["image", "video", "audio"] },
+    { name: "images", type: "string[]", desc: "Reference images as dataURL array (set for edit / image-to-video)", capabilities: ["image", "video"] },
+    { name: "messages", type: "{ role, content }[]", desc: "Chat messages including system", capabilities: ["text"] },
+    { name: "params", type: "object", desc: "Generation params: image {size,quality,count}, video {seconds,size,resolution,ratio,generateAudio,watermark}, audio {voice,format,speed,instructions}" },
+    { name: "model", type: "string", desc: "Model name (without channel prefix)" },
+    { name: "baseUrl", type: "string", desc: "Channel base URL as-is (not joined with /v1)" },
+    { name: "apiKey", type: "string", desc: "Channel API key — add it to request headers yourself" },
+    { name: "systemPrompt", type: "string", desc: "Raw system prompt text" },
+    { name: "http", type: "object", desc: "Helpers: http.post(path, body, {headers,params,responseType}), http.get(path, opts), http.url(path); default Authorization: Bearer apiKey (override via headers); relative path joins baseUrl + /v1" },
+    { name: "request", type: "function", desc: "Raw request({ method, url, headers, params, data, responseType }) with no default headers — write auth yourself; relative url joins baseUrl (no /v1)" },
+    { name: "poll", type: "function", desc: "poll(request, extract, {intervalMs,timeoutMs}) — ends when extract returns a truthy value" },
+    { name: "sleep", type: "function", desc: "sleep(ms) delay" },
+    { name: "signal", type: "AbortSignal", desc: "Abort signal — pass through to http/request" },
+    { name: "onDelta", type: "function", desc: "onDelta(text) stream text chunks (text models)", capabilities: ["text"] },
 ];
 
 export const PLUGIN_RETURNS: Record<ModelCapability, string> = {
-    image: "文生图（images 为空）和图生图（images 有参考图）接口不同，脚本需自行区分；返回图片 URL 或 dataURL 字符串，也可返回它们的数组，或 [{ dataUrl }] / [{ url }] / [{ b64_json }]",
-    video: "脚本内部完成轮询，返回 { url } 或 { blob } 或视频 URL 字符串",
-    audio: "返回 Blob，或 base64 / dataURL 字符串，或 { b64_json } / { data } / { url }",
-    text: "用 onDelta(text) 推送流式，最终 return 完整文本字符串",
+    image: "Text-to-image (empty images) and image-to-image (with refs) use different APIs — branch in the script; return image URL or dataURL string(s), or [{ dataUrl }] / [{ url }] / [{ b64_json }]",
+    video: "Poll inside the script; return { url } or { blob } or a video URL string",
+    audio: "Return a Blob, base64 / dataURL string, or { b64_json } / { data } / { url }",
+    text: "Stream with onDelta(text), then return the full text string",
 };
 
 export type PluginTemplate = { label: string; script: string };
@@ -189,11 +189,11 @@ export type PluginTemplate = { label: string; script: string };
 export const PLUGIN_TEMPLATES: Record<ModelCapability, PluginTemplate[]> = {
     image: [
         {
-            label: "OpenAI 规范",
-            script: `// 生图 / 改图：两者接口不同，用 images 是否为空来区分。
-// 可用：prompt、images(dataURL[])、params{size,quality,count}、model、baseUrl、apiKey
+            label: "OpenAI style",
+            script: `// Image gen / edit: different APIs — branch on whether images is empty.
+// Locals: prompt, images(dataURL[]), params{size,quality,count}, model, baseUrl, apiKey
 if (images.length === 0) {
-  // 文生图：/images/generations（JSON）
+  // Text-to-image: /images/generations (JSON)
   const data = await request({
     method: "post",
     url: \`\${baseUrl}/v1/images/generations\`,
@@ -203,7 +203,7 @@ if (images.length === 0) {
   return (data.data || []).map((item) => item.b64_json ? \`data:image/png;base64,\${item.b64_json}\` : item.url);
 }
 
-// 图生图：/images/edits（multipart/form-data，参考图作为文件上传）
+// Image-to-image: /images/edits (multipart/form-data, upload refs as files)
 const form = new FormData();
 form.set("model", model);
 form.set("prompt", prompt);
@@ -215,15 +215,15 @@ for (const dataUrl of images) {
 const edited = await request({
   method: "post",
   url: \`\${baseUrl}/v1/images/edits\`,
-  headers: { Authorization: \`Bearer \${apiKey}\` }, // 不要手动设 Content-Type，交给浏览器带 boundary
+  headers: { Authorization: \`Bearer \${apiKey}\` }, // do not set Content-Type; browser adds boundary
   data: form,
 });
 return (edited.data || []).map((item) => item.b64_json ? \`data:image/png;base64,\${item.b64_json}\` : item.url);`,
         },
         {
-            label: "Gemini 规范",
-            script: `// Gemini 文生图 / 图生图：都走 generateContent，参考图放进 parts 的 inline_data。
-// 可用：prompt、images(dataURL[])、model、baseUrl、apiKey
+            label: "Gemini style",
+            script: `// Gemini text-to-image / image-to-image: both use generateContent; refs go in parts.inline_data.
+// Locals: prompt, images(dataURL[]), model, baseUrl, apiKey
 const parts = [{ text: prompt }];
 for (const dataUrl of images) {
   const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
@@ -244,8 +244,8 @@ return (data.candidates || [])
     ],
     video: [
         {
-            label: "OpenAI 规范",
-            script: `// 视频（脚本内部自行轮询）。可用：prompt、images(dataURL[])、params{seconds,size,resolution,ratio}
+            label: "OpenAI style",
+            script: `// Video (poll inside the script). Locals: prompt, images(dataURL[]), params{seconds,size,resolution,ratio}
 const headers = { "Content-Type": "application/json", Authorization: \`Bearer \${apiKey}\` };
 const task = await request({
   method: "post",
@@ -260,9 +260,9 @@ return await poll(
 );`,
         },
         {
-            label: "Gemini 规范",
-            script: `// Gemini(Veo) 视频：predictLongRunning 提交，轮询 operation 拿视频 URI。
-// 可用：prompt、images(dataURL[])、params、model、baseUrl、apiKey
+            label: "Gemini style",
+            script: `// Gemini(Veo) video: submit with predictLongRunning, poll operation for video URI.
+// Locals: prompt, images(dataURL[]), params, model, baseUrl, apiKey
 const headers = { "Content-Type": "application/json", "x-goog-api-key": apiKey };
 const instance = { prompt };
 const first = images[0] && images[0].match(/^data:([^;]+);base64,(.*)$/);
@@ -278,7 +278,7 @@ return await poll(
   (state) => {
     if (!state.done) return null;
     const uri = state.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri;
-    if (!uri) throw new Error("Gemini 未返回视频 URI");
+    if (!uri) throw new Error("Gemini did not return a video URI");
     return { url: uri.includes("key=") ? uri : \`\${uri}\${uri.includes("?") ? "&" : "?"}key=\${apiKey}\` };
   },
   { intervalMs: 5000, timeoutMs: 300000 },
@@ -287,8 +287,8 @@ return await poll(
     ],
     audio: [
         {
-            label: "OpenAI 规范",
-            script: `// 音频 TTS。可用：prompt、params{voice,format,speed,instructions}、model
+            label: "OpenAI style",
+            script: `// Audio TTS. Locals: prompt, params{voice,format,speed,instructions}, model
 return await request({
   method: "post",
   url: \`\${baseUrl}/v1/audio/speech\`,
@@ -298,9 +298,9 @@ return await request({
 });`,
         },
         {
-            label: "Gemini 规范",
-            script: `// Gemini TTS：generateContent + AUDIO 模态，返回 base64 PCM（音频数据在 inlineData.data）。
-// 可用：prompt、params{voice}、model、baseUrl、apiKey
+            label: "Gemini style",
+            script: `// Gemini TTS: generateContent + AUDIO modality; returns base64 PCM in inlineData.data.
+// Locals: prompt, params{voice}, model, baseUrl, apiKey
 const data = await request({
   method: "post",
   url: \`\${baseUrl}/v1beta/models/\${model}:generateContent\`,
@@ -314,14 +314,14 @@ const data = await request({
   },
 });
 const audio = data.candidates?.[0]?.content?.parts?.map((p) => p.inlineData || p.inline_data).find(Boolean);
-if (!audio?.data) throw new Error("Gemini 未返回音频");
+if (!audio?.data) throw new Error("Gemini did not return audio");
 return { data: audio.data };`,
         },
     ],
     text: [
         {
-            label: "OpenAI 规范",
-            script: `// 文本对话（OpenAI Responses 接口）。可用：messages([{role,content}])、systemPrompt、model
+            label: "OpenAI style",
+            script: `// Text chat (OpenAI Responses API). Locals: messages([{role,content}]), systemPrompt, model
 const data = await request({
   method: "post",
   url: \`\${baseUrl}/v1/responses\`,
@@ -335,9 +335,9 @@ onDelta(text);
 return text;`,
         },
         {
-            label: "Gemini 规范",
-            script: `// Gemini 文本：generateContent，system 消息放 systemInstruction。
-// 可用：messages([{role,content}])、systemPrompt、model、baseUrl、apiKey
+            label: "Gemini style",
+            script: `// Gemini text: generateContent; put system messages in systemInstruction.
+// Locals: messages([{role,content}]), systemPrompt, model, baseUrl, apiKey
 const contents = messages
   .filter((m) => m.role !== "system")
   .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
@@ -369,6 +369,6 @@ export function normalizePluginImages(result: unknown): string[] {
             return "";
         })
         .filter(Boolean);
-    if (!urls.length) throw new Error("模型调用脚本没有返回图片");
+    if (!urls.length) throw new Error("Model call script returned no images");
     return urls;
 }

@@ -120,7 +120,7 @@ export function normalizeSeedanceRatio(value: string) {
 export function seedancePixelLabel(resolution: string, ratio: string) {
     const normalizedResolution = normalizeSeedanceResolution(resolution) as keyof typeof seedancePixels;
     const normalizedRatio = normalizeSeedanceRatio(ratio) as keyof (typeof seedancePixels)[typeof normalizedResolution] | "adaptive";
-    if (normalizedRatio === "adaptive") return "自动匹配";
+    if (normalizedRatio === "adaptive") return "Auto";
     return seedancePixels[normalizedResolution][normalizedRatio] || "";
 }
 
@@ -131,9 +131,9 @@ export function boolConfig(value: string | undefined, fallback: boolean) {
 }
 
 export function seedanceReferenceLabel(kind: "image" | "video" | "audio", index: number) {
-    if (kind === "image") return `图片${index + 1}`;
-    if (kind === "video") return `视频${index + 1}`;
-    return `音频${index + 1}`;
+    if (kind === "image") return `Image ${index + 1}`;
+    if (kind === "video") return `Video ${index + 1}`;
+    return `Audio ${index + 1}`;
 }
 
 export function buildSeedancePromptText(prompt: string, images: ReferenceImage[], videos: ReferenceVideo[], audios: ReferenceAudio[]) {
@@ -144,7 +144,7 @@ export function buildSeedancePromptText(prompt: string, images: ReferenceImage[]
     ];
     const text = prompt.trim();
     if (!labels.length) return text;
-    return `参考资产编号：${labels.join("、")}。请按这些编号理解提示词中的图片、视频和音频引用。\n\n${text}`;
+    return `Reference asset IDs: ${labels.join(", ")}. Use these IDs when the prompt mentions images, videos, or audio.\n\n${text}`;
 }
 
 export function seedanceVideoReferenceError(videos: ReferenceVideo[]) {
@@ -153,23 +153,23 @@ export function seedanceVideoReferenceError(videos: ReferenceVideo[]) {
         const video = videos[index];
         const label = seedanceReferenceLabel("video", index);
         if (!isSeedanceRemoteMediaUrl(video.url)) {
-            if (!video.storageKey && !video.url) return `${label} 无效，请重新上传`;
-            if (!isOssUploadReady(useConfigStore.getState().oss)) return `${label} 需公网 https / asset://，或先在配置中填写对象存储 AccessKey 后再上传本地文件`;
+            if (!video.storageKey && !video.url) return `${label} is invalid. Please re-upload.`;
+            if (!isOssUploadReady(useConfigStore.getState().oss)) return `${label} requires a public https / asset:// URL, or configure object storage AccessKey before uploading local files`;
         }
-        if (video.bytes && video.bytes > SEEDANCE_REFERENCE_LIMITS.videoMaxBytes) return `${label} 超过 50MB，请压缩后再上传`;
+        if (video.bytes && video.bytes > SEEDANCE_REFERENCE_LIMITS.videoMaxBytes) return `${label} exceeds 50MB. Please compress and re-upload.`;
         if (video.durationMs) {
-            if (video.durationMs < 2000 || video.durationMs > 15000) return `${label} 时长需要在 2-15 秒之间`;
+            if (video.durationMs < 2000 || video.durationMs > 15000) return `${label} duration must be between 2 and 15 seconds`;
             totalDurationMs += video.durationMs;
         }
         if (video.width && video.height) {
-            if (video.width < 300 || video.width > 6000 || video.height < 300 || video.height > 6000) return `${label} 宽高需要在 300-6000px 之间`;
+            if (video.width < 300 || video.width > 6000 || video.height < 300 || video.height > 6000) return `${label} width/height must be between 300 and 6000px`;
             const ratio = video.width / video.height;
-            if (ratio < 0.4 || ratio > 2.5) return `${label} 宽高比需要在 0.4-2.5 之间`;
+            if (ratio < 0.4 || ratio > 2.5) return `${label} aspect ratio must be between 0.4 and 2.5`;
             const pixels = video.width * video.height;
-            if (pixels < 640 * 640 || pixels > 2206 * 946) return `${label} 像素总量不符合 Seedance 要求，请转成 480p/720p/1080p 后再上传`;
+            if (pixels < 640 * 640 || pixels > 2206 * 946) return `${label} pixel count does not meet Seedance requirements. Convert to 480p/720p/1080p and re-upload.`;
         }
     }
-    if (totalDurationMs > 15000) return "Seedance 参考视频总时长不能超过 15 秒";
+    if (totalDurationMs > 15000) return "Total Seedance reference video duration cannot exceed 15 seconds";
     return "";
 }
 
@@ -179,4 +179,4 @@ export function isSeedanceRemoteMediaUrl(value?: string) {
 }
 
 export const seedanceVideoReferenceHint =
-    "参考视频需为 mp4/mov，H.264/H.265，FPS 24-60；可为公网 https / asset://；本地文件需先在配置中填写对象存储 AccessKey，生成时会自动上传；含真人人脸资产请使用火山授权 asset:// 资产。";
+    "Reference videos must be mp4/mov, H.264/H.265, FPS 24-60; public https / asset:// URLs are supported; local files require object storage AccessKey in settings (auto-uploaded on generate); for real-person face assets, use Volcengine-authorized asset:// assets.";

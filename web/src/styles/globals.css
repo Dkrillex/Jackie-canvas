@@ -190,6 +190,87 @@
         }
     }
 
+    /* Homepage tech accents — stay on stone palette */
+    .home-tech-panel {
+        position: relative;
+        isolation: isolate;
+    }
+
+    .home-tech-panel::before {
+        content: "";
+        pointer-events: none;
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        opacity: 0.035;
+        background: repeating-linear-gradient(
+            to bottom,
+            rgba(28, 25, 23, 0.9) 0,
+            rgba(28, 25, 23, 0.9) 1px,
+            transparent 1px,
+            transparent 3px
+        );
+    }
+
+    .dark .home-tech-panel::before {
+        opacity: 0.05;
+        background: repeating-linear-gradient(
+            to bottom,
+            rgba(245, 245, 244, 0.9) 0,
+            rgba(245, 245, 244, 0.9) 1px,
+            transparent 1px,
+            transparent 3px
+        );
+    }
+
+    .home-tech-corners {
+        position: relative;
+    }
+
+    .home-tech-corners::before,
+    .home-tech-corners::after {
+        content: "";
+        pointer-events: none;
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-color: rgb(168 162 158);
+        transition: border-color 0.2s ease;
+    }
+
+    .dark .home-tech-corners::before,
+    .dark .home-tech-corners::after {
+        border-color: rgb(87 83 78);
+    }
+
+    .home-tech-corners::before {
+        top: -1px;
+        left: -1px;
+        border-top: 1px solid;
+        border-left: 1px solid;
+    }
+
+    .home-tech-corners::after {
+        right: -1px;
+        bottom: -1px;
+        border-right: 1px solid;
+        border-bottom: 1px solid;
+    }
+
+    .group:hover.home-tech-corners::before,
+    .group:hover.home-tech-corners::after,
+    .group:hover .home-tech-corners::before,
+    .group:hover .home-tech-corners::after {
+        border-color: rgb(68 64 60);
+    }
+
+    .dark .group:hover.home-tech-corners::before,
+    .dark .group:hover.home-tech-corners::after,
+    .dark .group:hover .home-tech-corners::before,
+    .dark .group:hover .home-tech-corners::after {
+        border-color: rgb(214 211 209);
+    }
+
     .hide-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;

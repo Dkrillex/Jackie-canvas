@@ -194,7 +194,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
         const clientId = clientIdRef.current;
         let eventQueue = Promise.resolve();
         const enqueueEvent = (task: () => void | Promise<void>) => {
-            eventQueue = eventQueue.then(task).catch((error) => addEventLog("同步会话失败", error));
+            eventQueue = eventQueue.then(task).catch((error) => addEventLog("Failed to sync session", error));
         };
         const source = new EventSource(`${endpoint}/events?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}`);
         source.addEventListener("hello", (event) => {
@@ -203,7 +203,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
             connectedRef.current = true;
             setAgentState({ connected: true, activity: t("agent.connected"), connectError: "", messages: useAgentStore.getState().messages.filter((item) => !isConnectionErrorMessage(item)) });
             if (!headless) message.success(t("agent.connectedToast"));
-            setAgentState({ connected: true, activity: busy ? "Codex 正在运行" : t("agent.connected"), waiting: busy, sending: false, connectError: "", silentConnect: false, messages: useAgentStore.getState().messages.filter((item) => !isConnectionErrorMessage(item)) });
+            setAgentState({ connected: true, activity: busy ? "Codex is running" : t("agent.connected"), waiting: busy, sending: false, connectError: "", silentConnect: false, messages: useAgentStore.getState().messages.filter((item) => !isConnectionErrorMessage(item)) });
             void postState(endpoint, token, clientId, canvasContextRef.current?.snapshot || null);
             if (document.visibilityState === "visible" && document.hasFocus()) void activateAgentClient(endpoint, token, clientId);
         });
@@ -212,7 +212,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
             if (!data) return;
             enqueueEvent(async () => {
                 const busy = Boolean(data.busy);
-                setAgentState({ activity: busy ? "Codex 正在运行" : "完成", waiting: busy, ...(busy ? {} : { sending: false }) });
+                setAgentState({ activity: busy ? "Codex is running" : t("agent.completed"), waiting: busy, ...(busy ? {} : { sending: false }) });
                 if (!busy) await loadThreads();
             });
         });
@@ -339,9 +339,9 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
             setAgentState({ prompt: "", attachments: [] });
         } catch (error) {
             const errText = error instanceof Error ? error.message : t("agent.sendFailed");
-            const busy = errText.includes("Codex 正在运行");
-            setAgentState({ activity: busy ? "Codex 正在运行" : t("agent.sendFailed"), waiting: false });
-            addMessage({ role: "error", title: busy ? "任务仍在运行" : t("agent.sendFailed"), text: errText });
+            const busy = /Codex 正在运行|Codex is running/i.test(errText);
+            setAgentState({ activity: busy ? "Codex is running" : t("agent.sendFailed"), waiting: false });
+            addMessage({ role: "error", title: busy ? "Task still running" : t("agent.sendFailed"), text: errText });
             addEventLog(t("agent.sendFailed"), error);
         } finally {
             setAgentState({ sending: false });
@@ -408,7 +408,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
             });
             addEventLog(t("agent.received"), { mode: "cloud", model: CLOUD_CHAT_MODEL });
         } catch (error) {
-            const canceled = abort.signal.aborted || (error instanceof Error && (error.name === "AbortError" || error.message === "请求已取消"));
+            const canceled = abort.signal.aborted || (error instanceof Error && (error.name === "AbortError" || error.message === "请求已取消" || error.message === "Request cancelled"));
             if (canceled) {
                 setAgentState({ activity: t("agent.cloudChatCanceled") });
                 addEventLog(t("agent.userStopped"), { mode: "cloud" });
@@ -531,7 +531,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                 void postState(endpoint, token, clientIdRef.current, result as CanvasAgentSnapshot);
             } else if (payload.name === "canvas_create_attachment_nodes") {
                 const context = canvasContextRef.current;
-                if (!context) throw new Error("当前不在画布页，请先用 site_navigate 打开画布");
+                if (!context) throw new Error(t("agent.notOnCanvas"));
                 appliedOps = await attachmentNodeOps(endpoint, token, clientIdRef.current, payload.input?.nodes);
                 result = context.applyOps(appliedOps);
                 await postState(endpoint, token, clientIdRef.current, result as CanvasAgentSnapshot);
@@ -817,11 +817,11 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
                             {waiting && !pendingTool ? <AgentWorkingMessage theme={theme} /> : null}
                         </div>
                         {showScrollToBottom ? (
-                            <Tooltip title="滚动到底部" placement="left">
+                            <Tooltip title="Scroll to bottom" placement="left">
                                 <Button
                                     type="text"
                                     shape="circle"
-                                    aria-label="滚动到底部"
+                                    aria-label="Scroll to bottom"
                                     className="!absolute bottom-3 left-1/2 z-10 !h-8 !w-8 !min-w-8 -translate-x-1/2 backdrop-blur transition hover:-translate-y-0.5"
                                     style={{ background: theme.toolbar.panel, border: `1px solid ${theme.node.stroke}`, color: theme.node.text }}
                                     icon={<ChevronDown className="size-4" />}
@@ -1207,7 +1207,7 @@ const CANVAS_TOOL_KEYS: Record<string, MessageKey> = {
 function toolName(name: string) {
     const key = CANVAS_TOOL_KEYS[name];
     if (key) return useLocaleStore.getState().t(key);
-    if (name === "canvas_create_attachment_nodes") return "添加附件图片";
+    if (name === "canvas_create_attachment_nodes") return "Add attachment images";
     if (isSiteTool(name)) return SITE_TOOL_LABELS[name];
     return name;
 }
@@ -1221,7 +1221,7 @@ function siteToolSummary(name: string, result: unknown) {
     if (name === "assets_add") return t("agent.savedToAssets");
     if (name === "generation_get_status") {
         const summary = data.summary && typeof data.summary === "object" ? (data.summary as Record<string, unknown>) : {};
-        return `共 ${numberField(data, "total")} 个任务，排队 ${numberField(summary, "queued")}，运行中 ${numberField(summary, "running")}，成功 ${numberField(summary, "succeeded")}，失败 ${numberField(summary, "failed")}`;
+        return `${numberField(data, "total")} tasks — queued ${numberField(summary, "queued")}, running ${numberField(summary, "running")}, succeeded ${numberField(summary, "succeeded")}, failed ${numberField(summary, "failed")}`;
     }
     if (name === "workbench_image_generate" || name === "workbench_video_generate") return typeof data.note === "string" ? data.note : t("agent.ranInWorkbench");
     if (name === "workbench_image_get_config" || name === "workbench_video_get_config") return t("agent.readWorkbenchConfig");
@@ -1335,17 +1335,17 @@ function isCanvasWriteTool(name: string) {
 
 async function attachmentNodeOps(endpoint: string, token: string, clientId: string, value: unknown): Promise<CanvasAgentOp[]> {
     const nodes = Array.isArray(value) ? value : [];
-    if (!nodes.length) throw new Error("没有可添加的图片附件");
+    if (!nodes.length) throw new Error("No image attachments to add");
     return await Promise.all(
         nodes.map(async (value) => {
             const item = value as { id?: unknown; attachmentId?: unknown; title?: unknown; position?: unknown };
             const id = String(item.id || "");
             const attachmentId = String(item.attachmentId || "");
-            if (!id || !attachmentId) throw new Error("图片附件节点参数无效");
+            if (!id || !attachmentId) throw new Error("Invalid image attachment node params");
             const res = await fetch(`${endpoint}/agent/attachments/${encodeURIComponent(attachmentId)}?token=${encodeURIComponent(token)}&clientId=${encodeURIComponent(clientId)}`);
             if (!res.ok) {
                 const body = (await res.json().catch(() => null)) as { error?: string } | null;
-                throw new Error(body?.error || "读取图片附件失败");
+                throw new Error(body?.error || "Failed to read image attachment");
             }
             const image = await uploadImage(await res.blob());
             const size = fitNodeSize(image.width, image.height);
@@ -1354,7 +1354,7 @@ async function attachmentNodeOps(endpoint: string, token: string, clientId: stri
                 type: "add_node" as const,
                 id,
                 nodeType: "image" as const,
-                title: String(item.title || "参考图"),
+                title: String(item.title || "Reference image"),
                 position: { x: Number(position.x) || 0, y: Number(position.y) || 0 },
                 width: size.width,
                 height: size.height,

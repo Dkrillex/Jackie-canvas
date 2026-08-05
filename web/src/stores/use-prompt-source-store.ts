@@ -16,11 +16,11 @@ const defaultSchedule: PromptSourceSchedule = {
 };
 
 export const PROMPT_SOURCE_INTERVAL_OPTIONS = [
-    { label: "关闭定时", value: 0 },
-    { label: "每 30 分钟", value: 30 },
-    { label: "每 1 小时", value: 60 },
-    { label: "每 6 小时", value: 360 },
-    { label: "每 24 小时", value: 1440 },
+    { label: "Off", value: 0 },
+    { label: "Every 30 minutes", value: 30 },
+    { label: "Every 1 hour", value: 60 },
+    { label: "Every 6 hours", value: 360 },
+    { label: "Every 24 hours", value: 1440 },
 ];
 
 type PromptSourceStore = {

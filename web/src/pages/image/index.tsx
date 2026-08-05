@@ -55,7 +55,7 @@ type GenerationLog = {
     imageCount: number;
     size: string;
     quality: string;
-    status: "成功" | "失败";
+    status: "success" | "failed";
     images: GeneratedImage[];
     thumbnails: string[];
 };
@@ -162,13 +162,13 @@ export default function ImagePage() {
         if (!isAiConfigReady(effectiveConfig, model)) {
             message.warning(t(aiConfigNotReadyMessageKey(effectiveConfig, model) || "wb.needConfig"));
             openConfigDialog(true);
-            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: "生图配置不完整" });
+            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: "Image generation config is incomplete" });
             return;
         }
 
         const snapshot = buildRequestSnapshot();
         if (!snapshot) {
-            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: "生图参数无效" });
+            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: "Invalid image generation parameters" });
             return;
         }
 
@@ -187,7 +187,7 @@ export default function ImagePage() {
         const successCount = successImages.length;
         const failCount = generationCount - successCount;
         const failed = result.find((item): item is PromiseRejectedResult => item.status === "rejected");
-        const error = failed?.reason instanceof Error ? failed.reason.message : failCount ? "生成失败" : undefined;
+        const error = failed?.reason instanceof Error ? failed.reason.message : failCount ? "Generation failed" : undefined;
         if (agentTaskId) updateAgentTask(agentTaskId, { status: successCount ? "succeeded" : "failed", successCount, failCount, error: successCount ? undefined : error });
 
         try {
@@ -206,7 +206,7 @@ export default function ImagePage() {
                     durationMs: performance.now() - batchStartedAt,
                     successCount,
                     failCount,
-                    status: successCount ? "成功" : "失败",
+                    status: successCount ? "success" : "failed",
                     images: logImages,
                 }),
             );
@@ -223,7 +223,7 @@ export default function ImagePage() {
         clearImageCommand();
         if (typeof imageCommand.prompt === "string") setPrompt(imageCommand.prompt);
         if (imageCommand.run && running) {
-            if (imageCommand.taskId) updateAgentTask(imageCommand.taskId, { status: "failed", error: "生图工作台已有任务正在运行" });
+            if (imageCommand.taskId) updateAgentTask(imageCommand.taskId, { status: "failed", error: "An image workbench task is already running" });
             return;
         }
         if (imageCommand.run) {
@@ -363,7 +363,7 @@ export default function ImagePage() {
                     durationMs: performance.now() - retryStartedAt,
                     successCount: 1,
                     failCount: 0,
-                    status: "成功",
+                    status: "success",
                     images: [logImage],
                 }),
             );
@@ -802,7 +802,7 @@ async function normalizeLog(log: Partial<GenerationLog>): Promise<GenerationLog>
         imageCount: log.imageCount || log.successCount || 0,
         size: log.size || config.size || "",
         quality: log.quality || config.quality || "",
-        status: log.status || "成功",
+        status: log.status || "success",
         images,
         thumbnails: images.map((image) => image.dataUrl).filter(Boolean),
     };

@@ -110,11 +110,11 @@ export function buildGenerationConfig(config: AiConfig, node: CanvasNodeData | u
 }
 
 export function resetInterruptedGeneration(nodes: CanvasNodeData[]) {
-    return nodes.map((node) => (node.metadata?.status === "loading" ? { ...node, metadata: { ...node.metadata, status: "error" as const, errorDetails: "页面刷新后生成已中断，请重新生成。" } } : node));
+    return nodes.map((node) => (node.metadata?.status === "loading" ? { ...node, metadata: { ...node.metadata, status: "error" as const, errorDetails: "Generation was interrupted after refresh. Please generate again." } } : node));
 }
 
 export function isGenerationCanceled(error: unknown) {
-    return error instanceof Error && (error.message === "请求已取消" || error.name === "AbortError");
+    return error instanceof Error && (error.message === "请求已取消" || error.message === "Request cancelled" || error.name === "AbortError");
 }
 
 export function findRetrySourceNode(nodeId: string, nodes: CanvasNodeData[], connections: CanvasConnection[]) {
@@ -149,11 +149,11 @@ export function isAudioFile(file: File) {
 }
 
 export function buildAngleLabel(params: CanvasImageAngleParams) {
-    const horizontal = params.horizontalAngle === 0 ? "正面视角" : params.horizontalAngle > 0 ? `向右旋转 ${params.horizontalAngle} 度` : `向左旋转 ${Math.abs(params.horizontalAngle)} 度`;
-    const pitch = params.pitchAngle === 0 ? "水平视角" : params.pitchAngle > 0 ? `俯视 ${params.pitchAngle} 度` : `仰视 ${Math.abs(params.pitchAngle)} 度`;
-    return `AI 多角度：${horizontal}，${pitch}，镜头距离 ${params.cameraDistance.toFixed(1)}，${params.wideAngle ? "广角" : "标准"}镜头`;
+    const horizontal = params.horizontalAngle === 0 ? "front view" : params.horizontalAngle > 0 ? `rotate right ${params.horizontalAngle} degrees` : `rotate left ${Math.abs(params.horizontalAngle)} degrees`;
+    const pitch = params.pitchAngle === 0 ? "eye-level" : params.pitchAngle > 0 ? `look down ${params.pitchAngle} degrees` : `look up ${Math.abs(params.pitchAngle)} degrees`;
+    return `AI multi-angle: ${horizontal}, ${pitch}, camera distance ${params.cameraDistance.toFixed(1)}, ${params.wideAngle ? "wide-angle" : "standard"} lens`;
 }
 
 export function buildAnglePrompt(params: CanvasImageAngleParams) {
-    return `基于参考图重新生成同一主体的新视角，保持主体、颜色、材质和画面风格一致，不要只做透视变形。${buildAngleLabel(params)}。`;
+    return `Regenerate the same subject from a new viewpoint based on the reference image. Keep subject, colors, materials, and style consistent; do not only warp perspective. ${buildAngleLabel(params)}.`;
 }

@@ -74,11 +74,11 @@ export function CanvasTopBar({
         <>
             <div className="pointer-events-none absolute left-0 right-0 top-0 z-50 flex h-16 items-center justify-between pl-1 pr-4">
                 <div className="pointer-events-auto flex min-w-0 items-center gap-2">
-                    <Tooltip title={sidePanelOpen ? "收起面板" : "展开面板"}>
+                    <Tooltip title={sidePanelOpen ? "Collapse panel" : "Expand panel"}>
                         <button
                             type="button"
                             onClick={toggleSidePanel}
-                            aria-label={sidePanelOpen ? "收起面板" : "展开面板"}
+                            aria-label={sidePanelOpen ? "Collapse panel" : "Expand panel"}
                             className="grid size-7 place-items-center rounded-full transition hover:bg-black/5 dark:hover:bg-white/10"
                             style={{ color: theme.node.text }}
                         >
@@ -96,7 +96,7 @@ export function CanvasTopBar({
                                 { key: "delete", danger: true, icon: <Trash2 className="size-4" />, label: t("canvas.project.deleteCurrent"), onClick: onDeleteProject },
                                 { type: "divider" },
                                 { key: "import", icon: <Upload className="size-4" />, label: t("canvas.project.importAssets"), onClick: onImportImage },
-                                { key: "export", icon: <Download className="size-4" />, label: "导出当前画布", onClick: onExportProject },
+                                { key: "export", icon: <Download className="size-4" />, label: "Export current canvas", onClick: onExportProject },
                                 { type: "divider" },
                                 { key: "undo", disabled: !canUndo, icon: <Undo2 className="size-4" />, label: <MenuLabel text={t("canvas.tool.undo")} shortcut="⌘ Z" />, onClick: onUndo },
                                 { key: "redo", disabled: !canRedo, icon: <Redo2 className="size-4" />, label: <MenuLabel text={t("canvas.tool.redo")} shortcut="⌘ ⇧ Z / ⌘ Y" />, onClick: onRedo },

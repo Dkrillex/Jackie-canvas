@@ -16,7 +16,7 @@ type RawManifest = { plugins?: RawEntry[] };
 // 拉取官方插件清单;entry(相对文件名)按清单地址解析成绝对 URL,再走既有 URL 安装流程
 export async function fetchOfficialPlugins(registryUrl: string = PLUGIN_REGISTRY_URL): Promise<OfficialPluginEntry[]> {
     const response = await fetch(registryUrl, { headers: { accept: "application/json" } });
-    if (!response.ok) throw new Error(`获取官方插件列表失败 (HTTP ${response.status})`);
+    if (!response.ok) throw new Error(`Failed to fetch official plugin list (HTTP ${response.status})`);
     const data = (await response.json()) as RawManifest;
     const list = Array.isArray(data?.plugins) ? data.plugins : [];
     return list

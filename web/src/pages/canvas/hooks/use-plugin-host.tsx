@@ -43,7 +43,7 @@ export function usePluginHost(params: PluginHostParams) {
         const ensureReady = (config: AiConfig) => {
             if (!isAiConfigReady(config, config.model)) {
                 openConfigDialog(true);
-                throw new Error("AI 配置未就绪,请先在设置里配置模型与密钥");
+                throw new Error("AI config is not ready — set model and API key in Settings first");
             }
         };
         return {
@@ -124,8 +124,8 @@ export function usePluginHost(params: PluginHostParams) {
             const interactive = Boolean(node.metadata?.interactive);
             const toggle: CanvasNodeToolbarItem = {
                 id: "node-interaction-toggle",
-                title: interactive ? "当前:交互中。点击切回「移动」——拖动可移动节点" : "当前:可移动。点击切到「交互」——可操作节点内容(如转动全景)",
-                label: interactive ? "移动" : "交互",
+                title: interactive ? "Interactive mode. Click to switch to Move — drag to reposition the node" : "Move mode. Click to switch to Interactive — interact with node content (e.g. pan panorama)",
+                label: interactive ? "Move" : "Interact",
                 icon: interactive ? "✋" : "🖐",
                 active: interactive,
                 onClick: () => pluginHost.updateMetadata(node.id, { interactive: !interactive }),

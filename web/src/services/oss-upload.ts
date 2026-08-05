@@ -13,7 +13,7 @@ export function ossPublicObjectUrl(config: OssUploadConfig, objectKey: string) {
 }
 
 export async function uploadBlobToOss(config: OssUploadConfig, blob: Blob, fileName: string) {
-    if (!isOssUploadReady(config)) throw new Error("请先在配置里填写 OSS-AK-ID / OSS-SK");
+    if (!isOssUploadReady(config)) throw new Error("Please set OSS-AK-ID / OSS-SK in settings first");
     const OSS = (await import("ali-oss")).default;
     const region = config.region.trim();
     const bucket = config.bucket.trim();
@@ -54,9 +54,9 @@ function formatOssUploadError(error: unknown, bucket: string) {
     const raw = error instanceof Error ? error.message : String(error || "upload failed");
     const lower = raw.toLowerCase();
     if (lower.includes("xhr error") || lower.includes("connected: false") || lower.includes("network") || lower.includes("cors") || lower.includes("failed to fetch")) {
-        return `对象存储上传被浏览器拦截（多为 CORS）。请在阿里云 OSS 控制台为 Bucket「${bucket}」配置跨域：来源 *（或本站域名），允许 Methods GET/PUT/POST/HEAD，允许 Headers *，暴露 Headers ETag 与 x-oss-request-id。原始错误：${raw}`;
+        return `Object storage upload was blocked by the browser (usually CORS). In the Alibaba Cloud OSS console, configure CORS for bucket "${bucket}": Allowed Origins * (or this site's domain), Allowed Methods GET/PUT/POST/HEAD, Allowed Headers *, Expose Headers ETag and x-oss-request-id. Original error: ${raw}`;
     }
-    return `对象存储上传失败：${raw}`;
+    return `Object storage upload failed: ${raw}`;
 }
 
 function buildObjectKey(prefix: string, fileName: string, mimeType: string) {
