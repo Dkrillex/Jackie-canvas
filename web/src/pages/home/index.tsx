@@ -97,7 +97,7 @@ export default function IndexPage() {
                 <div className="relative flex min-h-[640px] flex-col items-center justify-center overflow-visible pt-10 text-center">
                     <TokenStream />
                     <div className="relative z-10 flex flex-col items-center">
-                        <h1 className="ai-title-aurora max-w-5xl text-balance text-5xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">Tennda LLM</h1>
+                        <h1 className="ai-title-aurora font-heading max-w-5xl text-balance text-5xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">Tennda LLM</h1>
                         <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">
                             {t("home.hero.before")}{" "}
                             <Highlighter action="underline" color="#FF9800">
