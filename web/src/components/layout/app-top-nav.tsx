@@ -4,10 +4,17 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { filterPlaygroundTools, type NavigationToolSlug } from "@/constant/navigation-tools";
-import { TENNDA_HUGGINGFACE_URL, TENNDA_MODEL_CATALOG, tenndaModelDetailPath } from "@/constant/tennda-models";
+import {
+    TENNDA_CAPABILITY_ORDER,
+    TENNDA_HUGGINGFACE_URL,
+    TENNDA_MODEL_CATALOG,
+    tenndaModelDetailPath,
+    type TenndaModelCapability,
+} from "@/constant/tennda-models";
 import { AppConfigModal } from "@/components/layout/app-config-modal";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { UserStatusActions } from "@/components/layout/user-status-actions";
+import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useAgentStore } from "@/stores/use-agent-store";
 import { useConfigStore } from "@/stores/use-config-store";
@@ -15,6 +22,13 @@ import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 
 const SCROLL_PILL_THRESHOLD = 24;
+
+const MODEL_FAMILY_LABEL: Record<TenndaModelCapability, MessageKey> = {
+    image: "home.models.group.imageTitle",
+    video: "home.models.group.videoTitle",
+    text: "home.models.group.textTitle",
+    audio: "home.models.group.audioTitle",
+};
 
 export function AppTopNav() {
     const { pathname } = useLocation();
@@ -64,15 +78,22 @@ export function AppTopNav() {
     }, [onScrollCapture]);
 
     const modelsMenu = {
-        items: TENNDA_MODEL_CATALOG.map((model) => ({
-            key: model.slug,
-            label: (
-                <Link to={tenndaModelDetailPath(model.slug)} className="block min-w-[12rem]">
-                    <div className="font-medium text-stone-900 dark:text-stone-100">{model.displayName}</div>
-                    <div className="text-[11px] capitalize text-stone-400">{model.capability}</div>
-                </Link>
-            ),
-        })),
+        items: TENNDA_CAPABILITY_ORDER.map((capability) => {
+            const models = TENNDA_MODEL_CATALOG.filter((model) => model.capability === capability);
+            return {
+                key: capability,
+                label: t(MODEL_FAMILY_LABEL[capability]),
+                children: models.map((model) => ({
+                    key: model.slug,
+                    label: (
+                        <Link to={tenndaModelDetailPath(model.slug)} className="block min-w-[11rem]">
+                            <div className="font-medium text-stone-900 dark:text-stone-100">{model.displayName}</div>
+                            <div className="text-[11px] text-stone-400">{model.focus}</div>
+                        </Link>
+                    ),
+                })),
+            };
+        }),
     };
 
     const playgroundMenu = {

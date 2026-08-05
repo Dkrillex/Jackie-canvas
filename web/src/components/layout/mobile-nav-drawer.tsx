@@ -3,10 +3,24 @@ import { Drawer } from "antd";
 import { Link } from "react-router-dom";
 
 import { filterPlaygroundTools, type NavigationToolSlug } from "@/constant/navigation-tools";
-import { TENNDA_HUGGINGFACE_URL, TENNDA_MODEL_CATALOG, tenndaModelDetailPath } from "@/constant/tennda-models";
+import {
+    TENNDA_CAPABILITY_ORDER,
+    TENNDA_HUGGINGFACE_URL,
+    TENNDA_MODEL_CATALOG,
+    tenndaModelDetailPath,
+    type TenndaModelCapability,
+} from "@/constant/tennda-models";
+import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
+
+const MODEL_FAMILY_LABEL: Record<TenndaModelCapability, MessageKey> = {
+    image: "home.models.group.imageTitle",
+    video: "home.models.group.videoTitle",
+    text: "home.models.group.textTitle",
+    audio: "home.models.group.audioTitle",
+};
 
 type MobileNavDrawerProps = {
     open: boolean;
@@ -24,12 +38,22 @@ export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDraw
         <Drawer title={t("nav.drawer")} placement="left" size={300} open={open} onClose={onClose} className="md:hidden">
             <div className="space-y-5">
                 <NavGroup title={t("nav.models")}>
-                    {TENNDA_MODEL_CATALOG.map((model) => (
-                        <Link key={model.slug} to={tenndaModelDetailPath(model.slug)} onClick={onClose} className={linkClass(false)}>
-                            <span className="truncate">{model.displayName}</span>
-                            <span className="ml-auto text-[11px] capitalize text-stone-400">{model.capability}</span>
-                        </Link>
-                    ))}
+                    {TENNDA_CAPABILITY_ORDER.map((capability) => {
+                        const models = TENNDA_MODEL_CATALOG.filter((model) => model.capability === capability);
+                        return (
+                            <div key={capability} className="mb-2 last:mb-0">
+                                <div className="px-3 py-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">{t(MODEL_FAMILY_LABEL[capability])}</div>
+                                <div className="space-y-0.5">
+                                    {models.map((model) => (
+                                        <Link key={model.slug} to={tenndaModelDetailPath(model.slug)} onClick={onClose} className={linkClass(false)}>
+                                            <span className="truncate">{model.displayName}</span>
+                                            <span className="ml-auto text-[11px] text-stone-400">{model.focus}</span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </NavGroup>
 
                 <NavGroup title={t("nav.playground")}>
@@ -52,13 +76,7 @@ export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDraw
                 </NavGroup>
 
                 <NavGroup title={t("nav.huggingface")}>
-                    <a
-                        href={TENNDA_HUGGINGFACE_URL}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={onClose}
-                        className={linkClass(false)}
-                    >
+                    <a href={TENNDA_HUGGINGFACE_URL} target="_blank" rel="noreferrer" onClick={onClose} className={linkClass(false)}>
                         <span>{t("nav.huggingface")}</span>
                     </a>
                 </NavGroup>
