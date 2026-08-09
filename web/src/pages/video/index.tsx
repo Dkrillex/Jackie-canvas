@@ -7,17 +7,19 @@ import { saveAs } from "file-saver";
 import { useTranslation } from "react-i18next";
 
 import { AssetPickerModal, type InsertAssetPayload } from "@/components/canvas/asset-picker-modal";
+import { SeedanceAssetsModal } from "@/components/canvas/seedance-assets-modal";
 import { ModelPicker } from "@/components/model-picker";
 import { PromptSelectDialog } from "@/components/prompts/prompt-select-dialog";
 import { VideoSettingsPanel, normalizeVideoResolutionValue, normalizeVideoSizeValue, videoSizeLabel } from "@/components/video-settings-panel";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { formatBytes, formatDuration } from "@/lib/image-utils";
-import { boolConfig, isSeedanceVideoConfig, normalizeSeedanceRatio, seedanceReferenceLabel, seedanceVideoReferenceError, seedanceVideoReferenceHint, SEEDANCE_REFERENCE_LIMITS, SEEDANCE_VIDEO_MIME_TYPES } from "@/lib/seedance-video";
+import { boolConfig, isSeedanceVideoConfig, normalizeSeedanceRatio, seedanceCloudAssetReferenceError, seedanceReferenceLabel, seedanceVideoReferenceError, seedanceVideoReferenceHint, SEEDANCE_REFERENCE_LIMITS, SEEDANCE_VIDEO_MIME_TYPES } from "@/lib/seedance-video";
 import { deleteStoredMedia, resolveMediaUrl, uploadMediaFile } from "@/services/file-storage";
 import { resolveImageUrl, uploadImage } from "@/services/image-storage";
 import { createVideoGenerationTask, pollVideoGenerationTask, storeGeneratedVideo, type VideoGenerationTask } from "@/services/api/video";
 import { useAssetStore } from "@/stores/use-asset-store";
 import { useWorkbenchAgentStore } from "@/stores/use-workbench-agent-store";
+import { useRequireLogin } from "@/hooks/use-require-login";
 import { modelOptionLabel, useConfigStore, useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
 import { useThemeStore } from "@/stores/use-theme-store";
 import type { ReferenceImage } from "@/types/image";
@@ -73,6 +75,7 @@ const logStore = localforage.createInstance({ name: "infinite-canvas", storeName
 export default function VideoPage() {
     const { message } = App.useApp();
     const { t } = useTranslation();
+    const requireLogin = useRequireLogin();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dragDepthRef = useRef(0);
     const activeLogIdsRef = useRef<Set<string>>(new Set());
@@ -93,6 +96,7 @@ export default function VideoPage() {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [promptDialogOpen, setPromptDialogOpen] = useState(false);
     const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+    const [seedancePickerOpen, setSeedancePickerOpen] = useState(false);
     const [startedAt, setStartedAt] = useState(0);
     const [elapsedMs, setElapsedMs] = useState(0);
     const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
@@ -198,6 +202,10 @@ export default function VideoPage() {
     const generate = async () => {
         const agentTaskId = agentTaskIdRef.current;
         agentTaskIdRef.current = undefined;
+        if (!requireLogin("/video")) {
+            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: t("login.actionRequired") });
+            return;
+        }
         const snapshot = buildRequestSnapshot();
         if (!snapshot) {
             if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: t("videoWorkbench.invalidParams") });
@@ -263,6 +271,11 @@ export default function VideoPage() {
             message.error(t("videoWorkbench.referenceError", { error: videoReferenceError, hint: seedanceVideoReferenceHint() }));
             return null;
         }
+        const cloudError = seedanceCloudAssetReferenceError(references, videoReferences, audioReferences);
+        if (cloudError) {
+            message.error(cloudError);
+            return null;
+        }
         return { text, config: buildVideoConfig(effectiveConfig, model), references: [...references], videoReferences: [...videoReferences], audioReferences: [...audioReferences] };
     };
 
@@ -290,13 +303,66 @@ export default function VideoPage() {
     const insertPickedAsset = async (payload: InsertAssetPayload) => {
         if (payload.kind === "text") {
             setPrompt(payload.content);
+        } else if (payload.seedance) {
+            const seedance = payload.seedance;
+            const preview = seedance.previewUrl || "";
+            if (payload.kind === "video") {
+                setVideoReferences((value) =>
+                    [
+                        ...value,
+                        {
+                            id: nanoid(),
+                            name: payload.title,
+                            type: "video/mp4",
+                            url: seedance.assetUrl,
+                            seedanceGroupId: seedance.groupId,
+                            seedanceAssetStatus: seedance.status,
+                            width: payload.width,
+                            height: payload.height,
+                        },
+                    ].slice(0, SEEDANCE_REFERENCE_LIMITS.videos),
+                );
+            } else if (payload.kind === "audio") {
+                setAudioReferences((value) =>
+                    [
+                        ...value,
+                        {
+                            id: nanoid(),
+                            name: payload.title,
+                            type: "audio/mpeg",
+                            url: seedance.assetUrl,
+                            seedanceGroupId: seedance.groupId,
+                            seedanceAssetStatus: seedance.status,
+                            durationMs: payload.durationMs,
+                        },
+                    ].slice(0, SEEDANCE_REFERENCE_LIMITS.audios),
+                );
+            } else {
+                setReferences((value) =>
+                    [
+                        ...value,
+                        {
+                            id: nanoid(),
+                            name: payload.title,
+                            type: "image/png",
+                            dataUrl: preview,
+                            url: seedance.assetUrl,
+                            seedanceGroupId: seedance.groupId,
+                            seedanceAssetStatus: seedance.status,
+                        },
+                    ].slice(0, SEEDANCE_REFERENCE_LIMITS.images),
+                );
+            }
         } else if (payload.kind === "image") {
             const stored = await uploadImage(payload.dataUrl);
             setReferences((value) => [...value, { id: nanoid(), name: payload.title, type: stored.mimeType, dataUrl: stored.url, storageKey: stored.storageKey }].slice(0, SEEDANCE_REFERENCE_LIMITS.images));
         } else if (payload.kind === "video") {
             setVideoReferences((value) => [...value, { id: nanoid(), name: payload.title, type: "video/mp4", url: payload.url, storageKey: payload.storageKey, width: payload.width, height: payload.height }].slice(0, SEEDANCE_REFERENCE_LIMITS.videos));
+        } else if (payload.kind === "audio") {
+            setAudioReferences((value) => [...value, { id: nanoid(), name: payload.title, type: "audio/mpeg", url: payload.url, storageKey: payload.storageKey, durationMs: payload.durationMs }].slice(0, SEEDANCE_REFERENCE_LIMITS.audios));
         }
         setAssetPickerOpen(false);
+        setSeedancePickerOpen(false);
     };
 
     const createSession = () => {
@@ -446,7 +512,10 @@ export default function VideoPage() {
                             <div className="min-w-0">
                                 <div className="mb-2 flex items-center justify-between gap-3">
                                     <span className="text-base font-semibold">{t("videoWorkbench.references")}</span>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-wrap justify-end gap-2">
+                                        <Button size="small" icon={<FolderPlus className="size-3.5" />} onClick={() => setSeedancePickerOpen(true)}>
+                                            {t("videoWorkbench.seedanceLibrary")}
+                                        </Button>
                                         <Button size="small" icon={<ClipboardPaste className="size-3.5" />} onClick={() => void addReferencesFromClipboard()}>
                                             {t("workbench.clipboard")}
                                         </Button>
@@ -467,7 +536,7 @@ export default function VideoPage() {
                                 >
                                     {references.map((item, index) => (
                                         <div key={item.id} className="group relative size-20 shrink-0 overflow-hidden rounded-md border border-stone-200 dark:border-stone-800">
-                                            <img src={item.dataUrl} alt={item.name} className="size-full object-cover" />
+                                            {item.dataUrl ? <img src={item.dataUrl} alt={item.name} className="size-full object-cover" referrerPolicy="no-referrer" /> : <div className="grid size-full place-items-center text-[10px] text-stone-500">Seedance</div>}
                                             <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{seedanceReferenceLabel("image", index)}</span>
                                             <ReferenceOrderButtons index={index} total={references.length} onMove={(offset) => setReferences((value) => moveListItem(value, index, offset))} />
                                             <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("videoWorkbench.removeImage")}>
@@ -482,9 +551,14 @@ export default function VideoPage() {
                             <div className="min-w-0">
                                 <div className="mb-2 flex items-center justify-between gap-3">
                                     <span className="text-base font-semibold">{t("videoWorkbench.videoReferences")}</span>
-                                    <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
-                                        {t("workbench.upload")}
-                                    </Button>
+                                    <div className="flex flex-wrap justify-end gap-2">
+                                        <Button size="small" icon={<FolderPlus className="size-3.5" />} onClick={() => setSeedancePickerOpen(true)}>
+                                            {t("videoWorkbench.seedanceLibrary")}
+                                        </Button>
+                                        <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
+                                            {t("workbench.upload")}
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div
                                     className={`hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed p-2 pb-3 overscroll-x-contain transition-colors ${referenceDragTarget === "video" ? "border-stone-900 bg-stone-100/80 dark:border-stone-100 dark:bg-stone-900/80" : "border-stone-300 dark:border-stone-700"}`}
@@ -498,7 +572,13 @@ export default function VideoPage() {
                                 >
                                     {videoReferences.map((item, index) => (
                                         <div key={item.id} className="group relative h-20 w-32 shrink-0 overflow-hidden rounded-md border border-stone-200 bg-black dark:border-stone-800">
-                                            <video src={item.url} className="size-full object-cover" muted preload="metadata" />
+                                            {item.url.startsWith("asset://") ? (
+                                                <div className="grid size-full place-items-center bg-stone-900 text-stone-300">
+                                                    <VideoIcon className="size-6" />
+                                                </div>
+                                            ) : (
+                                                <video src={item.url} className="size-full object-cover" muted preload="metadata" />
+                                            )}
                                             <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{seedanceReferenceLabel("video", index)}</span>
                                             <ReferenceOrderButtons index={index} total={videoReferences.length} onMove={(offset) => setVideoReferences((value) => moveListItem(value, index, offset))} />
                                             <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setVideoReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("videoWorkbench.removeVideo")}>
@@ -513,9 +593,14 @@ export default function VideoPage() {
                             <div className="min-w-0">
                                 <div className="mb-2 flex items-center justify-between gap-3">
                                     <span className="text-base font-semibold">{t("videoWorkbench.audioReferences")}</span>
-                                    <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
-                                        {t("workbench.upload")}
-                                    </Button>
+                                    <div className="flex flex-wrap justify-end gap-2">
+                                        <Button size="small" icon={<FolderPlus className="size-3.5" />} onClick={() => setSeedancePickerOpen(true)}>
+                                            {t("videoWorkbench.seedanceLibrary")}
+                                        </Button>
+                                        <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
+                                            {t("workbench.upload")}
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div
                                     className={`hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed p-2 pb-3 overscroll-x-contain transition-colors ${referenceDragTarget === "audio" ? "border-stone-900 bg-stone-100/80 dark:border-stone-100 dark:bg-stone-900/80" : "border-stone-300 dark:border-stone-700"}`}
@@ -534,7 +619,7 @@ export default function VideoPage() {
                                                 <span className="shrink-0 rounded bg-stone-200 px-1 text-[10px] text-stone-700 dark:bg-stone-800 dark:text-stone-200">{seedanceReferenceLabel("audio", index)}</span>
                                                 <span className="truncate">{item.name}</span>
                                             </div>
-                                            <audio src={item.url} controls className="h-8 w-full" preload="metadata" />
+                                            {item.url.startsWith("asset://") ? <div className="truncate text-[11px] text-stone-400">Seedance</div> : <audio src={item.url} controls className="h-8 w-full" preload="metadata" />}
                                             <ReferenceOrderButtons index={index} total={audioReferences.length} onMove={(offset) => setAudioReferences((value) => moveListItem(value, index, offset))} />
                                             <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setAudioReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("videoWorkbench.removeAudio")}>
                                                 <Trash2 className="size-3.5" />
@@ -605,6 +690,7 @@ export default function VideoPage() {
             </Drawer>
             <PromptSelectDialog open={promptDialogOpen} onOpenChange={setPromptDialogOpen} onSelect={setPrompt} />
             <AssetPickerModal open={assetPickerOpen} defaultTab="my-assets" onInsert={(payload) => void insertPickedAsset(payload)} onClose={() => setAssetPickerOpen(false)} />
+            <SeedanceAssetsModal open={seedancePickerOpen} onInsert={(payload) => void insertPickedAsset(payload)} onClose={() => setSeedancePickerOpen(false)} />
             <Modal title={t("workbench.deleteLogs")} open={deleteConfirmOpen} onCancel={() => setDeleteConfirmOpen(false)} onOk={deleteSelectedLogs} okText={t("common.delete")} okButtonProps={{ danger: true }} cancelText={t("common.cancel")}>
                 {t("workbench.deleteLogsConfirm", { count: selectedLogIds.length })}
             </Modal>

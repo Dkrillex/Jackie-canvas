@@ -4,9 +4,10 @@ import { nanoid } from "nanoid";
 import i18n from "@/i18n";
 import { dataUrlToFile } from "@/lib/image-utils";
 import { getMediaBlob, uploadMediaFile, type UploadedFile } from "@/services/file-storage";
-import { imageToDataUrl } from "@/services/image-storage";
-import { boolConfig, buildSeedancePromptText, isSeedanceVideoConfig, normalizeSeedanceDuration, normalizeSeedanceRatio, normalizeSeedanceResolution, seedanceVideoReferenceError, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
-import { buildApiUrl, modelOptionName, resolveModelRequestConfig, resolveModelScript, type AiConfig } from "@/stores/use-config-store";
+import { getImageBlob, imageToDataUrl } from "@/services/image-storage";
+import { isOssUploadReady, uploadBlobToOss } from "@/services/oss-upload";
+import { boolConfig, buildSeedancePromptText, isArkPlanBaseUrl, isSeedanceVideoConfig, normalizeSeedanceDuration, normalizeSeedanceRatio, normalizeSeedanceResolution, seedanceCloudAssetReferenceError, seedanceVideoReferenceError, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
+import { buildApiUrl, modelOptionName, resolveModelRequestConfig, resolveModelScript, useConfigStore, type AiConfig } from "@/stores/use-config-store";
 import { runModelPlugin } from "./model-plugin";
 import type { ReferenceImage } from "@/types/image";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
@@ -14,8 +15,9 @@ import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
 type VideoResponse = { id: string; status?: string; error?: { message?: string }; url?: string; result_url?: string; video_url?: string; content?: { video_url?: string; url?: string } | null };
 type ApiVideoResponse = VideoResponse | { code?: number | string; data?: VideoResponse | null; msg?: string; message?: string; error?: { message?: string } };
 type SeedanceTask = {
-    id: string;
-    status?: "queued" | "running" | "succeeded" | "completed" | "failed" | "cancelled" | "expired";
+    id?: string;
+    task_id?: string;
+    status?: "queued" | "running" | "in_progress" | "succeeded" | "completed" | "failed" | "cancelled" | "expired";
     error?: { code?: string; message?: string } | null;
     content?: { video_url?: string; url?: string; last_frame_url?: string } | null;
     url?: string;
@@ -176,7 +178,9 @@ async function createSeedanceTask(config: AiConfig, model: string, prompt: strin
     }
     assertSeedanceVideoReferences(videoReferences);
     assertSeedanceAudioReferences(audioReferences);
-    const content = await buildSeedanceContent(config, prompt, references, videoReferences, audioReferences);
+    const cloudError = seedanceCloudAssetReferenceError(references, videoReferences, audioReferences);
+    if (cloudError) throw new Error(cloudError);
+    const content = await buildSeedanceContent(prompt, references, videoReferences, audioReferences);
     if (!content.length) throw new Error(apiText("videoPromptRequired"));
     const payload = {
         model: modelOptionName(model),
@@ -190,8 +194,9 @@ async function createSeedanceTask(config: AiConfig, model: string, prompt: strin
 
     try {
         const created = unwrapSeedanceTask((await axios.post<ApiEnvelope<SeedanceTask>>(seedanceApiUrl(config), payload, { headers: aiHeaders(config, "application/json"), signal: options?.signal })).data);
-        if (!created.id) throw new Error(apiText("seedanceNoTaskId"));
-        return { id: created.id, provider: "seedance", model };
+        const taskId = seedanceTaskId(created);
+        if (!taskId) throw new Error(apiText("seedanceNoTaskId"));
+        return { id: taskId, provider: "seedance", model };
     } catch (error) {
         throw new Error(readAxiosError(error, apiText("seedanceTaskCreateFailed")));
     }
@@ -233,15 +238,21 @@ function assertSeedanceAudioReferences(audioReferences: ReferenceAudio[]) {
 }
 
 function seedanceApiUrl(config: AiConfig, taskId?: string) {
-    return buildApiUrl(config.baseUrl, `/contents/generations/tasks${taskId ? `/${encodeURIComponent(taskId)}` : ""}`);
+    // Ark / Ark Plan keep tasks path; OpenAI-compatible Seedance uses /video/generations
+    const path = isArkPlanBaseUrl(config.baseUrl) || config.apiFormat === "ark" ? "/contents/generations/tasks" : "/video/generations";
+    return buildApiUrl(config.baseUrl, `${path}${taskId ? `/${encodeURIComponent(taskId)}` : ""}`);
 }
 
-async function buildSeedanceContent(config: AiConfig, prompt: string, references: ReferenceImage[], videoReferences: ReferenceVideo[], audioReferences: ReferenceAudio[]) {
+function seedanceTaskId(task: SeedanceTask) {
+    return [task.id, task.task_id].find((value) => typeof value === "string" && value.trim())?.trim() || "";
+}
+
+async function buildSeedanceContent(prompt: string, references: ReferenceImage[], videoReferences: ReferenceVideo[], audioReferences: ReferenceAudio[]) {
     const content: Array<Record<string, unknown>> = [];
     const text = buildSeedancePromptText(prompt, references, videoReferences, audioReferences);
     if (text) content.push({ type: "text", text });
     for (const image of references.slice(0, SEEDANCE_REFERENCE_LIMITS.images)) {
-        content.push({ type: "image_url", image_url: { url: await resolveSeedanceImageUrl(config, image) }, role: "reference_image" });
+        content.push({ type: "image_url", image_url: { url: await resolveSeedanceImageUrl(image) }, role: "reference_image" });
     }
     for (const video of videoReferences.slice(0, SEEDANCE_REFERENCE_LIMITS.videos)) {
         content.push({ type: "video_url", video_url: { url: await resolveSeedanceVideoUrl(video) }, role: "reference_video" });
@@ -252,30 +263,41 @@ async function buildSeedanceContent(config: AiConfig, prompt: string, references
     return content;
 }
 
-async function resolveSeedanceImageUrl(config: AiConfig, image: ReferenceImage) {
+async function resolveSeedanceImageUrl(image: ReferenceImage) {
     const directUrl = image.url || image.dataUrl;
     if (isPublicMediaUrl(directUrl) || directUrl.startsWith("asset://")) return directUrl;
-    const dataUrl = await imageToDataUrl(image);
-    if (!dataUrl) throw new Error(apiText("referenceImageReadFailed"));
-    return dataUrl;
+    return uploadLocalMediaToOss(directUrl, image.storageKey, image.name || "reference.png", "image");
 }
 
 async function resolveSeedanceVideoUrl(video: ReferenceVideo) {
     if (isPublicMediaUrl(video.url) || video.url.startsWith("asset://")) return video.url;
-    let blob: Blob | null = null;
-    if (video.storageKey) blob = await getMediaBlob(video.storageKey);
-    if (!blob && video.url?.startsWith("blob:")) blob = await (await fetch(video.url)).blob();
-    if (!blob) throw new Error(apiText("invalidReferenceVideo"));
-    return blobToDataUrl(blob);
+    return uploadLocalMediaToOss(video.url, video.storageKey, video.name || "reference.mp4", "video");
 }
 
 async function resolveSeedanceAudioUrl(audio: ReferenceAudio) {
     if (isPublicMediaUrl(audio.url) || audio.url.startsWith("asset://")) return audio.url;
-    let blob: Blob | null = null;
-    if (audio.storageKey) blob = await getMediaBlob(audio.storageKey);
-    if (!blob && audio.url?.startsWith("blob:")) blob = await (await fetch(audio.url)).blob();
-    if (!blob) throw new Error(apiText("invalidReferenceAudio"));
-    return blobToDataUrl(blob);
+    return uploadLocalMediaToOss(audio.url, audio.storageKey, audio.name || "reference.mp3", "audio");
+}
+
+async function uploadLocalMediaToOss(url: string, storageKey: string | undefined, fileName: string, kind: "image" | "video" | "audio") {
+    const oss = useConfigStore.getState().oss;
+    if (!isOssUploadReady(oss)) {
+        throw new Error(apiText("seedanceNeedsPublicOrOss", { label: apiText(`seedanceLocalLabel.${kind}`) }));
+    }
+    const blob = await resolveLocalMediaBlob(url, storageKey);
+    if (!blob) throw new Error(apiText(kind === "image" ? "referenceImageReadFailed" : kind === "video" ? "invalidReferenceVideo" : "invalidReferenceAudio"));
+    const uploaded = await uploadBlobToOss(oss, blob, fileName);
+    return uploaded.url;
+}
+
+async function resolveLocalMediaBlob(url: string, storageKey?: string) {
+    if (storageKey?.startsWith("image:")) return getImageBlob(storageKey);
+    if (storageKey) {
+        const media = await getMediaBlob(storageKey);
+        if (media) return media;
+    }
+    if (!url) return null;
+    return (await fetch(url)).blob();
 }
 
 async function videoResultFromUrl(url: string, options?: RequestOptions): Promise<VideoGenerationResult> {
@@ -326,11 +348,16 @@ function unwrapSeedanceTask(payload: ApiEnvelope<SeedanceTask>) {
 function unwrapEnvelope<T>(payload: ApiEnvelope<T>, emptyMessage: string): T {
     if (!payload) throw new Error(emptyMessage);
     if (typeof payload === "object" && "code" in payload && payload.code !== undefined) {
-        if (payload.code !== 0 && payload.code !== "0") throw new Error(readApiErrorMessage(payload) || apiText("requestFailed"));
+        if (!isApiSuccessCode(payload.code)) throw new Error(readApiErrorMessage(payload) || apiText("requestFailed"));
         if (!payload.data) throw new Error(emptyMessage);
         return payload.data;
     }
     return payload as T;
+}
+
+function isApiSuccessCode(code: number | string) {
+    if (code === 0 || code === "0") return true;
+    return String(code).toLowerCase() === "success";
 }
 
 function videoResultUrl(payload: VideoResponse | SeedanceTask) {
@@ -413,14 +440,5 @@ function delay(ms: number, signal?: AbortSignal) {
             },
             { once: true },
         );
-    });
-}
-
-function blobToDataUrl(blob: Blob) {
-    return new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error(apiText("localAssetReadFailed")));
-        reader.readAsDataURL(blob);
     });
 }

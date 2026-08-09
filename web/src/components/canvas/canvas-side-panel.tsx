@@ -20,6 +20,7 @@ import { useThemeStore } from "@/stores/use-theme-store";
 import { CanvasNodeType, type CanvasNodeData } from "@/types/canvas";
 
 import type { InsertAssetPayload } from "./asset-picker-modal";
+import { SeedanceAssetsPanel } from "./seedance-assets-panel";
 
 const PANEL_MOTION_SECONDS = CANVAS_SIDE_PANEL_MOTION_MS / 1000;
 const PANEL_EASE = [0.22, 1, 0.36, 1] as const;
@@ -286,6 +287,28 @@ function buildInsertPayload(asset: Asset): InsertAssetPayload {
 }
 
 const CanvasAssetsTab = memo(function CanvasAssetsTab({ onInsert, theme }: { onInsert: (payload: InsertAssetPayload) => void; theme: CanvasTheme }) {
+    const { t } = useTranslation();
+    const [source, setSource] = useState<"local" | "seedance">("local");
+    return (
+        <div className="flex h-full flex-col">
+            <div className="flex items-center gap-3 px-3 pb-2 pt-1">
+                <SubTabButton label={t("canvas.assets.local")} active={source === "local"} theme={theme} onClick={() => setSource("local")} />
+                <SubTabButton label={t("canvas.assets.seedance")} active={source === "seedance"} theme={theme} onClick={() => setSource("seedance")} />
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden">{source === "local" ? <LocalAssetsPanel onInsert={onInsert} theme={theme} /> : <SeedanceAssetsPanel onInsert={onInsert} theme={theme} />}</div>
+        </div>
+    );
+});
+
+function SubTabButton({ label, active, theme, onClick }: { label: string; active: boolean; theme: CanvasTheme; onClick: () => void }) {
+    return (
+        <button type="button" onClick={onClick} className="rounded-md px-2 py-1 text-xs font-semibold transition" style={{ color: theme.node.text, opacity: active ? 1 : 0.45, background: active ? theme.toolbar.activeBg : "transparent" }}>
+            {label}
+        </button>
+    );
+}
+
+const LocalAssetsPanel = memo(function LocalAssetsPanel({ onInsert, theme }: { onInsert: (payload: InsertAssetPayload) => void; theme: CanvasTheme }) {
     const { message } = App.useApp();
     const { t } = useTranslation();
     const assets = useAssetStore((state) => state.assets);

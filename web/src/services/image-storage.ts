@@ -51,8 +51,16 @@ export async function setImageBlob(storageKey: string, blob: Blob) {
 }
 
 export async function imageToDataUrl(image: { url?: string; dataUrl?: string; storageKey?: string }) {
-    const url = image.dataUrl || (await resolveImageUrl(image.storageKey, image.url || ""));
-    if (!url || url.startsWith("data:")) return url;
+    const dataUrl = image.dataUrl || "";
+    if (dataUrl.startsWith("data:")) return dataUrl;
+    // Prefer https preview over asset:// url so Seedance cloud assets don't break image gen/hydrate
+    if (dataUrl && !dataUrl.startsWith("asset://")) {
+        return blobToDataUrl(await (await fetch(dataUrl)).blob());
+    }
+    if (image.url?.startsWith("asset://")) return image.url;
+    if (dataUrl.startsWith("asset://")) return dataUrl;
+    const url = await resolveImageUrl(image.storageKey, image.url || "");
+    if (!url || url.startsWith("data:") || url.startsWith("asset://")) return url;
     return blobToDataUrl(await (await fetch(url)).blob());
 }
 

@@ -6,7 +6,20 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useAssetStore, type Asset } from "@/stores/use-asset-store";
 
-export type InsertAssetPayload = { kind: "text"; content: string; title: string } | { kind: "image"; dataUrl: string; title: string; storageKey?: string } | { kind: "video"; url: string; title: string; storageKey?: string; width?: number; height?: number };
+export type SeedanceInsertMeta = {
+    assetUrl: string;
+    groupId: string;
+    virtualId: string;
+    assetType: "Image" | "Video" | "Audio";
+    status: "pending" | "active" | "failed";
+    previewUrl?: string;
+};
+
+export type InsertAssetPayload =
+    | { kind: "text"; content: string; title: string }
+    | { kind: "image"; dataUrl: string; title: string; storageKey?: string; seedance?: SeedanceInsertMeta }
+    | { kind: "video"; url: string; title: string; storageKey?: string; width?: number; height?: number; seedance?: SeedanceInsertMeta }
+    | { kind: "audio"; url: string; title: string; storageKey?: string; durationMs?: number; seedance?: SeedanceInsertMeta };
 
 type Props = {
     open: boolean;

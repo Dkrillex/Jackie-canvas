@@ -71,6 +71,12 @@ export type CanvasNodeMetadata = {
     bytes?: number;
     durationMs?: number;
     groupId?: string;
+    /** Seedance cloud asset `asset://…`; preferred over content when generating */
+    seedanceAssetUrl?: string;
+    seedanceGroupId?: string;
+    seedanceVirtualId?: string;
+    seedanceAssetType?: "Image" | "Video" | "Audio";
+    seedanceAssetStatus?: "pending" | "active" | "failed";
     interactive?: boolean; // Plugin node interaction/move state; see CanvasNodeDefinition.interactionToggle.
 };
 

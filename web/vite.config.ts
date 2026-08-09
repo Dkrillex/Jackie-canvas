@@ -49,5 +49,24 @@ export default defineConfig({
     define: {
         __APP_VERSION__: JSON.stringify(localVersion),
         __APP_RELEASES__: JSON.stringify(parseChangelog(localChangelog)),
+        global: "globalThis",
+    },
+    optimizeDeps: {
+        include: ["ali-oss"],
+    },
+    server: {
+        proxy: {
+            "/gw": {
+                target: "https://api.gravitex.ai",
+                changeOrigin: true,
+                secure: true,
+                rewrite: (path) => path.replace(/^\/gw/, ""),
+            },
+            "/prod-api": {
+                target: "https://maas.gravitex.ai",
+                changeOrigin: true,
+                secure: true,
+            },
+        },
     },
 });

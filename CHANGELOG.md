@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Jackie（本分支定制）
+
++ [新增][Jackie] 基于上游 v0.15.1 重建 `canvas-dev-v015`，回放 MaaS 登录、会话 auto 密钥、生成门禁、OSS、Seedance 素材库与品牌定制。
++ [新增][Jackie] 接入 Jackie 登录鉴权与用户中心（余额、会话密钥），配置齿轮与配置导航仅登录后可见。
++ [新增][Jackie] 生图/视频工作台与画布生成前校验登录；Seedance 云素材库面板与 `/gw`、`/prod-api` 代理一并可用。
++ [新增][Jackie] 画布侧栏与视频创作台接入 Seedance 云素材库；本地参考媒体可经对象存储上传为公网 https，避免大体积 base64。
++ [修复][Jackie] Seedance 云素材预览与 `asset://` 引用分离，避免破坏图片生成与节点展示。
++ [调整][Jackie] 默认渠道改为 `/gw` 与 Jackie 常用模型列表，并保留上游本地存储等配置能力。
++ [调整][Jackie] 品牌展示为 Jackie Canvas（首页 AsciiRing、页面标题）。
+
+### Upstream（合入上游）
+
++ [调整] 同步上游 `main` v0.15.1（Agent / 画布 / i18n / MIT 等）。
+
 ## v0.15.1 - 2026-08-07
 
 + [调整] 项目开源协议更换为MIT，允许所有人免费用于开源、闭源和商业场景。

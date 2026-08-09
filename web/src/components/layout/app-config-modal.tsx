@@ -1,6 +1,6 @@
-import { App, Button, Form, Input, Modal, Progress, Select, Tabs } from "antd";
+import { App, Button, Form, Input, Modal, Progress, Select, Tabs, Tooltip } from "antd";
 import type { TFunction } from "i18next";
-import { Cloud, Download, Pencil, Plus, RefreshCw, Trash2, Upload, Wifi } from "lucide-react";
+import { Cloud, Copy, Download, Eye, EyeOff, LogOut, Pencil, Plus, RefreshCw, Trash2, Upload, Wifi } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -8,12 +8,25 @@ import { ModelPicker } from "@/components/model-picker";
 import { ChannelEditorDrawer } from "@/components/layout/channel-editor-drawer";
 import { ConfigPromptSources } from "@/components/layout/config-prompt-sources";
 import { ConfigLocalStorage } from "@/components/layout/config-local-storage";
+import { useCopyText } from "@/hooks/use-copy-text";
 import type { AppLocale } from "@/i18n";
 import { exportAppConfig, importAppConfig } from "@/services/config-file";
+import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
 import { createModelChannel, modelOptionsFromChannels, normalizeModelOptionValue, selectableModelsByCapability, useConfigStore, type AiConfig, type ApiCallFormat, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
+import { useUserStore } from "@/stores/use-user-store";
+
+function maskApiKey(key: string) {
+    const value = key.trim();
+    if (!value) return "";
+    if (value.length <= 12) return `${value.slice(0, 4)}${"*".repeat(Math.max(0, value.length - 4))}`;
+    return `${value.slice(0, 7)}${"*".repeat(Math.min(18, value.length - 11))}${value.slice(-4)}`;
+}
+
+/** Jackie 限制：隐藏渠道 / 提示词来源 / OSS 配置，账户与偏好等仍可用 */
+const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels", "prompt-sources", "oss"];
 
 type ModelGroup = {
     capability: ModelCapability;
@@ -46,27 +59,41 @@ function createWebdavDomainProgress(): Record<AppSyncDomainKey, WebdavDomainProg
     );
 }
 
-export function AppConfigPanel({ showDoneButton = false, initialTab = "channels" }: { showDoneButton?: boolean; initialTab?: ConfigTabKey }) {
+export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: { showDoneButton?: boolean; initialTab?: ConfigTabKey }) {
     const { message } = App.useApp();
     const { i18n, t } = useTranslation();
     const configInputRef = useRef<HTMLInputElement>(null);
-    const [activeTab, setActiveTab] = useState<ConfigTabKey>(initialTab);
+    const resolveTab = (tab: ConfigTabKey) => (HIDDEN_CONFIG_TABS.includes(tab) ? "user" : tab);
+    const [activeTab, setActiveTab] = useState<ConfigTabKey>(resolveTab(initialTab));
     const [editingChannelId, setEditingChannelId] = useState("");
     const [testingWebdav, setTestingWebdav] = useState(false);
     const [syncingWebdav, setSyncingWebdav] = useState(false);
     const [webdavSyncStatus, setWebdavSyncStatus] = useState("");
     const [webdavDomainProgress, setWebdavDomainProgress] = useState(createWebdavDomainProgress);
+    const [userInfo, setUserInfo] = useState<UserCenterInfo | null>(null);
+    const [loadingUserInfo, setLoadingUserInfo] = useState(false);
+    const [userInfoError, setUserInfoError] = useState("");
+    const [loggingOut, setLoggingOut] = useState(false);
+    const [showApiKey, setShowApiKey] = useState(false);
+    const copyText = useCopyText();
     const config = useConfigStore((state) => state.config);
+    const sessionApiKey = (config.channels.find((channel) => channel.id === "default")?.apiKey || config.apiKey || "").trim();
     const webdav = useConfigStore((state) => state.webdav);
     const updateConfig = useConfigStore((state) => state.updateConfig);
     const updateWebdavConfig = useConfigStore((state) => state.updateWebdavConfig);
     const shouldPromptContinue = useConfigStore((state) => state.shouldPromptContinue);
     const setConfigDialogOpen = useConfigStore((state) => state.setConfigDialogOpen);
     const clearPromptContinue = useConfigStore((state) => state.clearPromptContinue);
+    const sessionUser = useUserStore((state) => state.user);
+    const setUser = useUserStore((state) => state.setUser);
+    const logout = useUserStore((state) => state.logout);
+    const openLoginModal = useUserStore((state) => state.openLoginModal);
+    const hydrateFromServer = useUserStore((state) => state.hydrateFromServer);
+    const syncSessionApiKey = useUserStore((state) => state.syncSessionApiKey);
     const webdavReady = Boolean(webdav.url.trim());
     const editingChannel = config.channels.find((channel) => channel.id === editingChannelId) || null;
     const locale = i18n.resolvedLanguage as AppLocale;
-    useEffect(() => setActiveTab(initialTab), [initialTab]);
+    useEffect(() => setActiveTab(resolveTab(initialTab)), [initialTab]);
 
     const saveConfig = (nextConfig: AiConfig) => {
         (Object.keys(nextConfig) as Array<keyof AiConfig>).forEach((key) => updateConfig(key, nextConfig[key]));
@@ -79,6 +106,82 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
         message.success(t(shouldPromptContinue ? "config.savedContinue" : "config.saved"));
         clearPromptContinue();
     };
+
+    const applySessionUserInfo = (current: NonNullable<typeof sessionUser>) => {
+        setUserInfo({
+            username: current.displayName || current.username,
+            tokenName: current.username,
+            totalAvailable: Math.max(0, current.quota),
+            totalGranted: Math.max(0, current.quota + current.usedQuota),
+            totalUsed: Math.max(0, current.usedQuota),
+            unlimitedQuota: false,
+        });
+    };
+
+    const loadUserInfoFromChannelFallback = async () => {
+        const channel = config.channels.find((item) => item.baseUrl.trim() && item.apiKey.trim()) || config.channels[0];
+        if (!channel?.baseUrl.trim() || !channel?.apiKey.trim()) {
+            setUserInfo(null);
+            setUserInfoError(useUserStore.getState().user ? t("config.account.sessionExpired") : t("config.account.loginOrChannelHint"));
+            return;
+        }
+        try {
+            setUserInfo(await fetchUserCenterInfo({ baseUrl: channel.baseUrl, apiKey: channel.apiKey }));
+        } catch (error) {
+            setUserInfo(null);
+            setUserInfoError(error instanceof Error ? error.message : t("config.account.fetchFailed"));
+        }
+    };
+
+    const refreshUserInfo = async (force = false) => {
+        setLoadingUserInfo(true);
+        setUserInfoError("");
+        try {
+            if (!force) {
+                if (sessionUser) {
+                    applySessionUserInfo(sessionUser);
+                    if (!sessionApiKey) await syncSessionApiKey();
+                    return;
+                }
+                await hydrateFromServer();
+                const hydrated = useUserStore.getState().user;
+                if (hydrated) {
+                    applySessionUserInfo(hydrated);
+                    return;
+                }
+                await loadUserInfoFromChannelFallback();
+                return;
+            }
+            const current = await fetchCurrentUser();
+            setUser(current);
+            applySessionUserInfo(current);
+            await syncSessionApiKey();
+        } catch {
+            await loadUserInfoFromChannelFallback();
+        } finally {
+            setLoadingUserInfo(false);
+        }
+    };
+
+    const handleLogout = async () => {
+        setLoggingOut(true);
+        try {
+            await logout();
+            setUserInfo(null);
+            setConfigDialogOpen(false);
+            message.success(t("config.account.logoutSuccess"));
+        } catch (error) {
+            message.error(error instanceof Error ? error.message : t("config.account.logoutFailed"));
+        } finally {
+            setLoggingOut(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab !== "user") return;
+        void refreshUserInfo(false);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- 仅切到账户 Tab 时拉取
+    }, [activeTab]);
 
     const loadConfigFile = async (file: File) => {
         try {
@@ -179,6 +282,76 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                 activeKey={activeTab}
                 onChange={(key) => setActiveTab(key as ConfigTabKey)}
                 items={[
+                    {
+                        key: "user",
+                        label: t("config.tabs.user"),
+                        children: (
+                            <Form layout="vertical" requiredMark={false}>
+                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
+                                    <div className="min-w-0">
+                                        <div className="text-sm font-semibold">{t("config.account.title")}</div>
+                                        <div className="mt-1 text-xs text-stone-500">{sessionUser ? t("config.account.loggedInHint") : t("config.account.loggedOutHint")}</div>
+                                    </div>
+                                    <div className="flex shrink-0 gap-2">
+                                        {sessionUser ? (
+                                            <Button danger icon={<LogOut className="size-4" />} loading={loggingOut} onClick={() => void handleLogout()}>
+                                                {t("config.account.logout")}
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                type="primary"
+                                                onClick={() => {
+                                                    setConfigDialogOpen(false);
+                                                    openLoginModal("/canvas");
+                                                }}
+                                            >
+                                                {t("config.account.goLogin")}
+                                            </Button>
+                                        )}
+                                        <Button icon={<RefreshCw className="size-4" />} loading={loadingUserInfo} onClick={() => void refreshUserInfo(true)}>
+                                            {t("config.account.refresh")}
+                                        </Button>
+                                    </div>
+                                </div>
+                                {userInfoError ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">{userInfoError}</div> : null}
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <Form.Item label={t("config.account.name")} className="mb-0">
+                                        <div className="flex h-8 items-center text-base font-semibold text-stone-800 dark:text-stone-100">
+                                            {loadingUserInfo ? t("config.account.loading") : sessionUser?.username || userInfo?.tokenName || t("config.account.empty")}
+                                        </div>
+                                    </Form.Item>
+                                    <Form.Item label={t("config.account.balanceLeft")} className="mb-0">
+                                        <div className="flex h-8 items-center text-base font-semibold text-stone-800 dark:text-stone-100">
+                                            {loadingUserInfo
+                                                ? t("config.account.loading")
+                                                : userInfo
+                                                  ? userInfo.unlimitedQuota
+                                                      ? t("config.account.unlimited")
+                                                      : formatQuotaCurrency(userInfo.totalAvailable)
+                                                  : t("config.account.empty")}
+                                        </div>
+                                    </Form.Item>
+                                    <Form.Item label={t("config.account.apiKey")} extra={t("config.account.apiKeyHint")} className="mb-0 md:col-span-2">
+                                        {sessionApiKey ? (
+                                            <div className="flex items-center gap-2">
+                                                <code className="min-w-0 flex-1 truncate rounded-md bg-stone-100 px-3 py-1.5 text-sm text-stone-800 dark:bg-stone-900 dark:text-stone-100">
+                                                    {showApiKey ? sessionApiKey : maskApiKey(sessionApiKey)}
+                                                </code>
+                                                <Tooltip title={showApiKey ? t("config.account.hide") : t("config.account.show")}>
+                                                    <Button type="text" icon={showApiKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />} onClick={() => setShowApiKey((open) => !open)} />
+                                                </Tooltip>
+                                                <Tooltip title={t("common.copy")}>
+                                                    <Button type="text" icon={<Copy className="size-4" />} onClick={() => copyText(sessionApiKey, t("config.account.apiKeyCopied"))} />
+                                                </Tooltip>
+                                            </div>
+                                        ) : (
+                                            <div className="flex h-8 items-center text-sm text-stone-500">{loadingUserInfo ? t("config.account.loading") : t("config.account.apiKeyEmpty")}</div>
+                                        )}
+                                    </Form.Item>
+                                </div>
+                            </Form>
+                        ),
+                    },
                     {
                         key: "channels",
                         label: t("config.tabs.channels"),
@@ -317,7 +490,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                         label: t("config.tabs.localStorage"),
                         children: <ConfigLocalStorage active={activeTab === "local-storage"} />,
                     },
-                ]}
+                ].filter((item) => !HIDDEN_CONFIG_TABS.includes(item.key as ConfigTabKey))}
             />
             {showDoneButton ? (
                 <div className="mt-4 flex justify-end">

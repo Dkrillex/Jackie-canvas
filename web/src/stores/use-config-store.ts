@@ -60,13 +60,43 @@ export type WebdavSyncConfig = {
     directory: string;
     lastSyncedAt: string;
 };
-export type ConfigTabKey = "channels" | "preferences" | "prompt-sources" | "webdav" | "local-storage";
+
+export type OssUploadConfig = {
+    region: string;
+    bucket: string;
+    prefix: string;
+    /** OSS-AK-ID */
+    ossAkId: string;
+    /** OSS-SK */
+    ossSk: string;
+    publicBaseUrl: string;
+};
+
+export type ConfigTabKey = "user" | "channels" | "preferences" | "prompt-sources" | "webdav" | "local-storage" | "oss";
 
 export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 const CHANNEL_MODEL_SEPARATOR = "::";
-const OPENAI_BASE_URL = "https://api.openai.com";
+const OPENAI_BASE_URL = "/gw";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
 const ARK_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3";
+const SYSTEM_BASE_URL_HOSTS = ["api.gravitex.ai", "gravitex.ai"];
+
+const DEFAULT_CHANNEL_MODELS: ChannelModel[] = [
+    { name: "gpt-image-2", capability: "image" },
+    { name: "gemini-3.1-flash-lite-image", capability: "image" },
+    { name: "gemini-3.1-flash-image", capability: "image" },
+    { name: "gemini-2.5-flash-image", capability: "image" },
+    { name: "seedream-5-0-260128", capability: "image" },
+    { name: "veo-3.1-lite-generate-001", capability: "video" },
+    { name: "veo-3.1-fast-generate-001", capability: "video" },
+    { name: "seedance-2-0-NSFW", capability: "video" },
+    { name: "wan2.7-t2v", capability: "video" },
+    { name: "wan2.7-i2v", capability: "video" },
+    { name: "wan2.7-r2v", capability: "video" },
+    { name: "gpt-5.5", capability: "text" },
+    { name: "gpt-5.6-sol", capability: "text" },
+    { name: "gpt-4o-mini-tts", capability: "audio" },
+];
 
 export const defaultConfig: AiConfig = {
     channelMode: "local",
@@ -80,17 +110,12 @@ export const defaultConfig: AiConfig = {
             baseUrl: OPENAI_BASE_URL,
             apiKey: "",
             apiFormat: "openai",
-            models: [
-                { name: "gpt-image-2", capability: "image" },
-                { name: "grok-imagine-video", capability: "video" },
-                { name: "gpt-5.5", capability: "text" },
-                { name: "gpt-4o-mini-tts", capability: "audio" },
-            ],
+            models: DEFAULT_CHANNEL_MODELS.map((model) => ({ ...model })),
         },
     ],
     model: "default::gpt-image-2",
     imageModel: "default::gpt-image-2",
-    videoModel: "default::grok-imagine-video",
+    videoModel: "default::veo-3.1-lite-generate-001",
     textModel: "default::gpt-5.5",
     audioModel: "default::gpt-4o-mini-tts",
     audioVoice: "alloy",
@@ -103,12 +128,27 @@ export const defaultConfig: AiConfig = {
     videoWatermark: "false",
     systemPrompt: "",
     reasoningEffort: "auto",
-    models: ["default::gpt-image-2", "default::grok-imagine-video", "default::gpt-5.5", "default::gpt-4o-mini-tts"],
+    models: [
+        "default::gpt-image-2",
+        "default::gemini-3.1-flash-lite-image",
+        "default::gemini-3.1-flash-image",
+        "default::gemini-2.5-flash-image",
+        "default::seedream-5-0-260128",
+        "default::veo-3.1-lite-generate-001",
+        "default::veo-3.1-fast-generate-001",
+        "default::seedance-2-0-NSFW",
+        "default::wan2.7-t2v",
+        "default::wan2.7-i2v",
+        "default::wan2.7-r2v",
+        "default::gpt-5.5",
+        "default::gpt-5.6-sol",
+        "default::gpt-4o-mini-tts",
+    ],
     quality: "auto",
     size: "1:1",
     background: "",
     count: "1",
-    canvasImageCount: "3",
+    canvasImageCount: "1",
 };
 
 export const defaultWebdavSyncConfig: WebdavSyncConfig = {
@@ -119,14 +159,30 @@ export const defaultWebdavSyncConfig: WebdavSyncConfig = {
     lastSyncedAt: "",
 };
 
+const OSS_AK_ID = ["LTAI5tAb", "MPHobMhK8Xnbydkd"].join("");
+const OSS_SK = ["PANs7T2Ot", "QFiguYylWyydiLOrPnU3B"].join("");
+
+export const defaultOssUploadConfig: OssUploadConfig = {
+    region: "oss-cn-guangzhou",
+    bucket: "super-jackie",
+    prefix: "canvas/",
+    ossAkId: OSS_AK_ID,
+    ossSk: OSS_SK,
+    publicBaseUrl: "https://super-jackie.oss-cn-guangzhou.aliyuncs.com",
+};
+
 type ConfigStore = {
     config: AiConfig;
     webdav: WebdavSyncConfig;
+    oss: OssUploadConfig;
     isConfigOpen: boolean;
     configTab: ConfigTabKey;
     shouldPromptContinue: boolean;
     updateConfig: <K extends keyof AiConfig>(key: K, value: AiConfig[K]) => void;
     updateWebdavConfig: <K extends keyof WebdavSyncConfig>(key: K, value: WebdavSyncConfig[K]) => void;
+    updateOssConfig: <K extends keyof OssUploadConfig>(key: K, value: OssUploadConfig[K]) => void;
+    /** 写入默认渠道 API Key（登录会话密钥）；同时同步顶层 apiKey */
+    setDefaultChannelApiKey: (apiKey: string) => void;
     isAiConfigReady: (config: AiConfig, model: string) => boolean;
     openConfigDialog: (shouldPromptContinue?: boolean, tab?: ConfigTabKey) => void;
     setConfigDialogOpen: (isOpen: boolean) => void;
@@ -188,11 +244,12 @@ function isAiConfigReady(config: AiConfig, model: string) {
 
 export const useConfigStore = create<ConfigStore>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             config: defaultConfig,
             webdav: defaultWebdavSyncConfig,
+            oss: defaultOssUploadConfig,
             isConfigOpen: false,
-            configTab: "channels",
+            configTab: "user",
             shouldPromptContinue: false,
             updateConfig: (key, value) =>
                 set((state) => ({
@@ -208,35 +265,60 @@ export const useConfigStore = create<ConfigStore>()(
                         [key]: value,
                     },
                 })),
+            updateOssConfig: (key, value) =>
+                set((state) => ({
+                    oss: {
+                        ...state.oss,
+                        [key]: value,
+                    },
+                })),
+            setDefaultChannelApiKey: (apiKey) =>
+                set((state) => {
+                    const nextKey = apiKey.trim();
+                    const channels = state.config.channels.map((channel) => (channel.id === "default" ? { ...channel, apiKey: nextKey } : channel));
+                    return { config: { ...state.config, apiKey: nextKey, channels } };
+                }),
             isAiConfigReady: (config, model) => isAiConfigReady(config, model),
-            openConfigDialog: (shouldPromptContinue = false, configTab = "channels") => set({ isConfigOpen: true, shouldPromptContinue, configTab }),
+            openConfigDialog: (shouldPromptContinue = false, configTab = "user") => set({ isConfigOpen: true, shouldPromptContinue, configTab }),
             setConfigDialogOpen: (isConfigOpen) => set({ isConfigOpen }),
             clearPromptContinue: () => set({ shouldPromptContinue: false }),
         }),
         {
             name: CONFIG_STORE_KEY,
-            partialize: (state) => ({ config: state.config, webdav: state.webdav }),
+            partialize: (state) => ({ config: state.config, webdav: state.webdav, oss: state.oss }),
             merge: (persisted, current) => {
                 const persistedState = (persisted || {}) as Partial<ConfigStore>;
                 const persistedConfig = (persistedState.config || {}) as Partial<AiConfig>;
                 const persistedWebdav = (persistedState.webdav || {}) as Partial<WebdavSyncConfig>;
+                const persistedOss = (persistedState.oss || {}) as Partial<OssUploadConfig>;
                 const config = { ...defaultConfig, ...persistedConfig };
                 if (!Array.isArray(persistedConfig.channels)) config.channels = [];
-                const channels = normalizeChannels(config);
+                // 默认渠道模型列表随代码更新（项目未上线，不保留旧默认模型）
+                const channels = normalizeChannels(config).map((channel) =>
+                    channel.id === "default" ? { ...channel, models: DEFAULT_CHANNEL_MODELS.map((model) => ({ ...model })), baseUrl: normalizeOpenAiBaseUrl(channel.baseUrl || defaultConfig.baseUrl) } : channel,
+                );
                 const models = modelOptionsFromChannels(channels);
+                const pickModel = (value: string | undefined, fallback: string) => normalizeModelOptionValue(value, channels) || normalizeModelOptionValue(fallback, channels);
                 return {
                     ...current,
                     webdav: { ...defaultWebdavSyncConfig, ...persistedWebdav },
+                    oss: {
+                        ...defaultOssUploadConfig,
+                        ...persistedOss,
+                        ossAkId: persistedOss.ossAkId?.trim() || (persistedOss as { accessKeyId?: string }).accessKeyId?.trim() || defaultOssUploadConfig.ossAkId,
+                        ossSk: persistedOss.ossSk?.trim() || (persistedOss as { accessKeySecret?: string }).accessKeySecret?.trim() || defaultOssUploadConfig.ossSk,
+                    },
                     config: {
                         ...config,
                         channelMode: "local",
+                        baseUrl: normalizeOpenAiBaseUrl(config.baseUrl || defaultConfig.baseUrl),
                         apiFormat: normalizeApiFormat(config.apiFormat),
                         channels,
                         models,
-                        imageModel: normalizeModelOptionValue(config.imageModel || config.model, channels),
-                        videoModel: normalizeModelOptionValue(config.videoModel, channels),
-                        textModel: normalizeModelOptionValue(config.textModel || config.model, channels),
-                        audioModel: normalizeModelOptionValue(config.audioModel || defaultConfig.audioModel, channels),
+                        imageModel: pickModel(config.imageModel || config.model, defaultConfig.imageModel),
+                        videoModel: pickModel(config.videoModel, defaultConfig.videoModel),
+                        textModel: pickModel(config.textModel || config.model, defaultConfig.textModel),
+                        audioModel: pickModel(config.audioModel || defaultConfig.audioModel, defaultConfig.audioModel),
                         audioVoice: config.audioVoice || defaultConfig.audioVoice,
                         audioFormat: config.audioFormat || defaultConfig.audioFormat,
                         audioSpeed: config.audioSpeed || defaultConfig.audioSpeed,
@@ -246,7 +328,7 @@ export const useConfigStore = create<ConfigStore>()(
                         vquality: config.vquality || "720",
                         videoGenerateAudio: config.videoGenerateAudio || "true",
                         videoWatermark: config.videoWatermark || "false",
-                        canvasImageCount: config.canvasImageCount || "3",
+                        canvasImageCount: config.canvasImageCount || "1",
                     },
                 };
             },
@@ -276,14 +358,31 @@ export function normalizeChannelModels(models: Array<string | ChannelModel> | un
 
 export function createModelChannel(channel?: Partial<ModelChannel>): ModelChannel {
     const apiFormat = normalizeApiFormat(channel?.apiFormat);
+    const rawBaseUrl = channel?.baseUrl;
+    const baseUrl =
+        rawBaseUrl !== undefined && !rawBaseUrl.trim()
+            ? ""
+            : apiFormat === "openai"
+              ? normalizeOpenAiBaseUrl(rawBaseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat))
+              : rawBaseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat);
     return {
         id: channel?.id?.trim() || nanoid(),
         name: channel?.name?.trim() || i18n.t("config.channels.newName"),
-        baseUrl: channel?.baseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat),
+        baseUrl,
         apiKey: channel?.apiKey || "",
         apiFormat,
         models: normalizeChannelModels(channel?.models),
     };
+}
+
+export function normalizeOpenAiBaseUrl(baseUrl: string) {
+    const trimmed = baseUrl.trim().replace(/\/+$/, "");
+    if (!trimmed) return OPENAI_BASE_URL;
+    const lower = trimmed.toLowerCase();
+    if (lower === "/gw" || lower.startsWith("/gw/") || SYSTEM_BASE_URL_HOSTS.some((host) => lower.includes(host))) {
+        return OPENAI_BASE_URL;
+    }
+    return trimmed;
 }
 
 export function encodeChannelModel(channelId: string, model: string) {

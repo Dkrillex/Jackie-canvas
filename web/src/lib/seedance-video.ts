@@ -1,5 +1,6 @@
 import i18n from "@/i18n";
-import { resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
+import { isOssUploadReady } from "@/services/oss-upload";
+import { resolveModelRequestConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
 import type { ReferenceImage } from "@/types/image";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
 
@@ -134,7 +135,13 @@ export function seedanceVideoReferenceError(videos: ReferenceVideo[]) {
     for (let index = 0; index < videos.length; index += 1) {
         const video = videos[index];
         const label = seedanceReferenceLabel("video", index);
-        if (!SEEDANCE_VIDEO_MIME_TYPES.includes(video.type)) return i18n.t("seedance.errors.format", { label });
+        if (!isSeedanceRemoteMediaUrl(video.url)) {
+            if (!video.storageKey && !video.url) return i18n.t("seedance.errors.invalid", { label });
+            if (!isOssUploadReady(useConfigStore.getState().oss)) return i18n.t("seedance.errors.needsPublicOrOss", { label });
+        }
+        if (video.type && !SEEDANCE_VIDEO_MIME_TYPES.includes(video.type) && !video.url.startsWith("asset://")) {
+            return i18n.t("seedance.errors.format", { label });
+        }
         if (video.bytes && video.bytes > SEEDANCE_REFERENCE_LIMITS.videoMaxBytes) return i18n.t("seedance.errors.size", { label });
         if (video.durationMs) {
             if (video.durationMs < 2000 || video.durationMs > 15000) return i18n.t("seedance.errors.duration", { label });
@@ -150,6 +157,54 @@ export function seedanceVideoReferenceError(videos: ReferenceVideo[]) {
     }
     if (totalDurationMs > 15000) return i18n.t("seedance.errors.totalDuration");
     return "";
+}
+
+/** Same request: Seedance cloud assets must share one group and be active. */
+export function seedanceCloudAssetReferenceError(images: ReferenceImage[], videos: ReferenceVideo[], audios: ReferenceAudio[]) {
+    const items: Array<{ label: string; url: string; groupId?: string; status?: string }> = [
+        ...images.map((image, index) => ({
+            label: seedanceReferenceLabel("image", index),
+            url: image.url || image.dataUrl,
+            groupId: image.seedanceGroupId,
+            status: image.seedanceAssetStatus,
+        })),
+        ...videos.map((video, index) => ({
+            label: seedanceReferenceLabel("video", index),
+            url: video.url,
+            groupId: video.seedanceGroupId,
+            status: video.seedanceAssetStatus,
+        })),
+        ...audios.map((audio, index) => ({
+            label: seedanceReferenceLabel("audio", index),
+            url: audio.url,
+            groupId: audio.seedanceGroupId,
+            status: audio.seedanceAssetStatus,
+        })),
+    ].filter((item) => item.url?.startsWith("asset://") || item.groupId);
+
+    if (!items.length) return "";
+
+    for (const item of items) {
+        if (item.status === "pending") return i18n.t("seedance.errors.cloudPending", { label: item.label });
+        if (item.status === "failed") return i18n.t("seedance.errors.cloudFailed", { label: item.label });
+    }
+
+    const groupIds = Array.from(new Set(items.map((item) => item.groupId).filter((value): value is string => Boolean(value?.trim()))));
+    if (groupIds.length > 1) return i18n.t("seedance.errors.cloudMixedGroups");
+    if (items.some((item) => item.url.startsWith("asset://") && !item.groupId) && groupIds.length) {
+        return i18n.t("seedance.errors.cloudMissingGroup");
+    }
+    return "";
+}
+
+export function isSeedanceRemoteMediaUrl(value?: string) {
+    const url = (value || "").trim();
+    return /^https?:\/\//i.test(url) || url.startsWith("asset://");
+}
+
+export function isArkPlanBaseUrl(baseUrl: string) {
+    const value = baseUrl.toLowerCase();
+    return value.includes("ark.cn-beijing.volces.com/api/plan/v3") || value.includes("/api/plan/v3");
 }
 
 export function seedanceVideoReferenceHint() {

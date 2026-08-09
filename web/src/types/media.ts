@@ -8,6 +8,8 @@ export type ReferenceVideo = {
     width?: number;
     height?: number;
     durationMs?: number;
+    seedanceGroupId?: string;
+    seedanceAssetStatus?: "pending" | "active" | "failed";
 };
 
 export type ReferenceAudio = {
@@ -17,4 +19,6 @@ export type ReferenceAudio = {
     url: string;
     storageKey?: string;
     durationMs?: number;
+    seedanceGroupId?: string;
+    seedanceAssetStatus?: "pending" | "active" | "failed";
 };

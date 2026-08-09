@@ -159,39 +159,55 @@ function generationLabel(type: NodeGenerationInput["type"], index: number) {
 }
 
 function readReferenceImage(node: CanvasNodeData): ReferenceImage | null {
-    if (node.type !== CanvasNodeType.Image || !node.metadata?.content) return null;
+    const assetUrl = node.metadata?.seedanceAssetUrl;
+    const preview = node.metadata?.content || "";
+    // dataUrl keeps https preview for image gen; url holds asset:// for Seedance video refs
+    if (node.type !== CanvasNodeType.Image || (!assetUrl && !preview)) return null;
     return {
         id: node.id,
         name: `${node.title || node.id}.png`,
-        type: node.metadata.mimeType || "image/png",
-        dataUrl: node.metadata.content,
-        storageKey: node.metadata.storageKey,
+        type: node.metadata?.mimeType || "image/png",
+        dataUrl: preview || assetUrl || "",
+        url: assetUrl || undefined,
+        storageKey: node.metadata?.storageKey,
+        seedanceGroupId: node.metadata?.seedanceGroupId,
+        seedanceAssetStatus: node.metadata?.seedanceAssetStatus,
     };
 }
 
 function readReferenceVideo(node: CanvasNodeData): ReferenceVideo | null {
-    if (node.type !== CanvasNodeType.Video || !node.metadata?.content) return null;
+    const assetUrl = node.metadata?.seedanceAssetUrl;
+    const preview = node.metadata?.content || "";
+    const url = assetUrl || preview;
+    if (node.type !== CanvasNodeType.Video || !url) return null;
     return {
         id: node.id,
         name: `${node.title || node.id}.mp4`,
-        type: node.metadata.mimeType || "video/mp4",
-        url: node.metadata.content,
-        storageKey: node.metadata.storageKey,
-        bytes: node.metadata.bytes,
-        width: node.metadata.naturalWidth,
-        height: node.metadata.naturalHeight,
-        durationMs: node.metadata.durationMs,
+        type: node.metadata?.mimeType || "video/mp4",
+        url,
+        storageKey: node.metadata?.storageKey,
+        bytes: node.metadata?.bytes,
+        width: node.metadata?.naturalWidth,
+        height: node.metadata?.naturalHeight,
+        durationMs: node.metadata?.durationMs,
+        seedanceGroupId: node.metadata?.seedanceGroupId,
+        seedanceAssetStatus: node.metadata?.seedanceAssetStatus,
     };
 }
 
 function readReferenceAudio(node: CanvasNodeData): ReferenceAudio | null {
-    if (node.type !== CanvasNodeType.Audio || !node.metadata?.content) return null;
+    const assetUrl = node.metadata?.seedanceAssetUrl;
+    const preview = node.metadata?.content || "";
+    const url = assetUrl || preview;
+    if (node.type !== CanvasNodeType.Audio || !url) return null;
     return {
         id: node.id,
         name: `${node.title || node.id}.mp3`,
-        type: node.metadata.mimeType || "audio/mpeg",
-        url: node.metadata.content,
-        storageKey: node.metadata.storageKey,
-        durationMs: node.metadata.durationMs,
+        type: node.metadata?.mimeType || "audio/mpeg",
+        url,
+        storageKey: node.metadata?.storageKey,
+        durationMs: node.metadata?.durationMs,
+        seedanceGroupId: node.metadata?.seedanceGroupId,
+        seedanceAssetStatus: node.metadata?.seedanceAssetStatus,
     };
 }

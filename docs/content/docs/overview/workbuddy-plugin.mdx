@@ -1,0 +1,149 @@
+---
+title: WorkBuddy 插件
+description: 在 WorkBuddy 中安装并使用 Jackie Canvas 插件
+---
+
+# WorkBuddy 插件
+
+Jackie Canvas 提供了一个 WorkBuddy（CodeBuddy）插件，用来把 WorkBuddy 和本地 Canvas Agent 连接起来。安装后，你可以直接在 WorkBuddy 中说「打开 Jackie Canvas」，让它打开画布、读取节点、创建节点并触发生成流程。
+
+插件源码与 Codex 共用同一目录：`plugins/infinite-canvas/`。  
+WorkBuddy 使用 `.workbuddy-plugin/` / `.codebuddy-plugin/` 清单；Codex 使用 `.codex-plugin/` 清单；两边共享 `skills/` 与 `.mcp.json`。
+
+## 安装方式
+
+### 方式一：插件安装（推荐，和 Codex 同级）
+
+#### 本仓库开发调试
+
+在 Jackie Canvas 仓库根目录执行（WorkBuddy 内可用 slash 命令）：
+
+```text
+/plugin marketplace add .
+/plugin install infinite-canvas@jackie-canvas-local
+```
+
+仓库根目录已提供：
+
+- `.codebuddy-plugin/marketplace.json`
+- `.workbuddy-plugin/marketplace.json`
+
+两者都指向 `./plugins/infinite-canvas`。
+
+也可以把下面这段发给 WorkBuddy：
+
+```text
+请从当前 Jackie Canvas 仓库安装 Jackie Canvas WorkBuddy 插件。
+确认 plugins/infinite-canvas/.workbuddy-plugin/plugin.json 存在，
+把当前仓库加入 marketplace（/plugin marketplace add .），
+再安装 infinite-canvas@jackie-canvas-local。
+安装后请校验 MCP infinite-canvas 是否可用，并告诉我是否需要开启新对话。
+```
+
+#### 从 Git 仓库安装
+
+```text
+请从 https://github.com/Dkrillex/Jackie-canvas.git 安装 Jackie Canvas WorkBuddy 插件。
+请 clone 仓库到 ~/plugins/jackie-canvas，确认 plugins/infinite-canvas/.workbuddy-plugin/plugin.json 存在，
+把该仓库根目录加入 marketplace，再安装 infinite-canvas@jackie-canvas-local。
+安装后请校验插件，并告诉我是否需要开启一个新对话来加载新技能和 MCP 工具。
+```
+
+安装完成后，建议新建一个对话，让 skill 和 MCP 工具完整加载。
+
+### 方式二：只配 MCP（不装插件）
+
+如果暂时不想走 marketplace，也可以只把 Canvas Agent MCP 写进 WorkBuddy：
+
+1. 打开 WorkBuddy → 侧边栏 **插件** → **MCP 服务器** → **配置 MCP**
+2. 编辑 `~/.workbuddy/mcp.json`（用户级）或 `<项目目录>/.workbuddy/mcp.json`（项目级）
+
+```json
+{
+  "mcpServers": {
+    "infinite-canvas": {
+      "command": "npx",
+      "args": ["-y", "@jackie-canvas/canvas-agent", "mcp"]
+    }
+  }
+}
+```
+
+保存后状态应为绿色。此方式不会自动加载 `open-canvas` / `canvas` 技能说明，需要你在对话里自行引导打开画布。
+
+## 使用插件
+
+新建对话后，可以直接说：
+
+```text
+打开 Jackie Canvas 新建画布 并连接好 WorkBuddy
+```
+
+插件会优先确认本地画布服务是否已运行；端口被占用时会检查进程归属，避免误连其他项目。确认或启动画布后，会启动本地 Canvas Agent，并打开带连接参数的新建画布 URL。
+
+画布打开后可以继续操作：
+
+```text
+读取当前画布并总结节点结构
+根据选中节点创建一组生图提示词
+把这些节点整理成一个生成流程
+```
+
+## 网页侧连接
+
+无论用插件还是只配 MCP，浏览器都需要连上本地 Canvas Agent 桥：
+
+1. 终端运行（插件的 `open-canvas` 技能也会尝试自动启动）：
+
+```bash
+npx -y @jackie-canvas/canvas-agent
+```
+
+2. 在网页配置页 **Codex** Tab（本地 Agent 连接）填入 `Local URL` / `Connect token`，或由插件打开的 URL 自动带上 `agentUrl` / `agentToken`。
+
+只配 MCP、网页未连接时，`canvas_*` 工具会失败。
+
+## 更新插件
+
+普通业务代码变更通常不需要更新插件。只有改了下面这些内容时，才建议重新安装或刷新：
+
+- `plugins/infinite-canvas/.workbuddy-plugin/plugin.json`
+- `plugins/infinite-canvas/.codebuddy-plugin/plugin.json`
+- `plugins/infinite-canvas/.mcp.json`
+- `plugins/infinite-canvas/skills/` 下的技能说明
+
+重新安装后建议开启新对话。
+
+## 卸载
+
+卸载插件（在 WorkBuddy 插件管理里禁用/卸载 `infinite-canvas`），或手动从 `~/.workbuddy/mcp.json` 删掉 `infinite-canvas` 条目。
+
+## 手动排查
+
+插件默认通过下面的 MCP 命令启动 Canvas Agent：
+
+```bash
+npx -y @jackie-canvas/canvas-agent mcp
+```
+
+如果需要手动排查，先启动画布：
+
+```bash
+cd web
+bun install
+bun run dev
+```
+
+然后启动本地 Agent。端口不是 `3000` 时，把 `CANVAS_URL` 换成真实本地画布地址：
+
+```bash
+CANVAS_URL=http://localhost:3000 npx -y @jackie-canvas/canvas-agent
+```
+
+从 Agent 输出或 `http://127.0.0.1:17371/config` 读取本地地址和 token 后，打开：
+
+```text
+<画布网页地址>/canvas?mode=new&agentUrl=<Local URL>&agentToken=<Connect token>
+```
+
+`mode=new` 会让网页自动创建画布并连接本地 Agent。
