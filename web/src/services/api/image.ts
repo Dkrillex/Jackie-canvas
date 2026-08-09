@@ -343,10 +343,19 @@ function aiHeaders(config: AiConfig, contentType?: string) {
     };
 }
 
+/** Nano Banana / Gemini 原生生图模型不能走 OpenAI `/images/generations`，必须用 generateContent。 */
+function usesGeminiImageGeneration(model: string) {
+    const value = model.toLowerCase();
+    return value.includes("gemini") && value.includes("image");
+}
+
 function geminiBaseUrl(config: Pick<AiConfig, "baseUrl">) {
     const normalizedBaseUrl = config.baseUrl.trim().replace(/\/+$/, "");
     const lowerBaseUrl = normalizedBaseUrl.toLowerCase();
-    return lowerBaseUrl.endsWith("/v1") || lowerBaseUrl.endsWith("/v1beta") ? normalizedBaseUrl : `${normalizedBaseUrl}/v1beta`;
+    if (lowerBaseUrl.endsWith("/v1beta")) return normalizedBaseUrl;
+    // OpenAI 兼容地址常带 `/v1`，Gemini generateContent 需要 `/v1beta`
+    if (lowerBaseUrl.endsWith("/v1")) return `${normalizedBaseUrl.slice(0, -2)}v1beta`;
+    return `${normalizedBaseUrl}/v1beta`;
 }
 
 function geminiModelName(model: string) {
@@ -361,8 +370,10 @@ function geminiApiUrl(config: Pick<AiConfig, "baseUrl" | "model">, action?: "gen
 
 function geminiHeaders(config: Pick<AiConfig, "apiKey">) {
     return {
-        "x-goog-api-key": config.apiKey,
         "Content-Type": "application/json",
+        "x-goog-api-key": config.apiKey,
+        // 官方 Gemini 用 x-goog-api-key；OpenAI 兼容网关通常认 Bearer
+        Authorization: `Bearer ${config.apiKey}`,
     };
 }
 
@@ -736,7 +747,7 @@ export async function requestGeneration(config: AiConfig, prompt: string, option
             throw new Error(readAxiosError(error, apiText("requestFailed")));
         }
     }
-    if (requestConfig.apiFormat === "gemini") {
+    if (requestConfig.apiFormat === "gemini" || usesGeminiImageGeneration(requestConfig.model)) {
         try {
             return await requestGeminiImages(requestConfig, prompt, [], n, options);
         } catch (error) {
@@ -796,7 +807,7 @@ export async function requestEdit(config: AiConfig, prompt: string, references: 
             throw new Error(readAxiosError(error, apiText("requestFailed")));
         }
     }
-    if (requestConfig.apiFormat === "gemini") {
+    if (requestConfig.apiFormat === "gemini" || usesGeminiImageGeneration(requestConfig.model)) {
         if (mask) throw new Error(apiText("geminiMaskUnsupported"));
         try {
             return await requestGeminiImages(requestConfig, requestPrompt, references, n, options);

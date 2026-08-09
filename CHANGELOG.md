@@ -4,6 +4,8 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] Nano Banana / Gemini 生图在 OpenAI 兼容 `/gw` 下自动走 `generateContent`，并将末尾 `/v1` 改写为 `/v1beta`。
++ [调整][Jackie] 顶栏与画布菜单移除上游版本号、GitHub 链接、文档入口、语言切换与主题切换，避免二开站点指向原仓库并简化顶栏。
 + [新增][Jackie] 基于上游 v0.15.1 重建 `canvas-dev-v015`，回放 MaaS 登录、会话 auto 密钥、生成门禁、OSS、Seedance 素材库与品牌定制。
 + [新增][Jackie] 接入 Jackie 登录鉴权与用户中心（余额、会话密钥），配置齿轮与配置导航仅登录后可见。
 + [新增][Jackie] 生图/视频工作台与画布生成前校验登录；Seedance 云素材库面板与 `/gw`、`/prod-api` 代理一并可用。
@@ -14,7 +16,8 @@
 
 ### Upstream（合入上游）
 
-+ [调整] 同步上游 `main` v0.15.1（Agent / 画布 / i18n / MIT 等）。
++ [调整] 同步上游 `main` v0.15.1；本分支有意保留上游 Agent、画布增强能力（旧 Jackie 分支无对应功能属正常差异）。
++ [调整] 前端 i18n 沿用上游 i18next（`zh-CN` / `en-US`），不再回退旧扁平 `useI18n`。
 
 ## v0.15.1 - 2026-08-07
 
