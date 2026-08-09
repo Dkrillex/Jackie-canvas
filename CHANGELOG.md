@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 配置中心 WebDAV 同步页仅 `admin` 账号可见。
 + [修复][Jackie] Nano Banana / Gemini 生图在 OpenAI 兼容 `/gw` 下自动走 `generateContent`，并将末尾 `/v1` 改写为 `/v1beta`。
 + [调整][Jackie] 顶栏与画布菜单移除上游版本号、GitHub 链接、文档入口、语言切换与主题切换，避免二开站点指向原仓库并简化顶栏。
 + [新增][Jackie] 基于上游 v0.15.1 重建 `canvas-dev-v015`，回放 MaaS 登录、会话 auto 密钥、生成门禁、OSS、Seedance 素材库与品牌定制。

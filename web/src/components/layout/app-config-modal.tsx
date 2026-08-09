@@ -27,6 +27,18 @@ function maskApiKey(key: string) {
 
 /** Jackie 限制：隐藏渠道 / 提示词来源 / OSS 配置，账户与偏好等仍可用 */
 const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels", "prompt-sources", "oss"];
+/** 仅 `admin` 账号可见 */
+const ADMIN_ONLY_CONFIG_TABS: ConfigTabKey[] = ["webdav"];
+
+function isAdminUser(username?: string | null) {
+    return (username || "").trim().toLowerCase() === "admin";
+}
+
+function isConfigTabVisible(tab: ConfigTabKey, isAdmin: boolean) {
+    if (HIDDEN_CONFIG_TABS.includes(tab)) return false;
+    if (!isAdmin && ADMIN_ONLY_CONFIG_TABS.includes(tab)) return false;
+    return true;
+}
 
 type ModelGroup = {
     capability: ModelCapability;
@@ -63,8 +75,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const { message } = App.useApp();
     const { i18n, t } = useTranslation();
     const configInputRef = useRef<HTMLInputElement>(null);
-    const resolveTab = (tab: ConfigTabKey) => (HIDDEN_CONFIG_TABS.includes(tab) ? "user" : tab);
-    const [activeTab, setActiveTab] = useState<ConfigTabKey>(resolveTab(initialTab));
+    const sessionUser = useUserStore((state) => state.user);
+    const isAdmin = isAdminUser(sessionUser?.username);
+    const resolveTab = (tab: ConfigTabKey) => (isConfigTabVisible(tab, isAdmin) ? tab : "user");
+    const [activeTab, setActiveTab] = useState<ConfigTabKey>(() => resolveTab(initialTab));
     const [editingChannelId, setEditingChannelId] = useState("");
     const [testingWebdav, setTestingWebdav] = useState(false);
     const [syncingWebdav, setSyncingWebdav] = useState(false);
@@ -84,7 +98,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const shouldPromptContinue = useConfigStore((state) => state.shouldPromptContinue);
     const setConfigDialogOpen = useConfigStore((state) => state.setConfigDialogOpen);
     const clearPromptContinue = useConfigStore((state) => state.clearPromptContinue);
-    const sessionUser = useUserStore((state) => state.user);
     const setUser = useUserStore((state) => state.setUser);
     const logout = useUserStore((state) => state.logout);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
@@ -93,7 +106,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const webdavReady = Boolean(webdav.url.trim());
     const editingChannel = config.channels.find((channel) => channel.id === editingChannelId) || null;
     const locale = i18n.resolvedLanguage as AppLocale;
-    useEffect(() => setActiveTab(resolveTab(initialTab)), [initialTab]);
+    useEffect(() => setActiveTab(resolveTab(initialTab)), [initialTab, isAdmin]);
+    useEffect(() => {
+        if (!isConfigTabVisible(activeTab, isAdmin)) setActiveTab("user");
+    }, [activeTab, isAdmin]);
 
     const saveConfig = (nextConfig: AiConfig) => {
         (Object.keys(nextConfig) as Array<keyof AiConfig>).forEach((key) => updateConfig(key, nextConfig[key]));
@@ -490,7 +506,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                         label: t("config.tabs.localStorage"),
                         children: <ConfigLocalStorage active={activeTab === "local-storage"} />,
                     },
-                ].filter((item) => !HIDDEN_CONFIG_TABS.includes(item.key as ConfigTabKey))}
+                ].filter((item) => isConfigTabVisible(item.key as ConfigTabKey, isAdmin))}
             />
             {showDoneButton ? (
                 <div className="mt-4 flex justify-end">
