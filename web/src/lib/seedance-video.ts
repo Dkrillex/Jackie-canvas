@@ -1,6 +1,6 @@
 import i18n from "@/i18n";
 import { isOssUploadReady } from "@/services/oss-upload";
-import { resolveModelRequestConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
+import { modelOptionName, resolveModelRequestConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
 import type { ReferenceImage } from "@/types/image";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
 
@@ -59,13 +59,27 @@ const seedancePixels = {
     },
 } as const;
 
-export function isSeedanceVideoConfig(config: AiConfig | Pick<AiConfig, "model" | "videoModel" | "apiFormat">) {
-    const requestConfig = "channels" in config ? resolveModelRequestConfig(config, config.model || config.videoModel) : config;
-    return requestConfig.apiFormat === "ark";
+/** Jackie `/gw` 默认 OpenAI 格式；按模型名识别 Seedance，不能只依赖 apiFormat=ark。 */
+export function isSeedanceVideoConfig(config: AiConfig | Pick<AiConfig, "model" | "videoModel" | "baseUrl" | "apiFormat">) {
+    const selectedModel = "channels" in config ? config.model || config.videoModel : config.model || config.videoModel;
+    if (isSeedanceVideoModel(modelOptionName(selectedModel || ""))) return true;
+    const requestConfig = "channels" in config ? resolveModelRequestConfig(config, selectedModel || "") : config;
+    return isSeedanceVideoModel(modelOptionName(requestConfig.model || requestConfig.videoModel || "")) || requestConfig.apiFormat === "ark" || isArkPlanBaseUrl(requestConfig.baseUrl);
 }
 
-export function normalizeSeedanceResolution(value: string) {
+export function isSeedanceVideoModel(model: string) {
+    const value = model.toLowerCase();
+    return value.includes("seedance") || value.includes("doubao-seedance");
+}
+
+export function isSeedanceFastModel(model: string) {
+    const value = model.toLowerCase();
+    return isSeedanceVideoModel(value) && value.includes("fast");
+}
+
+export function normalizeSeedanceResolution(value: string, model = "") {
     const normalized = normalizeResolutionToken(value);
+    if (isSeedanceFastModel(model) && normalized === "1080p") return "720p";
     return seedanceResolutionOptions.some((item) => item.value === normalized) ? normalized : "720p";
 }
 
