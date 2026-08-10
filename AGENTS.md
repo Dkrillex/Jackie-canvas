@@ -83,6 +83,8 @@
 - 当前画布项目和“我的素材”主要保存在浏览器本地，不要在文档中误写成已支持云同步。
 - 当前 AI API Key 存在浏览器本地，并由前端直接请求 OpenAI 兼容接口；涉及安全说明时要写清楚。
 - Docker 静态资源路径目前仍是待办项，文档中不要过度承诺生产部署已经完全验证。
+- 对外产品展示名统一为 Jackie Canvas，不要再写「无限画布」或 Infinite Canvas（存储键、npm 包名等技术标识可保留 `infinite-canvas`）。
+- 对外产品展示名统一为 Jackie Canvas，不要再写「无限画布」或 Infinite Canvas（存储键、npm 包名等技术标识可继续用 `infinite-canvas`）。
 - 对外文案与渠道配置界面不要暴露底层服务品牌、域名或内置 API Key（如 gravitex）；默认 OpenAI 兼容地址用同源 `/gw`。渠道 Base URL / API Key 表单项仅 `admin` 账号渲染，普通用户不显示。配置中心 WebDAV 同步页签仅 `admin` 账号可见。
 - Seedance 视频模型在 `/gw`（OpenAI 兼容渠道）下按模型名识别（含 `seedance`），不要只依赖 `apiFormat === "ark"`；时长需落在 Seedance 合法范围（2.0 一般为 4–15 或 -1）。
 - 顶栏配置齿轮与导航「配置」仅登录后显示。
