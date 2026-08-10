@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 首页模型分组标题改为 Image / Video / Text / Audio。
 + [调整][Jackie] Hugging Face 外链改为 `https://huggingface.co/ChenXiangXi/Test-SMALL-Model`。
 + [调整][Jackie] 模型详情：Image/Video/Text/Audio + 预览卡切换；仅 Text 显示「Tennda LLM」；收紧装饰，Specs 白底圆角，API id 高亮。
 + [优化][Jackie] 首页模型卡片：主推布局；Image/Video 封面，Text/Audio 用对话/代码/TTS 预览。
@@ -19,7 +20,7 @@
 + [新增][Jackie] Agent Studio（`/agent`）：云端工具循环对话，内置生图/视频/TTS 与站点工具，支持远程 HTTP MCP；全员可用，发送需登录。
 + [调整][Jackie] Agent Studio 对话输入区复用侧栏 `AgentChatComposer`；对话与产物写入 IndexedDB，可 Clear。
 + [调整][Jackie] 首页模型 lineup 底部增加 Agent Studio 入口；文本/语音模型卡片引导至 `/agent`。
-+ [调整][Jackie] 首页 hero：Token Stream、Inference network 状态行、Explore Models / Hugging Face CTA；分组名为 Vision / Motion / LLM / Voice。
++ [调整][Jackie] 首页 hero：Token Stream、Inference network 状态行、Explore Models / Hugging Face CTA。
 + [调整][Jackie] 首页隐藏 Prompt library 整块；提示词库仍可通过导航进入。
 + [调整][Jackie] 更换 Tennda 品牌 Logo / favicon；全站用户可见文案英文化（强制英文）。
 + [修复][Jackie] 提示词选择弹窗与公开库门控对齐；非 admin 点 Codex 状态打开 Agent 面板而非 Account。
