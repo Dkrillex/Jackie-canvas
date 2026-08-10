@@ -11,6 +11,7 @@ const MAX_TOOL_ROUNDS = 8;
 
 export type StudioLoopHandlers = {
     onAssistantDelta: (text: string) => void;
+    onReasoningDelta?: (text: string) => void;
     onToolStart: (callId: string, name: string, args: string) => void;
     onToolEnd: (callId: string, name: string, result: StudioToolResult) => void;
 };
@@ -29,6 +30,7 @@ export type StudioLoopInput = {
 
 export type StudioLoopResult = {
     finalText: string;
+    reasoning?: string;
     artifacts: StudioArtifact[];
 };
 
@@ -40,11 +42,17 @@ export async function runStudioAgentLoop(input: StudioLoopInput): Promise<Studio
     ];
     const artifacts: StudioArtifact[] = [];
     let finalText = "";
+    let reasoning = "";
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
         if (input.signal?.aborted) throw new DOMException("Aborted", "AbortError");
-        const turn = await requestAgentTurn(input.config, messages, input.tools, input.handlers.onAssistantDelta, { signal: input.signal });
+        const turn = await requestAgentTurn(input.config, messages, input.tools, input.handlers.onAssistantDelta, {
+            signal: input.signal,
+            onReasoningDelta: input.handlers.onReasoningDelta,
+        });
         finalText = turn.content.trim();
+        // Keep only the latest turn's reasoning so a sealed pre-tool Thinking is not duplicated on the final answer.
+        reasoning = turn.reasoning?.trim() || "";
         if (!turn.toolCalls.length) break;
 
         for (const call of turn.toolCalls) {
@@ -80,7 +88,7 @@ export async function runStudioAgentLoop(input: StudioLoopInput): Promise<Studio
         }
     }
 
-    return { finalText, artifacts };
+    return { finalText, reasoning: reasoning || undefined, artifacts };
 }
 
 async function executeTool(name: string, rawArgs: string, input: StudioLoopInput): Promise<StudioToolResult> {

@@ -149,7 +149,7 @@ export default function IndexPage() {
                                     <div className="mb-4 flex flex-col gap-3 border-b border-border pb-4 dark:border-white/10 sm:flex-row sm:items-end sm:justify-between">
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-3.5">
-                                                <span className="inline-flex size-11 shrink-0 items-center justify-center border border-stone-300 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
+                                                <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary">
                                                     <Icon className="size-5" />
                                                 </span>
                                                 <div className="min-w-0">

@@ -51,6 +51,34 @@ const PIPELINE_STEPS: { id: PipelineStep; labelKey: MessageKey }[] = [
     { id: "artifact", labelKey: "studio.pipeline.artifact" },
 ];
 
+type DisplayRow =
+    | { kind: "single"; message: StudioMessage }
+    | { kind: "toolGroup"; toolName: string; items: StudioMessage[] };
+
+function groupMessagesForDisplay(messages: StudioMessage[]): DisplayRow[] {
+    const rows: DisplayRow[] = [];
+    for (const message of messages) {
+        if (message.role !== "tool") {
+            rows.push({ kind: "single", message });
+            continue;
+        }
+        const name = message.toolName || "tool";
+        const last = rows[rows.length - 1];
+        if (last?.kind === "toolGroup" && last.toolName === name) {
+            last.items.push(message);
+        } else {
+            rows.push({ kind: "toolGroup", toolName: name, items: [message] });
+        }
+    }
+    return rows;
+}
+
+function isEmptyToolResult(text: string) {
+    const value = text.trim();
+    if (!value) return false;
+    return /\bfound\s+0\b/i.test(value) || /\b0\s+prompts?\b/i.test(value) || /^no\s+(matches|results|prompts)\b/i.test(value);
+}
+
 function lastTurnMessages(messages: StudioMessage[]) {
     let lastUser = -1;
     for (let i = messages.length - 1; i >= 0; i -= 1) {
@@ -81,7 +109,10 @@ function planMessageIds(messages: StudioMessage[], sending: boolean): Set<string
         let sawTool = false;
         while (idx < messages.length && messages[idx].role !== "user") {
             const item = messages[idx];
-            if (item.role === "assistant" && !sawTool) pending.push(item.id);
+            if (item.role === "assistant" && !sawTool) {
+                const text = item.text.trim();
+                if (text && text !== "…") pending.push(item.id);
+            }
             if (item.role === "tool") sawTool = true;
             idx += 1;
         }
@@ -141,6 +172,7 @@ export default function AgentStudioPage() {
     const clearChat = useAgentStudioStore((state) => state.clearChat);
     const addMessage = useAgentStudioStore((state) => state.addMessage);
     const updateMessage = useAgentStudioStore((state) => state.updateMessage);
+    const removeMessage = useAgentStudioStore((state) => state.removeMessage);
     const addArtifacts = useAgentStudioStore((state) => state.addArtifacts);
     const toggleBuiltin = useAgentStudioStore((state) => state.toggleBuiltin);
     const upsertMcpServer = useAgentStudioStore((state) => state.upsertMcpServer);
@@ -228,7 +260,22 @@ export default function AgentStudioPage() {
                         if (existing) updateMessage(existing.id, { text: delta || "…" });
                         else addMessage({ role: "assistant", text: delta || "…", streamId });
                     },
+                    onReasoningDelta: (delta) => {
+                        const current = useAgentStudioStore.getState().messages;
+                        const existing = current.find((item) => item.streamId === streamId);
+                        if (existing) updateMessage(existing.id, { reasoning: delta });
+                        else addMessage({ role: "assistant", text: "…", reasoning: delta, streamId });
+                    },
                     onToolStart: (callId, name) => {
+                        // Seal or drop the pre-tool bubble so the post-tool answer appends after tools.
+                        const streaming = useAgentStudioStore.getState().messages.find((item) => item.streamId === streamId);
+                        if (streaming) {
+                            const trimmed = streaming.text.trim();
+                            const body = trimmed && trimmed !== "…" ? streaming.text : "";
+                            const hasReasoning = !!streaming.reasoning?.trim();
+                            if (body || hasReasoning) updateMessage(streaming.id, { streamId: undefined, text: body });
+                            else removeMessage(streaming.id);
+                        }
                         addMessage({ id: callId, role: "tool", text: "", toolName: name, toolStatus: "running" });
                     },
                     onToolEnd: (callId, name, toolResult) => {
@@ -246,8 +293,21 @@ export default function AgentStudioPage() {
 
             const current = useAgentStudioStore.getState().messages;
             const streamed = current.find((item) => item.streamId === streamId);
-            if (streamed) updateMessage(streamed.id, { text: result.finalText || streamed.text || "…", streamId: undefined });
-            else if (result.finalText) addMessage({ role: "assistant", text: result.finalText });
+            if (streamed) {
+                const streamedText = streamed.text.trim() && streamed.text.trim() !== "…" ? streamed.text : "";
+                const reasoning = result.reasoning || streamed.reasoning;
+                updateMessage(streamed.id, {
+                    text: result.finalText || streamedText || (reasoning ? "" : "…"),
+                    reasoning,
+                    streamId: undefined,
+                });
+            } else if (result.finalText || result.reasoning) {
+                addMessage({
+                    role: "assistant",
+                    text: result.finalText || "",
+                    reasoning: result.reasoning,
+                });
+            }
         } catch (error) {
             const canceled = abort.signal.aborted || (error instanceof Error && error.name === "AbortError");
             if (!canceled) {
@@ -355,19 +415,24 @@ export default function AgentStudioPage() {
                             {!messages.length ? (
                                 <EmptyChat theme={theme} onPick={(value) => setPrompt(value)} />
                             ) : (
-                                messages.map((item) => (
-                                    <ChatBubble
-                                        key={item.id}
-                                        role={item.role}
-                                        text={item.text}
-                                        toolName={item.toolName}
-                                        toolStatus={item.toolStatus}
-                                        artifacts={item.artifacts}
-                                        streamId={item.streamId}
-                                        showPlan={item.role === "assistant" && planIds.has(item.id)}
-                                        theme={theme}
-                                    />
-                                ))
+                                groupMessagesForDisplay(messages).map((row) =>
+                                    row.kind === "toolGroup" ? (
+                                        <ToolGroupBubble key={row.items.map((item) => item.id).join("-")} items={row.items} toolName={row.toolName} theme={theme} />
+                                    ) : (
+                                        <ChatBubble
+                                            key={row.message.id}
+                                            role={row.message.role}
+                                            text={row.message.text}
+                                            reasoning={row.message.reasoning}
+                                            toolName={row.message.toolName}
+                                            toolStatus={row.message.toolStatus}
+                                            artifacts={row.message.artifacts}
+                                            streamId={row.message.streamId}
+                                            showPlan={row.message.role === "assistant" && planIds.has(row.message.id)}
+                                            theme={theme}
+                                        />
+                                    ),
+                                )
                             )}
                         </div>
                         <div className="border-t" style={{ borderColor: theme.node.stroke }}>
@@ -586,37 +651,65 @@ function StageLabel({ label }: { label: string }) {
 function EmptyChat({ theme, onPick }: { theme: ThemeTokens; onPick: (value: string) => void }) {
     const { t } = useI18n();
     return (
-        <div className="mx-auto flex min-h-full max-w-xl flex-col justify-center px-1 py-3">
+        <div className="mx-auto flex min-h-full max-w-xl flex-col justify-center px-1 py-4">
             <div className="text-center">
-                <span className="mx-auto grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
+                <span className="mx-auto grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary shadow-[0_0_0_6px] shadow-primary/[0.04]">
                     <Bot className="size-5" />
                 </span>
-                <h2 className="mt-3 text-lg font-semibold tracking-tight">{t("studio.emptyTitle")}</h2>
-                <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-muted-foreground">{t("studio.empty")}</p>
+                <h2 className="mt-3.5 text-lg font-semibold tracking-tight">{t("studio.emptyTitle")}</h2>
+                <p className="mx-auto mt-1.5 max-w-sm text-xs leading-5 text-muted-foreground">{t("studio.empty")}</p>
             </div>
 
-            <div className="mt-5 rounded-xl border px-3 py-2.5" style={{ borderColor: theme.node.stroke, background: "color-mix(in srgb, #0175DA 4%, transparent)" }}>
-                <div className="mb-2 text-[10px] font-medium tracking-[0.14em] text-primary uppercase">{t("studio.emptyFlow")}</div>
-                <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                    {PIPELINE_STEPS.map((step, index) => (
-                        <span key={step.id} className="inline-flex items-center gap-1.5">
-                            <span className="rounded-md border bg-background/80 px-1.5 py-0.5 font-medium text-foreground/80" style={{ borderColor: theme.node.stroke }}>
-                                {t(step.labelKey)}
-                            </span>
-                            {index < PIPELINE_STEPS.length - 1 ? <span className="opacity-40">→</span> : null}
-                        </span>
-                    ))}
+            <div className="mt-6">
+                <div className="mb-2.5 text-center text-[10px] font-semibold tracking-[0.16em] text-primary/90 uppercase">{t("studio.emptyFlow")}</div>
+                <div
+                    className="rounded-2xl px-3 py-3.5 sm:px-5"
+                    style={{
+                        background: "color-mix(in srgb, #0175DA 5%, transparent)",
+                        boxShadow: `inset 0 0 0 1px color-mix(in srgb, #0175DA 14%, ${theme.node.stroke})`,
+                    }}
+                >
+                    <div className="relative">
+                        <div
+                            className="pointer-events-none absolute top-3 right-[12.5%] left-[12.5%] h-px"
+                            style={{ background: "linear-gradient(90deg, transparent, color-mix(in srgb, #0175DA 34%, transparent) 12%, color-mix(in srgb, #0175DA 34%, transparent) 88%, transparent)" }}
+                            aria-hidden
+                        />
+                        <ol className="relative grid grid-cols-4 gap-1">
+                            {PIPELINE_STEPS.map((step, index) => (
+                                <li key={step.id} className="flex flex-col items-center gap-1.5 text-center">
+                                    <span
+                                        className="grid size-6 place-items-center rounded-full text-[10px] font-semibold text-primary"
+                                        style={{
+                                            border: "1px solid color-mix(in srgb, #0175DA 40%, transparent)",
+                                            background: `color-mix(in srgb, #0175DA 14%, ${theme.toolbar.panel})`,
+                                            boxShadow: "0 0 0 3px color-mix(in srgb, #0175DA 5%, transparent)",
+                                        }}
+                                    >
+                                        {index + 1}
+                                    </span>
+                                    <span className="w-full truncate text-[11px] font-medium tracking-wide" style={{ color: theme.node.text }}>
+                                        {t(step.labelKey)}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
                 </div>
             </div>
 
-            <div className="mt-4 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="mt-5 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
                 {SUGGESTIONS.map((item) => (
                     <button
                         key={item.key}
                         type="button"
                         onClick={() => onPick(t(item.key))}
-                        className="flex items-start gap-2 rounded-xl border bg-background/70 px-3 py-2.5 text-left transition hover:border-primary/40 hover:bg-primary/[0.04]"
-                        style={{ borderColor: theme.node.stroke, color: theme.node.text }}
+                        className="flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-left transition hover:bg-primary/[0.05]"
+                        style={{
+                            color: theme.node.text,
+                            boxShadow: `inset 0 0 0 1px ${theme.node.stroke}`,
+                            background: "color-mix(in srgb, var(--background) 72%, transparent)",
+                        }}
                     >
                         <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">{item.icon}</span>
                         <span className="line-clamp-2 text-[11px] leading-4">{t(item.key)}</span>
@@ -627,9 +720,87 @@ function EmptyChat({ theme, onPick }: { theme: ThemeTokens; onPick: (value: stri
     );
 }
 
+function toolStatusTone(toolStatus: StudioMessage["toolStatus"] | undefined, t: (key: MessageKey) => string) {
+    if (toolStatus === "failed") {
+        return { color: "#dc2626", border: "rgba(220,38,38,.22)", bg: "rgba(220,38,38,.05)", icon: <XCircle className="size-3.5" />, label: t("studio.tool.failed") };
+    }
+    if (toolStatus === "running") {
+        return { color: "#2563eb", border: "rgba(37,99,235,.22)", bg: "rgba(37,99,235,.05)", icon: <LoaderCircle className="size-3.5 animate-spin" />, label: t("studio.tool.running") };
+    }
+    return { color: "#16a34a", border: "rgba(22,163,74,.22)", bg: "rgba(22,163,74,.05)", icon: <CheckCircle2 className="size-3.5" />, label: t("studio.tool.done") };
+}
+
+function ToolGroupBubble({ items, toolName, theme }: { items: StudioMessage[]; toolName: string; theme: ThemeTokens }) {
+    const { t } = useI18n();
+    const latest = items[items.length - 1];
+    const tone = toolStatusTone(latest.toolStatus, t);
+    // Prefer last non-empty hit; Earlier only lists calls before that hit.
+    let bestIndex = -1;
+    for (let i = items.length - 1; i >= 0; i -= 1) {
+        if (items[i].text.trim() && !isEmptyToolResult(items[i].text)) {
+            bestIndex = i;
+            break;
+        }
+    }
+    const best = bestIndex >= 0 ? items[bestIndex] : latest;
+    const empty = isEmptyToolResult(best.text);
+    const earlier = items
+        .slice(0, bestIndex >= 0 ? bestIndex : Math.max(0, items.length - 1))
+        .map((item) => {
+            const value = item.text.trim();
+            if (!value) return "";
+            return isEmptyToolResult(value) ? t("studio.tool.emptyResult") : value;
+        })
+        .filter(Boolean);
+    const artifacts = items.flatMap((item) => item.artifacts || []);
+
+    return (
+        <div className="flex items-start gap-2.5">
+            <StudioAvatar />
+            <div className="min-w-0 flex-1 space-y-1.5 rounded-xl border px-3 py-2" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
+                <div className="flex flex-wrap items-center gap-2">
+                    <StageLabel label={t("studio.stage.tool")} />
+                    <span className="font-mono text-xs">{toolName}</span>
+                    {items.length > 1 ? (
+                        <span className="rounded-full border px-1.5 py-0.5 font-mono text-[10px]" style={{ borderColor: theme.node.stroke, color: theme.node.muted }}>
+                            ×{items.length}
+                        </span>
+                    ) : null}
+                    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px]" style={{ borderColor: tone.border, color: tone.color, background: tone.bg }}>
+                        {tone.icon}
+                        {tone.label}
+                    </span>
+                </div>
+                {best.text || empty ? (
+                    <div className="space-y-0.5">
+                        <StageLabel label={t("studio.stage.result")} />
+                        <p className={cn("text-sm leading-5", empty && "italic opacity-70")} style={{ color: theme.node.muted }}>
+                            {empty ? t("studio.tool.emptyResult") : best.text}
+                        </p>
+                        {earlier.length ? (
+                            <p className="truncate font-mono text-[11px] leading-4 opacity-70" style={{ color: theme.node.muted }} title={earlier.join(" · ")}>
+                                {t("studio.tool.earlier")}: {earlier.join(" · ")}
+                            </p>
+                        ) : null}
+                    </div>
+                ) : null}
+                {artifacts.length ? (
+                    <div className="space-y-1.5 pt-0.5">
+                        <StageLabel label={t("studio.stage.artifact")} />
+                        {artifacts.map((item) => (
+                            <ArtifactCard key={item.id} artifact={item} theme={theme} compact />
+                        ))}
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
 function ChatBubble({
     role,
     text,
+    reasoning,
     toolName,
     toolStatus,
     artifacts,
@@ -639,6 +810,7 @@ function ChatBubble({
 }: {
     role: string;
     text: string;
+    reasoning?: string;
     toolName?: string;
     toolStatus?: "running" | "done" | "failed";
     artifacts?: StudioArtifact[];
@@ -648,43 +820,7 @@ function ChatBubble({
 }) {
     const { t } = useI18n();
     if (role === "tool") {
-        const tone =
-            toolStatus === "failed"
-                ? { color: "#dc2626", border: "rgba(220,38,38,.22)", bg: "rgba(220,38,38,.05)", icon: <XCircle className="size-3.5" />, label: t("studio.tool.failed") }
-                : toolStatus === "running"
-                  ? { color: "#2563eb", border: "rgba(37,99,235,.22)", bg: "rgba(37,99,235,.05)", icon: <LoaderCircle className="size-3.5 animate-spin" />, label: t("studio.tool.running") }
-                  : { color: "#16a34a", border: "rgba(22,163,74,.22)", bg: "rgba(22,163,74,.05)", icon: <CheckCircle2 className="size-3.5" />, label: t("studio.tool.done") };
-        return (
-            <div className="flex items-start gap-2.5">
-                <StudioAvatar />
-                <div className="min-w-0 flex-1 space-y-2 rounded-xl border px-3 py-2.5" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <StageLabel label={t("studio.stage.tool")} />
-                        <span className="font-mono text-xs">{toolName}</span>
-                        <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px]" style={{ borderColor: tone.border, color: tone.color, background: tone.bg }}>
-                            {tone.icon}
-                            {tone.label}
-                        </span>
-                    </div>
-                    {text ? (
-                        <div className="space-y-1">
-                            <StageLabel label={t("studio.stage.result")} />
-                            <p className="text-sm leading-5" style={{ color: theme.node.muted }}>
-                                {text}
-                            </p>
-                        </div>
-                    ) : null}
-                    {artifacts?.length ? (
-                        <div className="space-y-1.5">
-                            <StageLabel label={t("studio.stage.artifact")} />
-                            {artifacts.map((item) => (
-                                <ArtifactCard key={item.id} artifact={item} theme={theme} compact />
-                            ))}
-                        </div>
-                    ) : null}
-                </div>
-            </div>
-        );
+        return <ToolGroupBubble items={[{ id: "legacy", role: "tool", text, toolName, toolStatus, artifacts }]} toolName={toolName || "tool"} theme={theme} />;
     }
 
     if (role === "user") {
@@ -720,9 +856,21 @@ function ChatBubble({
             <StudioAvatar />
             <div className="min-w-0 flex-1 space-y-1.5 text-sm leading-5" style={{ color: theme.node.text }}>
                 {showPlan ? <StageLabel label={t("studio.stage.plan")} /> : null}
-                <Streamdown animated isAnimating={!!streamId}>
-                    {text}
-                </Streamdown>
+                {text?.trim() ? (
+                    <Streamdown animated isAnimating={!!streamId}>
+                        {text}
+                    </Streamdown>
+                ) : null}
+                {reasoning?.trim() ? (
+                    <details className="rounded-lg border px-2.5 py-1.5" style={{ borderColor: theme.node.stroke, background: `color-mix(in srgb, ${theme.node.text} 3%, transparent)` }} open={!!streamId && !text?.trim()}>
+                        <summary className="cursor-pointer select-none text-[11px] font-semibold tracking-[0.08em] uppercase" style={{ color: theme.node.muted }}>
+                            {t("studio.thinking")}
+                        </summary>
+                        <p className="mt-1.5 whitespace-pre-wrap text-[12px] leading-5 opacity-80" style={{ color: theme.node.muted }}>
+                            {reasoning}
+                        </p>
+                    </details>
+                ) : null}
             </div>
         </div>
     );

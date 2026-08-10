@@ -36,6 +36,7 @@ type AgentStudioState = {
     clearChat: () => void;
     addMessage: (message: Omit<StudioMessage, "id" | "createdAt"> & { id?: string }) => string;
     updateMessage: (id: string, patch: Partial<StudioMessage>) => void;
+    removeMessage: (id: string) => void;
     addArtifacts: (items: StudioArtifact[]) => void;
     toggleBuiltin: (id: string, enabled: boolean) => void;
     upsertMcpServer: (server: StudioMcpServer) => void;
@@ -67,6 +68,7 @@ export const useAgentStudioStore = create<AgentStudioState>()(
                             role: message.role,
                             text: message.text,
                             streamId: message.streamId,
+                            reasoning: message.reasoning,
                             toolName: message.toolName,
                             toolStatus: message.toolStatus,
                             artifacts: message.artifacts,
@@ -79,6 +81,7 @@ export const useAgentStudioStore = create<AgentStudioState>()(
                 set((state) => ({
                     messages: state.messages.map((item) => (item.id === id ? { ...item, ...patch } : item)),
                 })),
+            removeMessage: (id) => set((state) => ({ messages: state.messages.filter((item) => item.id !== id) })),
             addArtifacts: (items) =>
                 set((state) => {
                     const seen = new Set(state.artifacts.map((item) => item.id));

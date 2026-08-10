@@ -56,7 +56,8 @@ type ResponseApiToolDefinition = {
 };
 type ResponseApiOutputItem =
     | { type?: "message"; content?: Array<{ type?: string; text?: string }> }
-    | { type?: "function_call"; id?: string; call_id?: string; name?: string; arguments?: string };
+    | { type?: "function_call"; id?: string; call_id?: string; name?: string; arguments?: string }
+    | { type?: "reasoning"; summary?: Array<{ type?: string; text?: string }> };
 type ResponseApiPayload = {
     id?: string;
     output?: ResponseApiOutputItem[];
@@ -65,7 +66,26 @@ type ResponseApiPayload = {
     code?: number;
     msg?: string;
 };
-type ResponseStreamState = { buffer: string; text: string; payload?: ResponseApiPayload; error?: string };
+type ResponseStreamState = { buffer: string; text: string; reasoning: string; payload?: ResponseApiPayload; error?: string };
+type StreamCallbacks = {
+    onDelta?: (text: string) => void;
+    onReasoningDelta?: (text: string) => void;
+};
+
+function supportsReasoningSummary(model: string) {
+    const id = model.toLowerCase();
+    if (/nano|mini|lite|flash/.test(id)) return false;
+    return /gpt-5\.6|o1|o3|o4|-sol|reason/.test(id);
+}
+
+function reasoningFromPayload(payload?: ResponseApiPayload) {
+    if (!payload?.output?.length) return "";
+    return payload.output
+        .flatMap((item) => (item.type === "reasoning" ? item.summary || [] : []))
+        .map((part) => part.text || "")
+        .filter(Boolean)
+        .join("\n");
+}
 
 type ImageApiResponse = {
     data?: Array<Record<string, unknown>>;
@@ -485,7 +505,7 @@ async function readFetchError(response: Response, fallback: string) {
     }
 }
 
-function consumeResponseStreamBlock(block: string, state: ResponseStreamState, onDelta?: (text: string) => void) {
+function consumeResponseStreamBlock(block: string, state: ResponseStreamState, callbacks?: StreamCallbacks) {
     const data = block
         .split(/\r?\n/)
         .filter((line) => line.startsWith("data:"))
@@ -499,35 +519,56 @@ function consumeResponseStreamBlock(block: string, state: ResponseStreamState, o
     if (errorMessage) state.error = errorMessage;
     if (type === "response.output_text.delta" && typeof event.delta === "string") {
         state.text += event.delta;
-        onDelta?.(state.text);
+        callbacks?.onDelta?.(state.text);
     }
     if (type === "response.output_text.done" && !state.text && typeof event.text === "string") {
         state.text = event.text;
-        onDelta?.(state.text);
+        callbacks?.onDelta?.(state.text);
+    }
+    if ((type === "response.reasoning_summary_text.delta" || type === "response.reasoning_text.delta") && typeof event.delta === "string") {
+        state.reasoning += event.delta;
+        callbacks?.onReasoningDelta?.(state.reasoning);
+    }
+    if ((type === "response.reasoning_summary_text.done" || type === "response.reasoning_text.done") && !state.reasoning && typeof event.text === "string") {
+        state.reasoning = event.text;
+        callbacks?.onReasoningDelta?.(state.reasoning);
     }
     if (type === "response.completed" && isRecord(event.response)) {
         state.payload = event.response as ResponseApiPayload;
+        if (!state.reasoning) {
+            const fromPayload = reasoningFromPayload(state.payload);
+            if (fromPayload) {
+                state.reasoning = fromPayload;
+                callbacks?.onReasoningDelta?.(state.reasoning);
+            }
+        }
     } else if (Array.isArray(event.output)) {
         state.payload = event as ResponseApiPayload;
     }
 }
 
-function consumeResponseStreamText(state: ResponseStreamState, text: string, onDelta?: (text: string) => void, flush = false) {
+function consumeResponseStreamText(state: ResponseStreamState, text: string, callbacks?: StreamCallbacks, flush = false) {
     state.buffer += text;
     for (;;) {
         const match = state.buffer.match(/\r?\n\r?\n/);
         if (!match) break;
         const index = match.index ?? 0;
-        consumeResponseStreamBlock(state.buffer.slice(0, index), state, onDelta);
+        consumeResponseStreamBlock(state.buffer.slice(0, index), state, callbacks);
         state.buffer = state.buffer.slice(index + match[0].length);
     }
     if (flush && state.buffer.trim()) {
-        consumeResponseStreamBlock(state.buffer, state, onDelta);
+        consumeResponseStreamBlock(state.buffer, state, callbacks);
         state.buffer = "";
     }
 }
 
-async function requestStreamingResponse(config: AiConfig, body: Record<string, unknown>, onDelta?: (text: string) => void, options?: RequestOptions): Promise<ToolResponseResult> {
+async function requestStreamingResponse(
+    config: AiConfig,
+    body: Record<string, unknown>,
+    onDelta?: (text: string) => void,
+    options?: RequestOptions & { onReasoningDelta?: (text: string) => void },
+): Promise<ToolResponseResult & { reasoning?: string }> {
+    const callbacks: StreamCallbacks = { onDelta, onReasoningDelta: options?.onReasoningDelta };
     const response = await fetch(aiApiUrl(config, "/responses"), {
         method: "POST",
         headers: { ...aiHeaders(config, "application/json"), Accept: "text/event-stream" },
@@ -538,24 +579,24 @@ async function requestStreamingResponse(config: AiConfig, body: Record<string, u
     if (!response.body) {
         const payload = (await response.json()) as ResponseApiPayload;
         validateResponsePayload(payload);
-        return parseToolResponse(payload);
+        return { ...parseToolResponse(payload), reasoning: reasoningFromPayload(payload) || undefined };
     }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    const state: ResponseStreamState = { buffer: "", text: "" };
+    const state: ResponseStreamState = { buffer: "", text: "", reasoning: "" };
     for (;;) {
         const { done, value } = await reader.read();
         if (done) break;
-        consumeResponseStreamText(state, decoder.decode(value, { stream: true }), onDelta);
+        consumeResponseStreamText(state, decoder.decode(value, { stream: true }), callbacks);
         if (state.error) throw new Error(state.error);
     }
-    consumeResponseStreamText(state, decoder.decode(), onDelta, true);
+    consumeResponseStreamText(state, decoder.decode(), callbacks, true);
     if (state.error) throw new Error(state.error);
-    if (!state.payload) return { content: state.text, toolCalls: [] };
+    if (!state.payload) return { content: state.text, toolCalls: [], reasoning: state.reasoning || undefined };
     validateResponsePayload(state.payload);
     const result = parseToolResponse(state.payload);
-    return { ...result, content: state.text || result.content };
+    return { ...result, content: state.text || result.content, reasoning: state.reasoning || reasoningFromPayload(state.payload) || undefined };
 }
 
 function toGeminiBody(config: AiConfig, messages: ResponseInputMessage[], extra?: Record<string, unknown>) {
@@ -933,6 +974,7 @@ export type AgentToolCall = {
 export type AgentTurnResult = {
     content: string;
     toolCalls: AgentToolCall[];
+    reasoning?: string;
 };
 
 /** One model turn with optional function tools (Responses / Gemini). */
@@ -941,7 +983,7 @@ export async function requestAgentTurn(
     messages: AgentTurnMessage[],
     tools: AgentToolDefinition[],
     onDelta: (text: string) => void,
-    options?: RequestOptions & { toolChoice?: ToolChoice },
+    options?: RequestOptions & { toolChoice?: ToolChoice; onReasoningDelta?: (text: string) => void },
 ): Promise<AgentTurnResult> {
     const requestConfig = resolveModelRequestConfig(config, config.model || config.textModel);
     const script = resolveModelScript(config, config.model || config.textModel);
@@ -975,11 +1017,13 @@ export async function requestAgentTurn(
                 })),
             };
         }
+        const modelName = requestConfig.model || "";
         const result = await requestStreamingResponse(
             requestConfig,
             {
                 model: requestConfig.model,
                 input: toResponseInput(withSystemMessage(requestConfig, messages as ResponseInputMessage[])),
+                ...(supportsReasoningSummary(modelName) ? { reasoning: { summary: "auto" } } : {}),
                 ...(functionTools.length
                     ? {
                           tools: functionTools.map(toResponseTool),
@@ -992,6 +1036,7 @@ export async function requestAgentTurn(
         );
         return {
             content: result.content || "",
+            reasoning: result.reasoning,
             toolCalls: result.toolCalls.map((call) => ({
                 id: call.id,
                 name: call.function.name,

@@ -54,6 +54,7 @@ export type StudioMessage = {
     text: string;
     createdAt: number;
     streamId?: string;
+    reasoning?: string;
     toolName?: string;
     toolStatus?: "running" | "done" | "failed";
     artifacts?: StudioArtifact[];

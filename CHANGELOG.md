@@ -4,6 +4,8 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] Agent Studio：工具轮次结束后最终回答排在 Tool/Result 之后；仅有 Thinking 时不再误标 PLAN。
++ [优化][Jackie] Agent Studio：空状态「How a run works」改为与顶栏一致的四步编号轨；连续同名工具合并、零结果弱化、Thinking 摘要展示。
 + [调整][Jackie] 首页模型分组标题改为 Image / Video / Text / Audio。
 + [调整][Jackie] Hugging Face 外链改为 `https://huggingface.co/ChenXiangXi/Test-SMALL-Model`。
 + [调整][Jackie] 模型详情：Image/Video/Text/Audio + 预览卡切换；仅 Text 显示「Tennda LLM」；收紧装饰，Specs 白底圆角，API id 高亮。

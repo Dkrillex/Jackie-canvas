@@ -12,7 +12,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 模型详情：打开 `/models/illusion` 顶部为 Image/Video/Text/Audio（无白底壳，选中蓝底白字）+ 带预览的模型切换（选中主色描边，封面顶边无露白）；仅 Text 详情显示「Tennda LLM」eyebrow；API id 为 CTA 下主色高亮标签、Specs 为白底圆角卡片、用途为 `·` 分隔；Overview / Highlights / Python 间距更紧；「Open in Playground」跳对应工作台；无效 slug 落到第一个模型。
 - Developer 文档：`/developer/docs` 展示 Base URL `/gw`、Bearer 鉴权；可切换 Text/Image/Video/Audio 与 Python/curl；示例下方有 Method/Path、Request/Response body、参数表与可选值目录（image size/n/quality、video seconds/size、audio voice/speed 等 Tennda 自研口径）；不应出现 gpt-/gemini-/veo-/seedream 或 OpenAI 音色名。
 - 首页模型卡片：点 Try 进 `/models/{slug}` 详情，不再直接进工作台；分组「Open workbench」与底部 CTA 仍直达工作台/Agent。
-- Agent Studio：导航 Playground 下有 Agent Studio，进入 `/agent`；页面用 tennda 冷蓝底 + 轻圆角对话壳/侧栏；空状态含 Plan→Tool→Result→Artifact 示意与可点示例；底部输入默认单行、有内容再增高；未登录发送应弹登录；开始任务或本轮有工具时顶栏出现流水线进度（纯文本不显示）；Tools 三项带图标短文案 + MCP 入口；顶栏状态为轻量字标；对话与产物刷新可恢复；可调内置工具与远程 HTTP MCP；右侧本地 Codex Agent 仍独立可用。
+- Agent Studio：导航 Playground 下有 Agent Studio，进入 `/agent`；页面用 tennda 冷蓝底 + 轻圆角对话壳/侧栏；空状态「How a run works」为 1–4 编号步进轨（Plan→Tool→Result→Artifact），下方有可点示例；底部输入默认单行、有内容再增高；未登录发送应弹登录；开始任务或本轮有工具时顶栏出现流水线进度（纯文本不显示）；顺序应为 User →（可选 PLAN）→ Tool/Result → 最终回答，最终回答不应出现在工具上方或误标 PLAN；连续同名工具（如多次 `prompts_search`）应合并为一张卡并显示 ×N / Earlier，主结果优先非空命中；零结果显示 No matches 而非醒目 Found 0；选 Tennda Reason（`gpt-5.6-sol`）且上游返回 reasoning summary 时，助手气泡应出现可展开 Thinking；短回复/无 reasoning tokens 时可不显示；Tools 三项带图标短文案 + MCP 入口；顶栏状态为轻量字标；对话与产物刷新可恢复；可调内置工具与远程 HTTP MCP；右侧本地 Codex Agent 仍独立可用。
 - 首页模型 lineup：底部有 Open Agent Studio 主按钮；分组 Open workbench：Text/Audio → `/agent`，Image/Video → 对应工作台。
 - 首页 hero：标题背后应为缓慢左右漂移的 Token Stream（`attn` / `embed` / `ctx` 等），中心镂空不压字；不再是 ASCII 莫比乌斯环。
 - 品牌 Logo：浏览器标签页应为新蓝色像素风图标（`favicon.png`）；顶栏显示 `/logo.png`（透明底），首页 hero 上方不放 Logo；不再是旧三角 SVG。
