@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] Seedance 本地参考图生成前强制走 OSS 公网 URL，画布视频路径不再先转 base64，避免请求体仍是二进制/data URL。
 + [修复][Jackie] OpenAI 兼容 `/gw` 下按模型名识别 Seedance，避免误用 16/20 秒等非法 duration 导致 Seedance 2.0 报错。
 + [调整][Jackie] 配置中心 WebDAV 同步页仅 `admin` 账号可见。
 + [修复][Jackie] Nano Banana / Gemini 生图在 OpenAI 兼容 `/gw` 下自动走 `generateContent`，并将末尾 `/v1` 改写为 `/v1beta`。

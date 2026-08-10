@@ -141,7 +141,9 @@ export function buildNodeResponseMessages(context: NodeGenerationContext): AiTex
     ];
 }
 
-export async function hydrateNodeGenerationContext(context: NodeGenerationContext) {
+export async function hydrateNodeGenerationContext(context: NodeGenerationContext, options?: { skipImageDataUrl?: boolean }) {
+    // Seedance 视频生成前不要把参考图转成 base64，否则容易绕开 OSS 变成巨型二进制 body
+    if (options?.skipImageDataUrl) return context;
     const { imageToDataUrl } = await import("@/services/image-storage");
     return { ...context, referenceImages: await Promise.all(context.referenceImages.map(async (image) => ({ ...image, dataUrl: await imageToDataUrl(image) }))) };
 }

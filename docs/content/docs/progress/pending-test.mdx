@@ -10,6 +10,7 @@ The current release needs manual verification in these areas:
 - Jackie auth: boot hydrates session; unauthenticated users see login modal from the user icon; config gear and `/config` nav appear only after login; image/video Generate buttons prompt login first; account tab shows balance and auto API key, with logout clearing the session key.
 - Config WebDAV tab: visible only when logged in as `admin`; non-admin users should not see the WebDAV sync tab even if deep-linked.
 - Seedance models on `/gw` (OpenAI channel): video settings should show Seedance duration 4–15s / smart (-1), not OpenAI 16/20s options; text-to-video should call `/video/generations` with a valid `duration`.
+- Seedance local reference images: Network `/video/generations` payload `image_url` should be `https://…` (OSS) or `asset://…`, not `data:` / binary; canvas video generate should not base64-hydrate refs first.
 - Nano Banana / Gemini image models on default `/gw` (OpenAI-compatible): generate/edit should call Gemini `generateContent` via `/v1beta`, not OpenAI `/images/generations`.
 - Upstream-retained capabilities (expected on v0.15.1 base): Agent panel/top-nav Bot entry, canvas Select/Move and multi-image flows, and i18next language switching remain available; Jackie top bar intentionally omits version/GitHub/docs/lang/theme controls.
 - Seedance cloud assets panel/modal: group CRUD, upload, and insert into canvas after OSS + auth are ready; `/gw` and `/prod-api` proxies work in local Vite and Vercel rewrites.

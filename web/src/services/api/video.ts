@@ -264,18 +264,22 @@ async function buildSeedanceContent(prompt: string, references: ReferenceImage[]
 }
 
 async function resolveSeedanceImageUrl(image: ReferenceImage) {
-    const directUrl = image.url || image.dataUrl;
-    if (isPublicMediaUrl(directUrl) || directUrl.startsWith("asset://")) return directUrl;
-    return uploadLocalMediaToOss(directUrl, image.storageKey, image.name || "reference.png", "image");
+    // Prefer asset:// / https. Never send data: or blob: to Seedance (causes 413 / binary body).
+    if (image.url?.startsWith("asset://")) return image.url;
+    if (isPublicMediaUrl(image.url || "")) return image.url!;
+    if (isPublicMediaUrl(image.dataUrl || "")) return image.dataUrl;
+    return uploadLocalMediaToOss(image.dataUrl || image.url || "", image.storageKey, image.name || "reference.png", "image");
 }
 
 async function resolveSeedanceVideoUrl(video: ReferenceVideo) {
-    if (isPublicMediaUrl(video.url) || video.url.startsWith("asset://")) return video.url;
+    if (video.url?.startsWith("asset://")) return video.url;
+    if (isPublicMediaUrl(video.url)) return video.url;
     return uploadLocalMediaToOss(video.url, video.storageKey, video.name || "reference.mp4", "video");
 }
 
 async function resolveSeedanceAudioUrl(audio: ReferenceAudio) {
-    if (isPublicMediaUrl(audio.url) || audio.url.startsWith("asset://")) return audio.url;
+    if (audio.url?.startsWith("asset://")) return audio.url;
+    if (isPublicMediaUrl(audio.url)) return audio.url;
     return uploadLocalMediaToOss(audio.url, audio.storageKey, audio.name || "reference.mp3", "audio");
 }
 
@@ -287,6 +291,7 @@ async function uploadLocalMediaToOss(url: string, storageKey: string | undefined
     const blob = await resolveLocalMediaBlob(url, storageKey);
     if (!blob) throw new Error(apiText(kind === "image" ? "referenceImageReadFailed" : kind === "video" ? "invalidReferenceVideo" : "invalidReferenceAudio"));
     const uploaded = await uploadBlobToOss(oss, blob, fileName);
+    if (!isPublicMediaUrl(uploaded.url)) throw new Error(apiText("seedanceNeedsPublicOrOss", { label: apiText(`seedanceLocalLabel.${kind}`) }));
     return uploaded.url;
 }
 
