@@ -1,13 +1,21 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import { AgentPanel } from "@/components/agent/agent-panel";
 import { CanvasLocalAgentPanel } from "@/components/canvas/canvas-local-agent-panel";
 import { AppTopNav } from "@/components/layout/app-top-nav";
 import { LoginModal } from "@/components/layout/login-modal";
+import { useIsMobileNav } from "@/hooks/use-media-query";
 import { useAgentStore } from "@/stores/use-agent-store";
 
 export default function UserLayout({ children }: { children: ReactNode }) {
+    const isMobile = useIsMobileNav();
     const panelMounted = useAgentStore((state) => state.panelMounted);
+    const panelOpen = useAgentStore((state) => state.panelOpen);
+    const closePanel = useAgentStore((state) => state.closePanel);
+
+    useEffect(() => {
+        if (isMobile && panelOpen) closePanel();
+    }, [closePanel, isMobile, panelOpen]);
 
     return (
         <div className="flex h-dvh overflow-hidden bg-background text-foreground">
@@ -17,9 +25,13 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                     {children}
                 </div>
             </div>
-            {/* 面板收起卸载后仍保持 SSE，方便 WorkBuddy / Codex MCP 继续操作画布 */}
-            {!panelMounted ? <CanvasLocalAgentPanel headless autoConnect /> : null}
-            <AgentPanel />
+            {/* Desktop only: local Codex / canvas-agent stays available beside the main column. */}
+            {!isMobile ? (
+                <>
+                    {!panelMounted ? <CanvasLocalAgentPanel headless autoConnect /> : null}
+                    <AgentPanel />
+                </>
+            ) : null}
             <LoginModal />
         </div>
     );

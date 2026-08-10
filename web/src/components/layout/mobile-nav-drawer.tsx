@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { Drawer } from "antd";
+import { User } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 import { filterPlaygroundTools, type NavigationToolSlug } from "@/constant/navigation-tools";
@@ -10,8 +11,10 @@ import {
     tenndaModelDetailPath,
     type TenndaModelCapability,
 } from "@/constant/tennda-models";
+import { useViewportWidth } from "@/hooks/use-media-query";
 import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { useConfigStore } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 
@@ -31,14 +34,30 @@ type MobileNavDrawerProps = {
 export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDrawerProps) {
     const { t } = useI18n();
     const { pathname } = useLocation();
+    const drawerWidth = useViewportWidth(300);
     const user = useUserStore((state) => state.user);
+    const openLoginModal = useUserStore((state) => state.openLoginModal);
+    const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
     const isAdmin = (user?.username || "").trim().toLowerCase() === "admin";
-    const playgroundTools = filterPlaygroundTools({ isAdmin, loggedIn: Boolean(user) });
+    const playgroundTools = filterPlaygroundTools({ isAdmin, loggedIn: Boolean(user), hideCanvas: true });
     const activeModelSlug = pathname.match(/^\/models\/([^/]+)/)?.[1];
 
+    const openAccount = () => {
+        onClose();
+        if (user) openConfigDialog(false, "user");
+        else openLoginModal("/image");
+    };
+
     return (
-        <Drawer title={t("nav.drawer")} placement="left" size={300} open={open} onClose={onClose} className="md:hidden">
+        <Drawer title={t("nav.drawer")} placement="left" size={drawerWidth} open={open} onClose={onClose} destroyOnHidden>
             <div className="space-y-5">
+                <NavGroup title={t("nav.account")}>
+                    <button type="button" onClick={openAccount} className={cn(linkClass(false), "w-full text-left")}>
+                        <User className="size-5 shrink-0" />
+                        <span className="min-w-0 truncate">{user ? user.displayName || user.username || t("action.userCenter") : t("action.login")}</span>
+                    </button>
+                </NavGroup>
+
                 <NavGroup title={t("nav.models")}>
                     {TENNDA_CAPABILITY_ORDER.map((capability) => {
                         const models = TENNDA_MODEL_CATALOG.filter((model) => model.capability === capability);

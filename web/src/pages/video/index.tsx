@@ -548,7 +548,7 @@ export default function VideoPage() {
                                             <img src={item.dataUrl} alt={item.name} className="size-full object-cover" />
                                             <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{seedanceReferenceLabel("image", index)}</span>
                                             <ReferenceOrderButtons index={index} total={references.length} onMove={(offset) => setReferences((value) => moveListItem(value, index, offset))} />
-                                            <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeReference")}>
+                                            <button type="button" className="absolute right-1 top-1 flex size-6 items-center justify-center rounded bg-black/60 text-white" onClick={() => setReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeReference")}>
                                                 <Trash2 className="size-3.5" />
                                             </button>
                                         </div>
@@ -602,7 +602,7 @@ export default function VideoPage() {
                                                         <video src={item.url} className="size-full object-cover" muted preload="metadata" />
                                                         <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{seedanceReferenceLabel("video", index)}</span>
                                                         <ReferenceOrderButtons index={index} total={videoReferences.length} onMove={(offset) => setVideoReferences((value) => moveListItem(value, index, offset))} />
-                                                        <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setVideoReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeRefVideo")}>
+                                                        <button type="button" className="absolute right-1 top-1 flex size-6 items-center justify-center rounded bg-black/60 text-white" onClick={() => setVideoReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeRefVideo")}>
                                                             <Trash2 className="size-3.5" />
                                                         </button>
                                                     </div>
@@ -636,7 +636,7 @@ export default function VideoPage() {
                                                         </div>
                                                         <audio src={item.url} controls className="h-8 w-full" preload="metadata" />
                                                         <ReferenceOrderButtons index={index} total={audioReferences.length} onMove={(offset) => setAudioReferences((value) => moveListItem(value, index, offset))} />
-                                                        <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setAudioReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeRefAudio")}>
+                                                        <button type="button" className="absolute right-1 top-1 flex size-6 items-center justify-center rounded bg-black/60 text-white" onClick={() => setAudioReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeRefAudio")}>
                                                             <Trash2 className="size-3.5" />
                                                         </button>
                                                     </div>

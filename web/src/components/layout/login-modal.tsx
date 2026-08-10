@@ -36,7 +36,7 @@ export function LoginModal() {
     };
 
     return (
-        <Modal title={t("login.title")} open={open} onCancel={closeLoginModal} footer={null} centered destroyOnHidden>
+        <Modal title={t("login.title")} open={open} onCancel={closeLoginModal} footer={null} centered destroyOnHidden width="min(420px, calc(100vw - 32px))">
             <Form layout="vertical" requiredMark={false} onFinish={() => void handleSubmit()}>
                 <Form.Item label={t("login.username")} required>
                     <Input value={username} autoComplete="username" placeholder={t("login.usernamePlaceholder")} onChange={(event) => setUsername(event.target.value)} />

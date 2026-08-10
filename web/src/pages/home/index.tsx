@@ -87,13 +87,13 @@ export default function IndexPage() {
 
     return (
         <main data-app-page-scroll className="tennda-page-bg relative h-full overflow-y-auto">
-            <section className="relative mx-auto min-h-[calc(100vh-4rem)] max-w-7xl overflow-x-clip px-6">
-                <div className="relative flex min-h-[640px] flex-col items-center justify-center overflow-visible pt-10 text-center">
+            <section className="relative mx-auto min-h-[calc(100vh-4rem)] max-w-7xl overflow-x-clip px-4 sm:px-6">
+                <div className="relative flex min-h-[min(560px,calc(100dvh-7rem))] flex-col items-center justify-center overflow-visible pt-8 text-center sm:min-h-[640px] sm:pt-10">
                     <TokenStream />
                     <div className="relative z-10 flex flex-col items-center">
-                        <h1 className="ai-title-aurora font-heading max-w-5xl text-balance text-5xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">TENNDA AI</h1>
-                        <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">{t("home.hero.description")}</p>
-                        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+                        <h1 className="ai-title-aurora font-heading max-w-5xl text-balance text-4xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">TENNDA AI</h1>
+                        <p className="mt-5 max-w-3xl text-balance text-base leading-7 text-stone-500 sm:mt-8 sm:text-lg sm:leading-8 dark:text-stone-400">{t("home.hero.description")}</p>
+                        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
                             <Button type="primary" size="large" onClick={exploreModels} icon={<ArrowRight className="size-4" />} iconPlacement="end">
                                 {t("home.cta")}
                             </Button>

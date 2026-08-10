@@ -46,6 +46,9 @@ export const navigationTools = playgroundTools;
 
 export type NavigationToolSlug = (typeof playgroundTools)[number]["slug"];
 
-export function filterPlaygroundTools(options: { isAdmin: boolean; loggedIn: boolean }) {
-    return playgroundTools.filter((tool) => (tool.slug !== "canvas" || options.isAdmin) && (tool.slug !== "config" || options.loggedIn));
+export function filterPlaygroundTools(options: { isAdmin: boolean; loggedIn: boolean; hideCanvas?: boolean }) {
+    return playgroundTools.filter(
+        (tool) =>
+            (tool.slug !== "canvas" || (options.isAdmin && !options.hideCanvas)) && (tool.slug !== "config" || options.loggedIn),
+    );
 }

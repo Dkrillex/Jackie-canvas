@@ -1,6 +1,7 @@
 export const en = {
     "nav.menu": "Open menu",
     "nav.drawer": "Navigation",
+    "nav.account": "Account",
     "nav.models": "Models",
     "nav.playground": "Playground",
     "nav.developer": "Developer",
@@ -91,6 +92,7 @@ export const en = {
     "studio.tab.tools": "Tools",
     "studio.tab.mcp": "MCP",
     "studio.tab.artifacts": "Artifacts",
+    "studio.sidePanel": "Tools & files",
     "studio.tools.hint": "Core Tennda generation tools.",
     "studio.tools.infraHint": "Connect remote HTTP MCP servers to extend the agent.",
     "studio.tool.blurb.image": "Image generation with Tennda Vision models.",

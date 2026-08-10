@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 
 import { AdminRoute } from "@/components/layout/admin-route";
 import { AnalyticsTracker } from "@/components/layout/analytics-tracker";
+import { DesktopOnlyRoute } from "@/components/layout/desktop-only-route";
 import { TENNDA_MODEL_CATALOG } from "@/constant/tennda-models";
 import UserLayout from "@/layouts/user-layout";
 import AssetsPage from "@/pages/assets";
@@ -38,17 +39,21 @@ export const router = createBrowserRouter([
             {
                 path: "/canvas",
                 element: (
-                    <AdminRoute>
-                        <CanvasPage />
-                    </AdminRoute>
+                    <DesktopOnlyRoute>
+                        <AdminRoute>
+                            <CanvasPage />
+                        </AdminRoute>
+                    </DesktopOnlyRoute>
                 ),
             },
             {
                 path: "/canvas/:id",
                 element: (
-                    <AdminRoute>
-                        <CanvasProjectPage />
-                    </AdminRoute>
+                    <DesktopOnlyRoute>
+                        <AdminRoute>
+                            <CanvasProjectPage />
+                        </AdminRoute>
+                    </DesktopOnlyRoute>
                 ),
             },
             { path: "/config", element: <ConfigPage /> },

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { ModelPicker } from "@/components/model-picker";
 import { useCopyText } from "@/hooks/use-copy-text";
+import { useIsMobileNav } from "@/hooks/use-media-query";
 import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
@@ -24,13 +25,16 @@ function maskApiKey(key: string) {
 const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels", "prompt-sources", "oss"];
 /** Only `admin` account can see these tabs. */
 const ADMIN_ONLY_CONFIG_TABS: ConfigTabKey[] = ["preferences", "webdav", "codex"];
+/** Desktop-linked admin tools — hide on mobile shell. */
+const MOBILE_HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["preferences", "webdav", "codex"];
 
 function isAdminUser(username?: string | null) {
     return (username || "").trim().toLowerCase() === "admin";
 }
 
-function isConfigTabVisible(tab: ConfigTabKey, isAdmin: boolean) {
+function isConfigTabVisible(tab: ConfigTabKey, isAdmin: boolean, isMobile = false) {
     if (HIDDEN_CONFIG_TABS.includes(tab)) return false;
+    if (isMobile && MOBILE_HIDDEN_CONFIG_TABS.includes(tab)) return false;
     if (!isAdmin && ADMIN_ONLY_CONFIG_TABS.includes(tab)) return false;
     return true;
 }
@@ -83,9 +87,10 @@ function createWebdavDomainProgress(t: (key: MessageKey, vars?: Record<string, s
 export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: { showDoneButton?: boolean; initialTab?: ConfigTabKey }) {
     const { message } = App.useApp();
     const { t } = useI18n();
+    const isMobile = useIsMobileNav();
     const sessionUser = useUserStore((state) => state.user);
     const isAdmin = isAdminUser(sessionUser?.username);
-    const [activeTab, setActiveTab] = useState<ConfigTabKey>(() => (isConfigTabVisible(initialTab, isAdmin) ? initialTab : "user"));
+    const [activeTab, setActiveTab] = useState<ConfigTabKey>(() => (isConfigTabVisible(initialTab, isAdmin, false) ? initialTab : "user"));
     const [testingWebdav, setTestingWebdav] = useState(false);
     const [syncingWebdav, setSyncingWebdav] = useState(false);
     const [webdavSyncStatus, setWebdavSyncStatus] = useState("");
@@ -122,12 +127,12 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const webdavReady = Boolean(webdav.url.trim());
     useEffect(() => {
         // 隐藏 Tab / 非 admin 的管理 Tab，旧入口回退到账户
-        setActiveTab(isConfigTabVisible(initialTab, isAdmin) ? initialTab : "user");
-    }, [initialTab, isAdmin]);
+        setActiveTab(isConfigTabVisible(initialTab, isAdmin, isMobile) ? initialTab : "user");
+    }, [initialTab, isAdmin, isMobile]);
 
     useEffect(() => {
-        if (!isConfigTabVisible(activeTab, isAdmin)) setActiveTab("user");
-    }, [activeTab, isAdmin]);
+        if (!isConfigTabVisible(activeTab, isAdmin, isMobile)) setActiveTab("user");
+    }, [activeTab, isAdmin, isMobile]);
 
     const finishConfig = () => {
         const ready = config.channels.some((channel) => channel.baseUrl.trim() && channel.apiKey.trim() && channel.models.length);
@@ -502,7 +507,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                             </Form>
                         ),
                     },
-    ].filter((item): boolean => isConfigTabVisible(item.key as ConfigTabKey, isAdmin));
+    ].filter((item): boolean => isConfigTabVisible(item.key as ConfigTabKey, isAdmin, isMobile));
 
     return (
         <>
@@ -532,11 +537,11 @@ export function AppConfigModal() {
                 </div>
             }
             open={isConfigOpen}
-            width={980}
+            width="min(980px, calc(100vw - 24px))"
             centered
             destroyOnHidden
             onCancel={() => setConfigDialogOpen(false)}
-            styles={{ body: { maxHeight: "72vh", overflowY: "auto", paddingRight: 12 } }}
+            styles={{ body: { maxHeight: "min(72vh, calc(100dvh - 80px))", overflowY: "auto", paddingRight: 12 } }}
             footer={null}
         >
             {isConfigOpen ? <AppConfigPanel showDoneButton initialTab={configTab} /> : null}

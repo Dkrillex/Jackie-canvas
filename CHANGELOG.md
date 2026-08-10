@@ -4,6 +4,8 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 手机端隐藏画布与本地 Codex Agent；配置弹窗自适应宽度并隐藏桌面专属 Tab；Agent Studio 窄屏侧栏改抽屉。
++ [优化][Jackie] 首页 hero / 登录弹窗窄屏间距；生图/视频参考图删除按钮触控常显。
 + [修复][Jackie] Agent Studio：工具轮次结束后最终回答排在 Tool/Result 之后；仅有 Thinking 时不再误标 PLAN。
 + [优化][Jackie] Agent Studio：空状态「How a run works」改为与顶栏一致的四步编号轨；连续同名工具合并、零结果弱化、Thinking 摘要展示。
 + [调整][Jackie] 首页模型分组标题改为 Image / Video / Text / Audio。

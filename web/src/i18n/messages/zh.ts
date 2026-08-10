@@ -3,6 +3,7 @@ import type { Messages } from "../types";
 export const zh: Messages = {
     "nav.menu": "打开导航菜单",
     "nav.drawer": "导航",
+    "nav.account": "Account",
     "nav.models": "Models",
     "nav.playground": "Playground",
     "nav.developer": "Developer",
@@ -93,6 +94,7 @@ export const zh: Messages = {
     "studio.tab.tools": "Tools",
     "studio.tab.mcp": "MCP",
     "studio.tab.artifacts": "Artifacts",
+    "studio.sidePanel": "Tools & files",
     "studio.tools.hint": "Core Tennda generation tools.",
     "studio.tools.infraHint": "Connect remote HTTP MCP servers to extend the agent.",
     "studio.tool.blurb.image": "Image generation with Tennda Vision models.",

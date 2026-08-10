@@ -1,12 +1,13 @@
 import { Bot, CheckCircle2, ImageIcon, LoaderCircle, type LucideIcon, Plus, Sparkles, Trash2, Unplug, Video, Wifi, Wrench, XCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { App, Button, Empty, Input, Tooltip } from "antd";
+import { App, Button, Drawer, Empty, Input, Tooltip } from "antd";
 import { useNavigate } from "react-router-dom";
 import { nanoid } from "nanoid";
 import { Streamdown } from "streamdown";
 
 import { AgentChatComposer, AgentPanelTabs } from "@/components/canvas/canvas-agent-chat-ui";
 import { ModelPicker } from "@/components/model-picker";
+import { useIsDesktopSide, useViewportWidth } from "@/hooks/use-media-query";
 import { BUILTIN_TOOL_DEFS } from "@/lib/agent-studio/builtin-tools";
 import { connectMcpHttp, mcpToolName } from "@/lib/agent-studio/mcp-http-client";
 import { historyFromStudioMessages, runStudioAgentLoop } from "@/lib/agent-studio/studio-loop";
@@ -179,14 +180,21 @@ export default function AgentStudioPage() {
     const removeMcpServer = useAgentStudioStore((state) => state.removeMcpServer);
     const setMcpSession = useAgentStudioStore((state) => state.setMcpSession);
 
+    const isDesktopSide = useIsDesktopSide();
+    const sideDrawerWidth = useViewportWidth(360);
     const [prompt, setPrompt] = useState("");
     const [sideTab, setSideTab] = useState<SideTab>("tools");
+    const [sideOpen, setSideOpen] = useState(false);
     const [mcpName, setMcpName] = useState("");
     const [mcpUrl, setMcpUrl] = useState("");
     const [mcpAuth, setMcpAuth] = useState("");
     const [mcpBusyId, setMcpBusyId] = useState("");
     const abortRef = useRef<AbortController | null>(null);
     const listRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isDesktopSide) setSideOpen(false);
+    }, [isDesktopSide]);
 
     const textConfig = useMemo(() => {
         const base = buildGenerationConfig(effectiveConfig, undefined, "text");
@@ -375,6 +383,160 @@ export default function AgentStudioPage() {
         boxShadow: themeName === "dark" ? "0 18px 40px -28px rgba(0,0,0,0.55)" : "0 18px 40px -28px rgba(1,117,218,0.22)",
     };
 
+    const renderSidePanel = () => (
+        <>
+            <AgentPanelTabs
+                value={sideTab}
+                theme={theme}
+                onChange={setSideTab}
+                items={[
+                    { value: "tools", label: t("studio.tab.tools"), count: featuredOn },
+                    { value: "mcp", label: t("studio.tab.mcp"), count: mcpServers.length || undefined },
+                    { value: "artifacts", label: t("studio.tab.artifacts"), count: artifacts.length || undefined },
+                ]}
+            />
+            <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-3 md:px-3.5 md:pb-5">
+                {sideTab === "tools" ? (
+                    <div>
+                        <p className="mb-2.5 px-0.5 text-[11px] leading-4 text-muted-foreground">{t("studio.tools.hint")}</p>
+                        <div className="flex flex-col gap-2">
+                            {featuredTools.map((tool) => {
+                                const enabled = !disabledBuiltinIds.includes(tool.id);
+                                const meta = FEATURED_TOOL_UI[tool.id as (typeof FEATURED_BUILTIN_IDS)[number]];
+                                const Icon = meta.icon;
+                                return (
+                                    <button
+                                        key={tool.id}
+                                        type="button"
+                                        onClick={() => toggleBuiltin(tool.id, !enabled)}
+                                        className={cn(
+                                            "group flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2.5 text-left transition",
+                                            enabled ? "bg-background/80 hover:border-primary/35" : "bg-background/40 opacity-60 hover:opacity-80",
+                                        )}
+                                        style={{ borderColor: theme.node.stroke, color: theme.node.text }}
+                                    >
+                                        <span
+                                            className="grid size-8 shrink-0 place-items-center rounded-lg"
+                                            style={{ background: enabled ? "rgba(1,117,218,0.1)" : `color-mix(in srgb, ${theme.node.text} 6%, transparent)`, color: enabled ? "#0175DA" : theme.node.muted }}
+                                        >
+                                            <Icon className="size-3.5" />
+                                        </span>
+                                        <span className="min-w-0 flex-1">
+                                            <span className="flex items-center justify-between gap-2">
+                                                <span className="truncate font-mono text-[11px] font-medium">{tool.name}</span>
+                                                <span
+                                                    className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide"
+                                                    style={{
+                                                        color: enabled ? "#16a34a" : theme.node.muted,
+                                                        background: enabled ? "rgba(22,163,74,.1)" : "transparent",
+                                                    }}
+                                                >
+                                                    {enabled ? "ON" : "OFF"}
+                                                </span>
+                                            </span>
+                                            <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{t(meta.blurbKey)}</span>
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                            <button
+                                type="button"
+                                onClick={() => setSideTab("mcp")}
+                                className="group flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2.5 text-left transition hover:border-primary/35"
+                                style={{ borderColor: theme.node.stroke, color: theme.node.text, background: "color-mix(in srgb, #0175DA 4%, transparent)" }}
+                            >
+                                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                                    <Wifi className="size-3.5" />
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                    <span className="flex items-center justify-between gap-2">
+                                        <span className="font-mono text-[11px] font-medium">MCP</span>
+                                        <span className="font-mono text-[10px] text-muted-foreground">
+                                            {mcpOn}/{mcpServers.length}
+                                        </span>
+                                    </span>
+                                    <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{t("studio.tools.infraHint")}</span>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
+
+                {sideTab === "mcp" ? (
+                    <div className="space-y-5">
+                        <p className="mb-1 px-0.5 text-sm leading-6" style={{ color: theme.node.muted }}>
+                            {t("studio.mcp.hint")}
+                        </p>
+                        <div className="space-y-3 rounded-2xl border p-4" style={{ borderColor: theme.node.stroke }}>
+                            <Input value={mcpName} onChange={(e) => setMcpName(e.target.value)} placeholder={t("studio.mcp.name")} />
+                            <Input value={mcpUrl} onChange={(e) => setMcpUrl(e.target.value)} placeholder={t("studio.mcp.url")} />
+                            <Input value={mcpAuth} onChange={(e) => setMcpAuth(e.target.value)} placeholder={t("studio.mcp.header")} />
+                            <Button icon={<Plus className="size-4" />} onClick={addMcp} block>
+                                {t("studio.mcp.add")}
+                            </Button>
+                        </div>
+                        {!mcpServers.length ? (
+                            <Empty description={t("studio.mcp.empty")} className="mt-8" />
+                        ) : (
+                            mcpServers.map((server) => (
+                                <div key={server.id} className="space-y-3 rounded-2xl border p-4" style={{ borderColor: theme.node.stroke }}>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <div className="truncate text-sm font-medium">{server.name}</div>
+                                            <div className="mt-1 break-all font-mono text-xs leading-5" style={{ color: theme.node.muted }}>
+                                                {server.url}
+                                            </div>
+                                        </div>
+                                        <span
+                                            className="shrink-0 rounded-full border px-2.5 py-1 text-[11px]"
+                                            style={{
+                                                borderColor: server.connected ? "rgba(22,163,74,.28)" : theme.node.stroke,
+                                                color: server.connected ? "#16a34a" : theme.node.muted,
+                                                background: server.connected ? "rgba(22,163,74,.06)" : "transparent",
+                                            }}
+                                        >
+                                            {server.connected ? t("studio.mcp.connected") : t("studio.mcp.disconnected")}
+                                        </span>
+                                    </div>
+                                    {server.error ? <div className="text-sm text-red-600">{server.error}</div> : null}
+                                    {server.connected ? (
+                                        <div className="text-sm" style={{ color: theme.node.muted }}>
+                                            {server.tools.length} tools
+                                        </div>
+                                    ) : null}
+                                    <div className="flex flex-wrap gap-2 pt-1">
+                                        {server.connected ? (
+                                            <Button size="small" icon={<Unplug className="size-3.5" />} onClick={() => disconnectMcp(server.id)}>
+                                                {t("studio.mcp.disconnect")}
+                                            </Button>
+                                        ) : (
+                                            <Button size="small" type="primary" loading={mcpBusyId === server.id} icon={<Wifi className="size-3.5" />} onClick={() => void connectMcp(server.id)}>
+                                                {t("studio.mcp.connect")}
+                                            </Button>
+                                        )}
+                                        <Button size="small" danger icon={<Trash2 className="size-3.5" />} onClick={() => removeMcpServer(server.id)}>
+                                            {t("studio.mcp.remove")}
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                ) : null}
+
+                {sideTab === "artifacts" ? (
+                    <div className="space-y-5">
+                        {!artifacts.length ? (
+                            <Empty description={t("studio.artifacts.empty")} className="mt-10" />
+                        ) : (
+                            artifacts.map((item) => <ArtifactCard key={item.id} artifact={item} theme={theme} />)
+                        )}
+                    </div>
+                ) : null}
+            </div>
+        </>
+    );
+
     return (
         <main className="tennda-page-bg flex h-full flex-col overflow-hidden text-foreground">
             <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col gap-3 px-4 py-3 md:gap-3.5 md:px-6 md:py-4">
@@ -386,7 +548,7 @@ export default function AgentStudioPage() {
                         </div>
                         <p className="mt-1 truncate text-xs leading-4 text-muted-foreground">{t("studio.desc")}</p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-3">
+                    <div className="flex shrink-0 items-center gap-2 md:gap-3">
                         <div className="hidden items-center gap-2 font-mono text-[11px] text-muted-foreground md:flex">
                             <span>{featuredOn} tools</span>
                             <span className="opacity-30">·</span>
@@ -394,6 +556,18 @@ export default function AgentStudioPage() {
                             <span className="opacity-30">·</span>
                             <span>{artifacts.length} files</span>
                         </div>
+                        {!isDesktopSide ? (
+                            <Tooltip title={t("studio.sidePanel")}>
+                                <Button
+                                    type="text"
+                                    shape="circle"
+                                    className="!h-8 !w-8"
+                                    icon={<Wrench className="size-3.5" />}
+                                    onClick={() => setSideOpen(true)}
+                                    aria-label={t("studio.sidePanel")}
+                                />
+                            </Tooltip>
+                        ) : null}
                         <Tooltip title={t("studio.clear")}>
                             <Button
                                 type="text"
@@ -459,157 +633,25 @@ export default function AgentStudioPage() {
                         </div>
                     </section>
 
-                    <aside className="flex min-h-0 flex-col overflow-hidden rounded-2xl border backdrop-blur-sm" style={panelStyle}>
-                        <AgentPanelTabs
-                            value={sideTab}
-                            theme={theme}
-                            onChange={setSideTab}
-                            items={[
-                                { value: "tools", label: t("studio.tab.tools"), count: featuredOn },
-                                { value: "mcp", label: t("studio.tab.mcp"), count: mcpServers.length || undefined },
-                                { value: "artifacts", label: t("studio.tab.artifacts"), count: artifacts.length || undefined },
-                            ]}
-                        />
-                        <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-3 md:px-3.5 md:pb-5">
-                            {sideTab === "tools" ? (
-                                <div>
-                                    <p className="mb-2.5 px-0.5 text-[11px] leading-4 text-muted-foreground">{t("studio.tools.hint")}</p>
-                                    <div className="flex flex-col gap-2">
-                                        {featuredTools.map((tool) => {
-                                            const enabled = !disabledBuiltinIds.includes(tool.id);
-                                            const meta = FEATURED_TOOL_UI[tool.id as (typeof FEATURED_BUILTIN_IDS)[number]];
-                                            const Icon = meta.icon;
-                                            return (
-                                                <button
-                                                    key={tool.id}
-                                                    type="button"
-                                                    onClick={() => toggleBuiltin(tool.id, !enabled)}
-                                                    className={cn(
-                                                        "group flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2.5 text-left transition",
-                                                        enabled ? "bg-background/80 hover:border-primary/35" : "bg-background/40 opacity-60 hover:opacity-80",
-                                                    )}
-                                                    style={{ borderColor: theme.node.stroke, color: theme.node.text }}
-                                                >
-                                                    <span
-                                                        className="grid size-8 shrink-0 place-items-center rounded-lg"
-                                                        style={{ background: enabled ? "rgba(1,117,218,0.1)" : `color-mix(in srgb, ${theme.node.text} 6%, transparent)`, color: enabled ? "#0175DA" : theme.node.muted }}
-                                                    >
-                                                        <Icon className="size-3.5" />
-                                                    </span>
-                                                    <span className="min-w-0 flex-1">
-                                                        <span className="flex items-center justify-between gap-2">
-                                                            <span className="truncate font-mono text-[11px] font-medium">{tool.name}</span>
-                                                            <span
-                                                                className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide"
-                                                                style={{
-                                                                    color: enabled ? "#16a34a" : theme.node.muted,
-                                                                    background: enabled ? "rgba(22,163,74,.1)" : "transparent",
-                                                                }}
-                                                            >
-                                                                {enabled ? "ON" : "OFF"}
-                                                            </span>
-                                                        </span>
-                                                        <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{t(meta.blurbKey)}</span>
-                                                    </span>
-                                                </button>
-                                            );
-                                        })}
-                                        <button
-                                            type="button"
-                                            onClick={() => setSideTab("mcp")}
-                                            className="group flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2.5 text-left transition hover:border-primary/35"
-                                            style={{ borderColor: theme.node.stroke, color: theme.node.text, background: "color-mix(in srgb, #0175DA 4%, transparent)" }}
-                                        >
-                                            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                                                <Wifi className="size-3.5" />
-                                            </span>
-                                            <span className="min-w-0 flex-1">
-                                                <span className="flex items-center justify-between gap-2">
-                                                    <span className="font-mono text-[11px] font-medium">MCP</span>
-                                                    <span className="font-mono text-[10px] text-muted-foreground">
-                                                        {mcpOn}/{mcpServers.length}
-                                                    </span>
-                                                </span>
-                                                <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{t("studio.tools.infraHint")}</span>
-                                            </span>
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : null}
-
-                            {sideTab === "mcp" ? (
-                                <div className="space-y-5">
-                                    <p className="mb-1 px-0.5 text-sm leading-6" style={{ color: theme.node.muted }}>
-                                        {t("studio.mcp.hint")}
-                                    </p>
-                                    <div className="space-y-3 rounded-2xl border p-4" style={{ borderColor: theme.node.stroke }}>
-                                        <Input value={mcpName} onChange={(e) => setMcpName(e.target.value)} placeholder={t("studio.mcp.name")} />
-                                        <Input value={mcpUrl} onChange={(e) => setMcpUrl(e.target.value)} placeholder={t("studio.mcp.url")} />
-                                        <Input value={mcpAuth} onChange={(e) => setMcpAuth(e.target.value)} placeholder={t("studio.mcp.header")} />
-                                        <Button icon={<Plus className="size-4" />} onClick={addMcp} block>
-                                            {t("studio.mcp.add")}
-                                        </Button>
-                                    </div>
-                                    {!mcpServers.length ? (
-                                        <Empty description={t("studio.mcp.empty")} className="mt-8" />
-                                    ) : (
-                                        mcpServers.map((server) => (
-                                            <div key={server.id} className="space-y-3 rounded-2xl border p-4" style={{ borderColor: theme.node.stroke }}>
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="min-w-0">
-                                                        <div className="truncate text-sm font-medium">{server.name}</div>
-                                                        <div className="mt-1 break-all font-mono text-xs leading-5" style={{ color: theme.node.muted }}>
-                                                            {server.url}
-                                                        </div>
-                                                    </div>
-                                                    <span
-                                                        className="shrink-0 rounded-full border px-2.5 py-1 text-[11px]"
-                                                        style={{
-                                                            borderColor: server.connected ? "rgba(22,163,74,.28)" : theme.node.stroke,
-                                                            color: server.connected ? "#16a34a" : theme.node.muted,
-                                                            background: server.connected ? "rgba(22,163,74,.06)" : "transparent",
-                                                        }}
-                                                    >
-                                                        {server.connected ? t("studio.mcp.connected") : t("studio.mcp.disconnected")}
-                                                    </span>
-                                                </div>
-                                                {server.error ? <div className="text-sm text-red-600">{server.error}</div> : null}
-                                                {server.connected ? (
-                                                    <div className="text-sm" style={{ color: theme.node.muted }}>
-                                                        {server.tools.length} tools
-                                                    </div>
-                                                ) : null}
-                                                <div className="flex flex-wrap gap-2 pt-1">
-                                                    {server.connected ? (
-                                                        <Button size="small" icon={<Unplug className="size-3.5" />} onClick={() => disconnectMcp(server.id)}>
-                                                            {t("studio.mcp.disconnect")}
-                                                        </Button>
-                                                    ) : (
-                                                        <Button size="small" type="primary" loading={mcpBusyId === server.id} icon={<Wifi className="size-3.5" />} onClick={() => void connectMcp(server.id)}>
-                                                            {t("studio.mcp.connect")}
-                                                        </Button>
-                                                    )}
-                                                    <Button size="small" danger icon={<Trash2 className="size-3.5" />} onClick={() => removeMcpServer(server.id)}>
-                                                        {t("studio.mcp.remove")}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            ) : null}
-
-                            {sideTab === "artifacts" ? (
-                                <div className="space-y-5">
-                                    {!artifacts.length ? (
-                                        <Empty description={t("studio.artifacts.empty")} className="mt-10" />
-                                    ) : (
-                                        artifacts.map((item) => <ArtifactCard key={item.id} artifact={item} theme={theme} />)
-                                    )}
-                                </div>
-                            ) : null}
-                        </div>
-                    </aside>
+                    {isDesktopSide ? (
+                        <aside className="flex min-h-0 flex-col overflow-hidden rounded-2xl border backdrop-blur-sm" style={panelStyle}>
+                            {renderSidePanel()}
+                        </aside>
+                    ) : (
+                        <Drawer
+                            title={t("studio.sidePanel")}
+                            placement="right"
+                            size={sideDrawerWidth}
+                            open={sideOpen}
+                            onClose={() => setSideOpen(false)}
+                            destroyOnHidden
+                            styles={{ body: { padding: 0, display: "flex", flexDirection: "column", overflow: "hidden", height: "100%" } }}
+                        >
+                            <div className="flex h-full min-h-0 flex-col" style={panelStyle}>
+                                {renderSidePanel()}
+                            </div>
+                        </Drawer>
+                    )}
                 </div>
             </div>
         </main>
@@ -820,7 +862,7 @@ function ChatBubble({
 }) {
     const { t } = useI18n();
     if (role === "tool") {
-        return <ToolGroupBubble items={[{ id: "legacy", role: "tool", text, toolName, toolStatus, artifacts }]} toolName={toolName || "tool"} theme={theme} />;
+        return <ToolGroupBubble items={[{ id: "legacy", role: "tool", text, createdAt: 0, toolName, toolStatus, artifacts }]} toolName={toolName || "tool"} theme={theme} />;
     }
 
     if (role === "user") {
