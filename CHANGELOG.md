@@ -4,6 +4,8 @@
 
 ### Jackie（本分支定制）
 
++ [新增][Jackie] 接单中心前端 Mock：积分钱包（1 积分=1 美元）、发单/报价/提交/验收与佣金结算演示，数据仅存本机。
++ [调整][Jackie] 发布工作需求改为 Markdown（编辑/预览），支持插入本机图片。
 + [调整][Jackie] 产品展示名统一为 Jackie Canvas（原「无限画布」/ Infinite Canvas 文案）。
 + [修复][Jackie] Seedance 本地参考图生成前强制走 OSS 公网 URL，画布视频路径不再先转 base64，避免请求体仍是二进制/data URL。
 + [修复][Jackie] OpenAI 兼容 `/gw` 下按模型名识别 Seedance，避免误用 16/20 秒等非法 duration 导致 Seedance 2.0 报错。
