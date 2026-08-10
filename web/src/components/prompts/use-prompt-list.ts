@@ -6,11 +6,25 @@ import { useI18n } from "@/stores/use-locale-store";
 
 export const PROMPT_PAGE_SIZE = 20;
 
-export function usePromptList({ keyword, tags, category, enabled = true, includePersonal = false }: { keyword: string; tags: string[]; category: string; enabled?: boolean; includePersonal?: boolean }) {
+export function usePromptList({
+    keyword,
+    tags,
+    category,
+    enabled = true,
+    includePersonal = false,
+    pageSize = PROMPT_PAGE_SIZE,
+}: {
+    keyword: string;
+    tags: string[];
+    category: string;
+    enabled?: boolean;
+    includePersonal?: boolean;
+    pageSize?: number;
+}) {
     const { locale } = useI18n();
     const query = useInfiniteQuery({
-        queryKey: ["prompts", locale, keyword, tags, category, includePersonal],
-        queryFn: ({ pageParam }) => fetchPrompts({ keyword, tag: tags, category, page: pageParam, pageSize: PROMPT_PAGE_SIZE, includePersonal }),
+        queryKey: ["prompts", locale, keyword, tags, category, includePersonal, pageSize],
+        queryFn: ({ pageParam }) => fetchPrompts({ keyword, tag: tags, category, page: pageParam, pageSize, includePersonal }),
         initialPageParam: 1,
         getNextPageParam: (lastPage, pages) => (pages.reduce((total, page) => total + page.items.length, 0) < lastPage.total ? pages.length + 1 : undefined),
         enabled,

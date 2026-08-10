@@ -34,9 +34,6 @@ const AGENT_CONNECT_STEPS: Array<{ titleKey: MessageKey; textKey: MessageKey; co
     { titleKey: "agent.step1.title", textKey: "agent.step1.text" },
     { titleKey: "agent.step2.title", textKey: "agent.step2.text", command: "npx -y @jackie-canvas/canvas-agent" },
 ];
-const AGENT_PLUGIN_REMOVE_COMMAND = "codex plugin remove infinite-canvas";
-const AGENT_MCP_REMOVE_COMMAND = "codex mcp remove infinite-canvas";
-
 type AgentEventPayload = {
     agent?: string;
     type?: string;
@@ -937,24 +934,6 @@ function AgentConnectView({ theme, url, token, enabled, connected, activity, con
                             </div>
                         );
                     })}
-                </div>
-                <div className="rounded-lg border px-3 py-2.5 text-xs leading-5" style={{ borderColor: theme.node.stroke, color: theme.node.muted }}>
-                    <div className="font-medium" style={{ color: theme.node.text }}>{t("agent.pluginReminderTitle")}</div>
-                    <div className="mt-1">{t("agent.pluginReminderText")}</div>
-                    <div className="mt-2 grid gap-1.5">
-                        {[
-                            [t("agent.removePlugin"), AGENT_PLUGIN_REMOVE_COMMAND],
-                            [t("agent.removeMcp"), AGENT_MCP_REMOVE_COMMAND],
-                        ].map(([label, command]) => (
-                            <div key={command} className="flex items-center gap-2 rounded-md border bg-transparent px-2 py-1.5" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
-                                <span className="shrink-0 text-[11px]" style={{ color: theme.node.muted }}>{label}</span>
-                                <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[11px] leading-5">{command}</code>
-                                <Tooltip title={t("agent.copyCommand")}>
-                                    <Button size="small" type="text" className="!h-6 !w-6 !min-w-6" icon={<Copy className="size-3.5" />} onClick={() => copyCommand(command)} />
-                                </Tooltip>
-                            </div>
-                        ))}
-                    </div>
                 </div>
                 <div className="rounded-lg border p-3" style={{ borderColor: theme.node.stroke }}>
                     <div className="flex flex-wrap items-start justify-between gap-3">

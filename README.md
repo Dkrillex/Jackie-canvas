@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="web/public/logo.png" width="96" alt="Tennda LLM logo">
+  <img src="web/public/logo.png" width="96" alt="TENNDA AI logo">
 </p>
 
 <h1 align="center">Jackie Canvas</h1>

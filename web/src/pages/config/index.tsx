@@ -11,7 +11,7 @@ export default function ConfigPage() {
 
     if (!user) {
         return (
-            <main className="h-full overflow-y-auto bg-background">
+            <main data-app-page-scroll className="h-full overflow-y-auto bg-background">
                 <div className="mx-auto flex max-w-6xl flex-col items-start gap-4 px-6 py-16">
                     <h1 className="text-xl font-semibold text-stone-950 dark:text-stone-100">{t("config.pageTitle")}</h1>
                     <p className="text-sm text-stone-500">{t("config.loginHint")}</p>
@@ -24,7 +24,7 @@ export default function ConfigPage() {
     }
 
     return (
-        <main className="h-full overflow-y-auto bg-background">
+        <main data-app-page-scroll className="h-full overflow-y-auto bg-background">
             <div className="mx-auto max-w-6xl px-6 py-6">
                 <div className="mb-5">
                     <h1 className="text-xl font-semibold text-stone-950 dark:text-stone-100">{t("config.pageTitle")}</h1>

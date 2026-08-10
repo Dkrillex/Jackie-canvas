@@ -5,12 +5,14 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- 视频工作台 `/video`：对齐生图——History 无记录约 220px、有记录 320/340（等加载后再判定）；中间设置更宽；清晰度/分辨率常显，尺寸/时长/输出默认收在 Advanced，折叠态可见摘要；Reference videos/audio 默认收在 More references，折叠态显示数量摘要，从无到有时自动展开；Results 空态为 4 个可点击案例（填入 prompt）；图/视频/音频参考条可用纵向滚轮横向滚动；生成按钮更大更醒目（设置抽屉底部也有）；滚动设置面板时顶栏不应收成胶囊。
+- 生图工作台 `/image`：History 先按窄栏渲染，加载完成后再按有/无记录定宽（无约 220、有约 320/340），主区不应整页空白等待；中间设置更宽；Quality 常显，Size/Aspect/Count/透明底默认收在 Advanced，折叠态可见 `比例 · 张数` 摘要；移动端参数抽屉高度约 82vh；Results 空态上方展示 2–4 条提示词库封面+文案（DavidWu GPT Image 2，只拉 4 条），下方 Try an example 为 title+prompt 文本案例，内容区更窄（约 max-w-md）；滚动左侧设置面板时顶栏不应收成胶囊；首页/模型/画布列表等整页滚动仍可收成胶囊；生成按钮更大更醒目（设置抽屉底部也有）。
 - 视觉主题：浅色背景应为冷灰蓝 `#f5f7fa`（非暖石色），主按钮/链接为品牌蓝 `#0175DA`；首页/模型/Developer 有淡蓝顶光 + 蓝点阵；滚动后顶栏胶囊为白底冷灰描边（非暖石色）；深色模式底为 `#1c1f2b`、卡片 `#2a2e3c`。
 - 顶栏 IA：桌面一级为 Models / Playground / Developer / Hugging Face；Models 下拉进 `/models/:slug`；Playground 下拉含 Agent/Image/Video/Prompts/Assets（登录可见 Settings，admin 可见 My canvases）；Developer 进 `/developer/docs`；HF 外链。移动端抽屉按同样四组展示。
-- 模型详情：打开 `/models/illusion`（或其它 slug）顶部可横向切换模型卡；有 Specifications（Context / Max output / Input / Output + extras）；正文有 Overview / Highlights；底部有当前模型的 Python API 示例（`tennda-*` id，可复制，链到 `/developer/docs`）；「Open in Playground」跳到该模型对应工作台；无效 slug 应落到第一个模型。
+- 模型详情：打开 `/models/illusion` 顶部为 Image/Video/Text/Audio（无白底壳，选中蓝底白字）+ 带预览的模型切换（选中主色描边，封面顶边无露白）；仅 Text 详情显示「Tennda LLM」eyebrow；API id 为 CTA 下主色高亮标签、Specs 为白底圆角卡片、用途为 `·` 分隔；Overview / Highlights / Python 间距更紧；「Open in Playground」跳对应工作台；无效 slug 落到第一个模型。
 - Developer 文档：`/developer/docs` 展示 Base URL `/gw`、Bearer 鉴权；可切换 Text/Image/Video/Audio 与 Python/curl；示例下方有 Method/Path、Request/Response body、参数表与可选值目录（image size/n/quality、video seconds/size、audio voice/speed 等 Tennda 自研口径）；不应出现 gpt-/gemini-/veo-/seedream 或 OpenAI 音色名。
 - 首页模型卡片：点 Try 进 `/models/{slug}` 详情，不再直接进工作台；分组「Open workbench」与底部 CTA 仍直达工作台/Agent。
-- Agent Studio：导航 Playground 下有 Agent Studio，进入 `/agent`；页面冷灰蓝底 + 白/深色圆角对话壳与侧栏；空状态有建议卡片可点入输入框；底部输入区为圆角卡片（与侧栏 Agent 一致），模型选择在输入区左侧；未登录发送应弹登录；对话与产物刷新后应从 IndexedDB 恢复，点 Clear 后清空；应能调用内置工具与远程 HTTP MCP；右侧栏本地 Codex Agent 仍独立可用。
+- Agent Studio：导航 Playground 下有 Agent Studio，进入 `/agent`；页面用 tennda 冷蓝底 + 轻圆角对话壳/侧栏；空状态含 Plan→Tool→Result→Artifact 示意与可点示例；底部输入默认单行、有内容再增高；未登录发送应弹登录；开始任务或本轮有工具时顶栏出现流水线进度（纯文本不显示）；Tools 三项带图标短文案 + MCP 入口；顶栏状态为轻量字标；对话与产物刷新可恢复；可调内置工具与远程 HTTP MCP；右侧本地 Codex Agent 仍独立可用。
 - 首页模型 lineup：底部有 Open Agent Studio 主按钮；分组 Open workbench：Text/Audio → `/agent`，Image/Video → 对应工作台。
 - 首页 hero：标题背后应为缓慢左右漂移的 Token Stream（`attn` / `embed` / `ctx` 等），中心镂空不压字；不再是 ASCII 莫比乌斯环。
 - 品牌 Logo：浏览器标签页应为新蓝色像素风图标（`favicon.png`）；顶栏显示 `/logo.png`（透明底），首页 hero 上方不放 Logo；不再是旧三角 SVG。
@@ -18,13 +20,13 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 提示词库筛选与来源：`admin` 在 `/prompts` 库 Tab 与提示词选择弹窗可见 Category / Tags；非 `admin`（含未登录）不显示这两行筛选，列表与选择弹窗仅 DavidWu GPT Image 2，仍可用搜索。
 - Codex 状态按钮：`admin` 点击打开配置 Agent Tab；非 `admin` 点击应打开右侧 Agent 面板，不应落到 Account。
 - 模型选择器：`admin` 应看到「Tennda Illusion: gpt-image-2」这类「展示名: 实际上游模型名」，并显示厂商图标；非 `admin` 仅见 Tennda 展示名 + 默认 Cpu 图标。
-- 首页模型分组：图片 Tennda Vision、视频 Tennda Motion、文本 Tennda LLM、音频 Tennda Voice；卡片中原旗舰图模为 Tennda Illusion，音频模型展示名为 Tennda Waves。
+- 首页模型分组：图片 Tennda Vision、视频 Tennda Motion、文本 TENNDA AI、音频 Tennda Voice；每类一大卡主推（Illusion / Cinema / Reason / Waves）+ 小卡收紧；Image/Video 卡有封面图，Text 有对话/报告预览，Audio 有波形；卡片默认无四角文档风装饰，悬停再高亮。
 - 提示词库全英：`/prompts` Tab/按钮/弹窗应为英文；卡片标题应为英文（如 Celebrity in real life / title_en），不应再出现「实物+手绘…」等中文 registry 标题；Banana Quicker 默认关闭。
 - 画布权限：`admin` 顶栏/移动端可见「My canvases」，可进入 `/canvas` 与 `/canvas/:id`；非 `admin`（含未登录）导航无画布入口，直接访问应跳到 `/image`。
 - 顶栏齿轮：仅 `admin` 登录后可见右上角 Settings 齿轮；普通用户不应看到该按钮，可用用户图标打开 Account。
-- 顶栏 Hugging Face：桌面一级导航与移动端抽屉均有 Hugging Face 入口；点击应新开 `https://huggingface.co/Tennda`（或 `TENNDA_HUGGINGFACE_URL` 当前值）。
+- 顶栏 Hugging Face：桌面一级导航与移动端抽屉均有 Hugging Face 入口；点击应新开 `https://huggingface.co/ChenXiangXi/Test-SMALL-Model`（首页次按钮同源）。
 - Agent 云端回退对话：未连接本地 Agent 时，右侧面板 Chat 可发消息；应走 `/gw` 的 `gpt-5.4-nano` 流式回复（UI 显示 Tennda Mini）；未登录应先弹登录；点停止应中断；连上本地 Agent 后仍走 Codex。
-- Tennda LLM 故事版：品牌显示为 Tennda LLM；模型下拉仅见 Tennda 显示名，Network 请求 body 仍为真实上游模型 id（如 `gpt-image-2`）；首页为英文自研模型介绍网格；无语言切换按钮且刷新后仍为英文。
+- TENNDA AI 故事版：品牌显示为 TENNDA AI；首页 hero 副文案为 Purpose-built models for text, image, video and audio — connected through one unified agentic platform；模型下拉仅见 Tennda 显示名，Network 请求 body 仍为真实上游模型 id（如 `gpt-image-2`）；首页为英文自研模型介绍网格；无语言切换按钮且刷新后仍为英文。
 - 首页：模型 lineup 下方不再展示 Prompt library 区块；hero 主按钮滚到模型区，次按钮打开 Hugging Face；导航仍可进入 `/prompts`。
 - 首页 hero：CTA 下方显示 Inference network online 与 Singapore | Tokyo | Frankfurt；顶栏 Codex 状态图标为 Cpu 芯片而非 OpenAI。
 - 首页模型 lineup：应按 Image/Video/Text/Audio 分组；顶部有数量统计格；卡片含 focus 标签与 uses chips；底部可进 Image/Video studio。

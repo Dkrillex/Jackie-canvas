@@ -179,6 +179,7 @@ export function AgentChatComposer({
     onAddFiles,
     onRemoveAttachment,
     left,
+    autoGrow = false,
 }: {
     prompt: string;
     attachments?: CanvasAgentChatAttachment[];
@@ -192,13 +193,25 @@ export function AgentChatComposer({
     onAddFiles?: (files: FileList | File[] | null) => void | Promise<void>;
     onRemoveAttachment?: (id: string) => void;
     left?: ReactNode;
+    /** Start as a single line and grow with content (Agent Studio). */
+    autoGrow?: boolean;
 }) {
     const { t } = useI18n();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const canSubmit = !disabled && !sending && Boolean(prompt.trim() || attachments.length);
+
+    useEffect(() => {
+        if (!autoGrow) return;
+        const el = textareaRef.current;
+        if (!el) return;
+        el.style.height = "0px";
+        el.style.height = `${Math.min(Math.max(el.scrollHeight, 36), 128)}px`;
+    }, [autoGrow, prompt]);
+
     return (
         <div className="px-2 pb-2 pt-2" onWheelCapture={(event) => event.stopPropagation()}>
-            <div className="rounded-[24px] border px-3 pb-3 pt-3 shadow-lg" style={{ background: theme.toolbar.panel, borderColor: theme.node.stroke }}>
+            <div className={`rounded-[24px] border px-3 shadow-lg ${autoGrow ? "pb-2.5 pt-2.5" : "pb-3 pt-3"}`} style={{ background: theme.toolbar.panel, borderColor: theme.node.stroke }}>
                 {attachments.length ? (
                     <div className="thin-scrollbar mb-2 flex gap-2 overflow-x-auto pb-1">
                         {attachments.map((item) => (
@@ -214,7 +227,9 @@ export function AgentChatComposer({
                     </div>
                 ) : null}
                 <textarea
+                    ref={textareaRef}
                     value={prompt}
+                    rows={autoGrow ? 1 : undefined}
                     onChange={(event) => onPromptChange(event.target.value)}
                     onPaste={(event) => {
                         if (!onAddFiles) return;
@@ -228,11 +243,15 @@ export function AgentChatComposer({
                         event.preventDefault();
                         void onSubmit();
                     }}
-                    className="thin-scrollbar max-h-32 min-h-20 w-full resize-none border-0 bg-transparent px-1 py-1 text-sm leading-5 outline-none placeholder:opacity-45"
+                    className={
+                        autoGrow
+                            ? "thin-scrollbar max-h-32 min-h-9 w-full resize-none overflow-y-auto border-0 bg-transparent px-1 py-1.5 text-sm leading-5 outline-none placeholder:opacity-45"
+                            : "thin-scrollbar max-h-32 min-h-20 w-full resize-none border-0 bg-transparent px-1 py-1 text-sm leading-5 outline-none placeholder:opacity-45"
+                    }
                     style={{ color: theme.node.text }}
                     placeholder={placeholder}
                 />
-                <div className="mt-2 flex items-center justify-between gap-2">
+                <div className={`flex items-center justify-between gap-2 ${autoGrow ? "mt-1.5" : "mt-2"}`}>
                     <div className="flex min-w-0 items-center gap-1">
                         {onAddFiles ? (
                             <>

@@ -1,4 +1,4 @@
-import { Bot, ChevronDown, Cpu, Menu } from "lucide-react";
+import { Bot, Check, ChevronDown, Cpu, Menu } from "lucide-react";
 import { Button, Dropdown, Tooltip } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
@@ -8,6 +8,7 @@ import {
     TENNDA_CAPABILITY_ORDER,
     TENNDA_HUGGINGFACE_URL,
     TENNDA_MODEL_CATALOG,
+    getTenndaModelBySlug,
     tenndaModelDetailPath,
     type TenndaModelCapability,
 } from "@/constant/tennda-models";
@@ -23,11 +24,11 @@ import { useUserStore } from "@/stores/use-user-store";
 
 const SCROLL_PILL_THRESHOLD = 24;
 
-const MODEL_FAMILY_LABEL: Record<TenndaModelCapability, MessageKey> = {
-    image: "home.models.group.imageTitle",
-    video: "home.models.group.videoTitle",
-    text: "home.models.group.textTitle",
-    audio: "home.models.group.audioTitle",
+const MODEL_CAPABILITY_LABEL: Record<TenndaModelCapability, MessageKey> = {
+    image: "home.models.capability.image",
+    video: "home.models.capability.video",
+    text: "home.models.capability.text",
+    audio: "home.models.capability.audio",
 };
 
 export function AppTopNav() {
@@ -51,10 +52,14 @@ export function AppTopNav() {
     const modelsActive = pathname.startsWith("/models");
     const developerActive = pathname.startsWith("/developer");
     const playgroundActive = Boolean(activeToolSlug);
+    const activeModelSlug = pathname.match(/^\/models\/([^/]+)/)?.[1];
+    const activeModel = activeModelSlug ? getTenndaModelBySlug(activeModelSlug) : undefined;
 
     const onScrollCapture = useEffectEvent((event: Event) => {
         const target = event.target;
         if (!(target instanceof HTMLElement)) return;
+        // Only the marked page scroller drives pill nav — ignore nested workbench panels.
+        if (!target.hasAttribute("data-app-page-scroll")) return;
         if (!target.closest("[data-app-scroll-root]")) return;
         setScrolled(target.scrollTop > SCROLL_PILL_THRESHOLD);
     });
@@ -68,7 +73,7 @@ export function AppTopNav() {
     useEffect(() => {
         setScrolled(false);
         const root = document.querySelector("[data-app-scroll-root]");
-        const scroller = root?.querySelector<HTMLElement>(".overflow-y-auto, [data-scroll-container]");
+        const scroller = root?.querySelector<HTMLElement>("[data-app-page-scroll]");
         if (scroller) setScrolled(scroller.scrollTop > SCROLL_PILL_THRESHOLD);
     }, [pathname]);
 
@@ -78,20 +83,33 @@ export function AppTopNav() {
     }, [onScrollCapture]);
 
     const modelsMenu = {
+        selectedKeys: [activeModelSlug, activeModel?.capability].filter(Boolean) as string[],
+        className: "min-w-[9.5rem]",
         items: TENNDA_CAPABILITY_ORDER.map((capability) => {
             const models = TENNDA_MODEL_CATALOG.filter((model) => model.capability === capability);
+            const capabilityActive = activeModel?.capability === capability;
             return {
                 key: capability,
-                label: t(MODEL_FAMILY_LABEL[capability]),
-                children: models.map((model) => ({
-                    key: model.slug,
-                    label: (
-                        <Link to={tenndaModelDetailPath(model.slug)} className="block min-w-[11rem]">
-                            <div className="font-medium text-stone-900 dark:text-stone-100">{model.displayName}</div>
-                            <div className="text-[11px] text-stone-400">{model.focus}</div>
-                        </Link>
-                    ),
-                })),
+                label: (
+                    <span className={cn(capabilityActive && "font-semibold text-primary")}>{t(MODEL_CAPABILITY_LABEL[capability])}</span>
+                ),
+                children: models.map((model) => {
+                    const selected = model.slug === activeModelSlug;
+                    return {
+                        key: model.slug,
+                        label: (
+                            <Link to={tenndaModelDetailPath(model.slug)} className="flex min-w-[12.5rem] items-start gap-2 py-0.5">
+                                <div className="min-w-0 flex-1">
+                                    <div className={cn("truncate text-sm", selected ? "font-semibold text-primary" : "font-medium text-stone-900 dark:text-stone-100")}>
+                                        {model.displayName}
+                                    </div>
+                                    <div className="text-[11px] text-stone-400">{model.focus}</div>
+                                </div>
+                                {selected ? <Check className="mt-0.5 size-3.5 shrink-0 text-primary" /> : null}
+                            </Link>
+                        ),
+                    };
+                }),
             };
         }),
     };
@@ -139,8 +157,8 @@ export function AppTopNav() {
                     >
                         <div className="flex min-w-0 items-center justify-self-start">
                             <Link to="/" className="flex h-full shrink-0 items-center gap-2.5 text-sm font-semibold leading-none tracking-tight text-stone-950 transition hover:opacity-80 dark:text-stone-100">
-                                <img src="/logo.png" alt="Tennda LLM" className={cn("w-auto rounded-sm transition-all", scrolled ? "h-6" : "h-7")} />
-                                <span className={cn("font-medium", scrolled ? "text-sm" : "text-base")}>Tennda LLM</span>
+                                <img src="/logo.png" alt="TENNDA AI" className={cn("w-auto rounded-sm transition-all", scrolled ? "h-6" : "h-7")} />
+                                <span className={cn("font-medium", scrolled ? "text-sm" : "text-base")}>TENNDA AI</span>
                             </Link>
                             <button
                                 type="button"

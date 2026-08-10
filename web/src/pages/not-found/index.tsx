@@ -7,7 +7,7 @@ export default function NotFound() {
     const { t } = useI18n();
     return (
         <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-            <main className="tennda-page-bg flex h-full min-h-0 items-center justify-center overflow-y-auto px-6 py-10">
+            <main data-app-page-scroll className="tennda-page-bg flex h-full min-h-0 items-center justify-center overflow-y-auto px-6 py-10">
                 <section className="w-full max-w-md text-center">
                     <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-lg border border-stone-200 bg-white text-2xl font-semibold shadow-sm dark:border-stone-800 dark:bg-stone-900">404</div>
                     <h1 className="text-3xl font-semibold tracking-normal">{t("notFound.title")}</h1>

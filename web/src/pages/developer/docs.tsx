@@ -50,7 +50,7 @@ export default function DeveloperDocsPage() {
     const contract = tenndaApiContract(capability, apiId);
 
     return (
-        <main className="tennda-page-bg h-full overflow-y-auto">
+        <main data-app-page-scroll className="tennda-page-bg h-full overflow-y-auto">
             <div className="mx-auto max-w-3xl px-4 py-10 md:px-6 md:py-12">
                 <div className="font-mono text-[11px] tracking-[0.22em] text-stone-400 uppercase dark:text-stone-500">Developer · API</div>
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">{t("developer.docs.title")}</h1>

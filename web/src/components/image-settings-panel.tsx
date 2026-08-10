@@ -1,9 +1,11 @@
+import { ChevronDown } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { ConfigProvider, Switch } from "antd";
 
 import { type CanvasTheme } from "@/lib/canvas-theme";
 import type { AiConfig } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
+import { cn } from "@/lib/utils";
 
 const DIMENSION_STEP = 16;
 
@@ -33,11 +35,23 @@ type ImageSettingsPanelProps = {
     className?: string;
     maxCount?: number;
     quickCount?: number;
+    /** When true, size / aspect / count / transparent sit behind a collapsed Advanced toggle. */
+    collapsibleAdvanced?: boolean;
 };
 
-export function ImageSettingsPanel({ config, onConfigChange, theme, showTitle = true, className = "w-[320px] space-y-4 rounded-2xl px-1 py-0.5", maxCount = 15, quickCount = 10 }: ImageSettingsPanelProps) {
+export function ImageSettingsPanel({
+    config,
+    onConfigChange,
+    theme,
+    showTitle = true,
+    className = "w-[320px] space-y-4 rounded-2xl px-1 py-0.5",
+    maxCount = 15,
+    quickCount = 10,
+    collapsibleAdvanced = false,
+}: ImageSettingsPanelProps) {
     const { t } = useI18n();
     const [snapDimensionToStep, setSnapDimensionToStep] = useState(true);
+    const [advancedOpen, setAdvancedOpen] = useState(!collapsibleAdvanced);
     const quality = config.quality || "auto";
     const count = Math.max(1, Math.min(maxCount, Math.floor(Math.abs(Number(config.count)) || 1)));
     const activeSize = config.size || "auto";
@@ -61,6 +75,69 @@ export function ImageSettingsPanel({ config, onConfigChange, theme, showTitle = 
         onConfigChange("size", `${alignDimension(width, snapDimensionToStep)}x${alignDimension(height, snapDimensionToStep)}`);
     };
 
+    const advancedBody = (
+        <>
+            <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-3">
+                    <SettingTitle color={theme.node.muted}>{t("image.size")}</SettingTitle>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium" style={{ color: theme.node.muted }}>
+                            {t("image.snap16")}
+                        </span>
+                        <span title={t("image.snap16Hint")} onMouseDown={(event) => event.stopPropagation()}>
+                            <Switch size="small" checked={snapDimensionToStep} onChange={setSnapDimensionToStep} />
+                        </span>
+                    </div>
+                </div>
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2.5">
+                    <DimensionInput prefix="W" value={dimensions.width} disabled={activeSize === "auto"} theme={theme} alignToStep={snapDimensionToStep} onChange={(value) => updateDimension("width", value)} />
+                    <span className="text-lg opacity-45">↔</span>
+                    <DimensionInput prefix="H" value={dimensions.height} disabled={activeSize === "auto"} theme={theme} alignToStep={snapDimensionToStep} onChange={(value) => updateDimension("height", value)} />
+                </div>
+            </div>
+            <div className="space-y-2.5">
+                <SettingTitle color={theme.node.muted}>{t("image.aspect")}</SettingTitle>
+                <div className="grid grid-cols-4 gap-2.5">
+                    {aspectOptions.map((item) => (
+                        <button
+                            key={item.value}
+                            type="button"
+                            className="flex h-[72px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border bg-transparent text-sm transition hover:opacity-80"
+                            style={{ borderColor: selectedAspect?.value === item.value ? theme.node.text : theme.node.stroke, background: "transparent", color: theme.node.text }}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onClick={() => selectAspect(item.value)}
+                        >
+                            <AspectIcon type={item.icon} width={item.width} height={item.height} color={theme.node.text} />
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                    <SettingTitle color={theme.node.muted}>{t("image.transparentBg")}</SettingTitle>
+                    <div className="text-xs" style={{ color: theme.node.muted, opacity: 0.75 }}>
+                        {t("image.transparentBgHint")}
+                    </div>
+                </div>
+                <span onMouseDown={(event) => event.stopPropagation()}>
+                    <Switch size="small" checked={transparentBackground} onChange={(checked) => onConfigChange("background", checked ? "transparent" : "")} />
+                </span>
+            </div>
+            <div className="space-y-2.5">
+                <SettingTitle color={theme.node.muted}>{t("image.count")}</SettingTitle>
+                <div className="grid grid-cols-4 gap-2.5">
+                    {Array.from({ length: quickCount }, (_, index) => index + 1).map((value) => (
+                        <OptionPill key={value} selected={count === value} theme={theme} onClick={() => onConfigChange("count", String(value))}>
+                            {t("image.countUnit", { n: value })}
+                        </OptionPill>
+                    ))}
+                    <CountInput value={count} max={maxCount} theme={theme} onChange={(value) => onConfigChange("count", String(value || 1))} />
+                </div>
+            </div>
+        </>
+    );
+
     return (
         <ImageSettingsTheme theme={theme}>
             <div
@@ -83,64 +160,31 @@ export function ImageSettingsPanel({ config, onConfigChange, theme, showTitle = 
                         ))}
                     </div>
                 </div>
-                <div className="space-y-2.5">
-                    <div className="flex items-center justify-between gap-3">
-                        <SettingTitle color={theme.node.muted}>{t("image.size")}</SettingTitle>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium" style={{ color: theme.node.muted }}>
-                                {t("image.snap16")}
+                {collapsibleAdvanced ? (
+                    <div className="space-y-3">
+                        <button
+                            type="button"
+                            aria-expanded={advancedOpen}
+                            className="flex w-full items-center justify-between gap-2 rounded-lg py-1 text-left text-sm font-medium transition hover:opacity-80"
+                            style={{ color: theme.node.text }}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onClick={() => setAdvancedOpen((value) => !value)}
+                        >
+                            <span className="min-w-0">
+                                <span className="block">{t("image.advanced")}</span>
+                                {!advancedOpen ? (
+                                    <span className="mt-0.5 block truncate text-xs font-normal opacity-60">
+                                        {[imageSizeLabel(activeSize), t("image.countUnit", { n: count }), transparentBackground ? t("image.transparent") : null].filter(Boolean).join(" · ")}
+                                    </span>
+                                ) : null}
                             </span>
-                            <span title={t("image.snap16Hint")} onMouseDown={(event) => event.stopPropagation()}>
-                                <Switch size="small" checked={snapDimensionToStep} onChange={setSnapDimensionToStep} />
-                            </span>
-                        </div>
+                            <ChevronDown className={cn("size-4 shrink-0 opacity-60 transition-transform", advancedOpen && "rotate-180")} />
+                        </button>
+                        {advancedOpen ? <div className="space-y-4">{advancedBody}</div> : null}
                     </div>
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2.5">
-                        <DimensionInput prefix="W" value={dimensions.width} disabled={activeSize === "auto"} theme={theme} alignToStep={snapDimensionToStep} onChange={(value) => updateDimension("width", value)} />
-                        <span className="text-lg opacity-45">↔</span>
-                        <DimensionInput prefix="H" value={dimensions.height} disabled={activeSize === "auto"} theme={theme} alignToStep={snapDimensionToStep} onChange={(value) => updateDimension("height", value)} />
-                    </div>
-                </div>
-                <div className="space-y-2.5">
-                    <SettingTitle color={theme.node.muted}>{t("image.aspect")}</SettingTitle>
-                    <div className="grid grid-cols-4 gap-2.5">
-                        {aspectOptions.map((item) => (
-                            <button
-                                key={item.value}
-                                type="button"
-                                className="flex h-[72px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border bg-transparent text-sm transition hover:opacity-80"
-                                style={{ borderColor: selectedAspect?.value === item.value ? theme.node.text : theme.node.stroke, background: "transparent", color: theme.node.text }}
-                                onMouseDown={(event) => event.stopPropagation()}
-                                onClick={() => selectAspect(item.value)}
-                            >
-                                <AspectIcon type={item.icon} width={item.width} height={item.height} color={theme.node.text} />
-                                <span>{item.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                    <div className="space-y-0.5">
-                        <SettingTitle color={theme.node.muted}>Transparent background</SettingTitle>
-                        <div className="text-xs" style={{ color: theme.node.muted, opacity: 0.75 }}>
-                            Generate images with a transparent background (available on some models only)
-                        </div>
-                    </div>
-                    <span onMouseDown={(event) => event.stopPropagation()}>
-                        <Switch size="small" checked={transparentBackground} onChange={(checked) => onConfigChange("background", checked ? "transparent" : "")} />
-                    </span>
-                </div>
-                <div className="space-y-2.5">
-                    <SettingTitle color={theme.node.muted}>{t("image.count")}</SettingTitle>
-                    <div className="grid grid-cols-4 gap-2.5">
-                        {Array.from({ length: quickCount }, (_, index) => index + 1).map((value) => (
-                            <OptionPill key={value} selected={count === value} theme={theme} onClick={() => onConfigChange("count", String(value))}>
-                                {t("image.countUnit", { n: value })}
-                            </OptionPill>
-                        ))}
-                        <CountInput value={count} max={maxCount} theme={theme} onChange={(value) => onConfigChange("count", String(value || 1))} />
-                    </div>
-                </div>
+                ) : (
+                    advancedBody
+                )}
             </div>
         </ImageSettingsTheme>
     );

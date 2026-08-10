@@ -87,7 +87,7 @@ export default function PromptsPage() {
 
     return (
         <div className="flex h-full flex-col overflow-hidden bg-background text-stone-800 dark:text-stone-100">
-            <main className="tennda-page-bg min-h-0 flex-1 overflow-y-auto px-6 py-8" onScroll={handleListScroll}>
+            <main data-app-page-scroll className="tennda-page-bg min-h-0 flex-1 overflow-y-auto px-6 py-8" onScroll={handleListScroll}>
                 <div className="mx-auto max-w-7xl pb-8">
                     <div className="flex flex-wrap items-end justify-between gap-4">
                         <div>

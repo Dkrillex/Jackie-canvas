@@ -189,7 +189,7 @@ export default function AssetsPage() {
 
     return (
         <div className="flex h-full flex-col overflow-hidden bg-background text-stone-900 dark:text-stone-100">
-            <main className="tennda-page-bg min-h-0 flex-1 overflow-y-auto px-6 py-8">
+            <main data-app-page-scroll className="tennda-page-bg min-h-0 flex-1 overflow-y-auto px-6 py-8">
                 <div className="pb-8">
                     <div className="mx-auto max-w-5xl text-center">
                         <h1 className="text-4xl font-semibold tracking-tight text-stone-950 dark:text-stone-100">{t("page.assetsTitle")}</h1>

@@ -7,7 +7,7 @@ import type { CanvasExportAsset, CanvasExportFile } from "@/types/canvas-export"
 import type { CanvasProject } from "@/stores/canvas/use-canvas-store";
 import { CanvasNodeType, type CanvasNodeData } from "@/types/canvas";
 
-export async function exportCanvasProjects(projects: CanvasProject[], fileName = "Tennda LLM") {
+export async function exportCanvasProjects(projects: CanvasProject[], fileName = "TENNDA AI") {
     const zipFiles: { name: string; data: BlobPart }[] = [];
     const exportedProjects = await Promise.all(
         projects.map(async (project) => {

@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { Drawer } from "antd";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { filterPlaygroundTools, type NavigationToolSlug } from "@/constant/navigation-tools";
 import {
@@ -15,11 +15,11 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 
-const MODEL_FAMILY_LABEL: Record<TenndaModelCapability, MessageKey> = {
-    image: "home.models.group.imageTitle",
-    video: "home.models.group.videoTitle",
-    text: "home.models.group.textTitle",
-    audio: "home.models.group.audioTitle",
+const MODEL_CAPABILITY_LABEL: Record<TenndaModelCapability, MessageKey> = {
+    image: "home.models.capability.image",
+    video: "home.models.capability.video",
+    text: "home.models.capability.text",
+    audio: "home.models.capability.audio",
 };
 
 type MobileNavDrawerProps = {
@@ -30,9 +30,11 @@ type MobileNavDrawerProps = {
 
 export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDrawerProps) {
     const { t } = useI18n();
+    const { pathname } = useLocation();
     const user = useUserStore((state) => state.user);
     const isAdmin = (user?.username || "").trim().toLowerCase() === "admin";
     const playgroundTools = filterPlaygroundTools({ isAdmin, loggedIn: Boolean(user) });
+    const activeModelSlug = pathname.match(/^\/models\/([^/]+)/)?.[1];
 
     return (
         <Drawer title={t("nav.drawer")} placement="left" size={300} open={open} onClose={onClose} className="md:hidden">
@@ -42,14 +44,19 @@ export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDraw
                         const models = TENNDA_MODEL_CATALOG.filter((model) => model.capability === capability);
                         return (
                             <div key={capability} className="mb-2 last:mb-0">
-                                <div className="px-3 py-1.5 text-xs font-medium text-stone-500 dark:text-stone-400">{t(MODEL_FAMILY_LABEL[capability])}</div>
+                                <div className="px-3 py-1.5 text-xs font-medium tracking-[0.04em] text-stone-500 uppercase dark:text-stone-400">
+                                    {t(MODEL_CAPABILITY_LABEL[capability])}
+                                </div>
                                 <div className="space-y-0.5">
-                                    {models.map((model) => (
-                                        <Link key={model.slug} to={tenndaModelDetailPath(model.slug)} onClick={onClose} className={linkClass(false)}>
-                                            <span className="truncate">{model.displayName}</span>
-                                            <span className="ml-auto text-[11px] text-stone-400">{model.focus}</span>
-                                        </Link>
-                                    ))}
+                                    {models.map((model) => {
+                                        const active = model.slug === activeModelSlug;
+                                        return (
+                                            <Link key={model.slug} to={tenndaModelDetailPath(model.slug)} onClick={onClose} className={linkClass(active)}>
+                                                <span className="truncate">{model.displayName}</span>
+                                                <span className={cn("ml-auto text-[11px]", active ? "text-primary" : "text-stone-400")}>{model.focus}</span>
+                                            </Link>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         );

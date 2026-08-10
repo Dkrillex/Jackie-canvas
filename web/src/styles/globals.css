@@ -296,18 +296,65 @@
         border-bottom: 1px solid;
     }
 
-    .group:hover.home-tech-corners::before,
-    .group:hover.home-tech-corners::after,
-    .group:hover .home-tech-corners::before,
-    .group:hover .home-tech-corners::after {
+    /* Only the element that owns home-tech-corners, not nested cards inside a .group */
+    .home-tech-corners:hover::before,
+    .home-tech-corners:hover::after {
         border-color: #0175da;
     }
 
-    .dark .group:hover.home-tech-corners::before,
-    .dark .group:hover.home-tech-corners::after,
-    .dark .group:hover .home-tech-corners::before,
-    .dark .group:hover .home-tech-corners::after {
+    .dark .home-tech-corners:hover::before,
+    .dark .home-tech-corners:hover::after {
         border-color: #66fff9;
+    }
+
+    @keyframes tts-wave {
+        0%,
+        100% {
+            transform: scaleY(0.32);
+            opacity: 0.45;
+        }
+        50% {
+            transform: scaleY(1);
+            opacity: 1;
+        }
+    }
+
+    .tts-wave-stage {
+        position: relative;
+        overflow: hidden;
+        border-radius: 14px;
+        border: 1px solid rgba(102, 255, 249, 0.14);
+        background:
+            radial-gradient(120% 80% at 50% 50%, rgba(1, 117, 218, 0.22), transparent 70%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.95));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .tts-wave-stage::before {
+        content: "";
+        pointer-events: none;
+        position: absolute;
+        inset: 35% 12%;
+        border-radius: 999px;
+        background: radial-gradient(closest-side, rgba(102, 255, 249, 0.22), transparent 75%);
+        filter: blur(10px);
+    }
+
+    .tts-wave-bar {
+        display: block;
+        width: 2.5px;
+        flex: 0 0 auto;
+        border-radius: 999px;
+        transform-origin: center;
+        background: linear-gradient(180deg, #9afcff 0%, #66fff9 35%, #0175da 100%);
+        box-shadow: 0 0 10px rgba(102, 255, 249, 0.35);
+        animation: tts-wave 1.25s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+        will-change: transform, opacity;
+    }
+
+    .model-card:hover .tts-wave-bar {
+        animation-duration: 0.85s;
+        box-shadow: 0 0 14px rgba(102, 255, 249, 0.55);
     }
 
     .hide-scrollbar {

@@ -1,9 +1,11 @@
-import { type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { Switch } from "antd";
 
 import { ImageSettingsTheme } from "@/components/image-settings-panel";
 import { boolConfig, isSeedanceFastModel, isSeedanceVideoConfig, normalizeSeedanceDuration, normalizeSeedanceRatio, normalizeSeedanceResolution, seedanceDurationOptions, seedancePixelLabel, seedanceRatioOptions, seedanceResolutionOptions } from "@/lib/seedance-video";
 import { type CanvasTheme } from "@/lib/canvas-theme";
+import { cn } from "@/lib/utils";
 import { modelOptionName, type AiConfig } from "@/stores/use-config-store";
 import { useI18n, useLocaleStore } from "@/stores/use-locale-store";
 
@@ -33,22 +35,70 @@ type VideoSettingsPanelProps = {
     theme: CanvasTheme;
     showTitle?: boolean;
     className?: string;
+    /** When true, size / duration / output sit behind a collapsed Advanced toggle. */
+    collapsibleAdvanced?: boolean;
 };
 
-export function VideoSettingsPanel({ config, onConfigChange, theme, showTitle = true, className = "w-[320px] space-y-4 rounded-2xl px-1 py-0.5" }: VideoSettingsPanelProps) {
-    const { t } = useI18n();
-    if (isSeedanceVideoConfig(config)) {
-        return <SeedanceVideoSettingsPanel config={config} onConfigChange={onConfigChange} theme={theme} showTitle={showTitle} className={className} />;
+export function VideoSettingsPanel(props: VideoSettingsPanelProps) {
+    if (isSeedanceVideoConfig(props.config)) {
+        return <SeedanceVideoSettingsPanel {...props} />;
     }
+    return <StandardVideoSettingsPanel {...props} />;
+}
 
+function StandardVideoSettingsPanel({ config, onConfigChange, theme, showTitle = true, className = "w-[320px] space-y-4 rounded-2xl px-1 py-0.5", collapsibleAdvanced = false }: VideoSettingsPanelProps) {
+    const { t } = useI18n();
     const seconds = config.videoSeconds || "6";
     const size = normalizeVideoSizeValue(config.size);
     const dimensions = readSizeDimensions(size);
     const resolution = normalizeVideoResolutionValue(config.vquality);
+    const [advancedOpen, setAdvancedOpen] = useState(!collapsibleAdvanced);
     const updateDimension = (key: "width" | "height", value: number | null) => {
         const next = Math.max(1, Math.floor(value || dimensions[key] || 720));
         onConfigChange("size", `${key === "width" ? next : dimensions.width}x${key === "height" ? next : dimensions.height}`);
     };
+
+    const advancedBody = (
+        <>
+            <SettingGroup title={t("video.size")} color={theme.node.muted}>
+                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2.5">
+                    <DimensionInput prefix="W" value={dimensions.width} disabled={size === "auto"} theme={theme} onChange={(value) => updateDimension("width", value)} />
+                    <span className="text-lg opacity-45">↔</span>
+                    <DimensionInput prefix="H" value={dimensions.height} disabled={size === "auto"} theme={theme} onChange={(value) => updateDimension("height", value)} />
+                </div>
+                <div className="grid grid-cols-3 gap-2.5">
+                    {sizeOptionDefs.map((item) => (
+                        <button
+                            key={item.value}
+                            type="button"
+                            className="flex h-[78px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border bg-transparent text-sm transition hover:opacity-80"
+                            style={{ borderColor: size === item.value ? theme.node.text : theme.node.stroke, color: theme.node.text }}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onClick={() => onConfigChange("size", item.value)}
+                        >
+                            <SizePreview width={item.width} height={item.height} color={theme.node.text} />
+                            <span>{item.labelKey ? t(item.labelKey) : "auto"}</span>
+                            {item.value === "auto" ? null : (
+                                <span className="text-[11px] leading-none opacity-55">
+                                    {item.value}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            </SettingGroup>
+            <SettingGroup title={t("video.seconds")} color={theme.node.muted}>
+                <div className="grid grid-cols-3 gap-2.5">
+                    {secondOptions.map((value) => (
+                        <OptionPill key={value} selected={seconds === String(value)} theme={theme} onClick={() => onConfigChange("videoSeconds", String(value))}>
+                            {value}s
+                        </OptionPill>
+                    ))}
+                    <NumberInput value={seconds} min={1} max={20} theme={theme} onChange={(value) => onConfigChange("videoSeconds", value)} />
+                </div>
+            </SettingGroup>
+        </>
+    );
 
     return (
         <ImageSettingsTheme theme={theme}>
@@ -64,49 +114,19 @@ export function VideoSettingsPanel({ config, onConfigChange, theme, showTitle = 
                         <ResolutionInput value={resolution} theme={theme} onChange={(value) => onConfigChange("vquality", value)} />
                     </div>
                 </SettingGroup>
-                <SettingGroup title={t("video.size")} color={theme.node.muted}>
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2.5">
-                        <DimensionInput prefix="W" value={dimensions.width} disabled={size === "auto"} theme={theme} onChange={(value) => updateDimension("width", value)} />
-                        <span className="text-lg opacity-45">↔</span>
-                        <DimensionInput prefix="H" value={dimensions.height} disabled={size === "auto"} theme={theme} onChange={(value) => updateDimension("height", value)} />
-                    </div>
-                    <div className="grid grid-cols-3 gap-2.5">
-                        {sizeOptionDefs.map((item) => (
-                            <button
-                                key={item.value}
-                                type="button"
-                                className="flex h-[78px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border bg-transparent text-sm transition hover:opacity-80"
-                                style={{ borderColor: size === item.value ? theme.node.text : theme.node.stroke, color: theme.node.text }}
-                                onMouseDown={(event) => event.stopPropagation()}
-                                onClick={() => onConfigChange("size", item.value)}
-                            >
-                                <SizePreview width={item.width} height={item.height} color={theme.node.text} />
-                                <span>{item.labelKey ? t(item.labelKey) : "auto"}</span>
-                                {item.value === "auto" ? null : (
-                                    <span className="text-[11px] leading-none opacity-55">
-                                        {item.value}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
-                    </div>
-                </SettingGroup>
-                <SettingGroup title={t("video.seconds")} color={theme.node.muted}>
-                    <div className="grid grid-cols-3 gap-2.5">
-                        {secondOptions.map((value) => (
-                            <OptionPill key={value} selected={seconds === String(value)} theme={theme} onClick={() => onConfigChange("videoSeconds", String(value))}>
-                                {value}s
-                            </OptionPill>
-                        ))}
-                        <NumberInput value={seconds} min={1} max={20} theme={theme} onChange={(value) => onConfigChange("videoSeconds", value)} />
-                    </div>
-                </SettingGroup>
+                {collapsibleAdvanced ? (
+                    <AdvancedToggle open={advancedOpen} onToggle={() => setAdvancedOpen((value) => !value)} summary={[videoSizeLabel(size), videoSecondsLabel(seconds)].join(" · ")} theme={theme}>
+                        {advancedBody}
+                    </AdvancedToggle>
+                ) : (
+                    advancedBody
+                )}
             </div>
         </ImageSettingsTheme>
     );
 }
 
-function SeedanceVideoSettingsPanel({ config, onConfigChange, theme, showTitle, className }: VideoSettingsPanelProps) {
+function SeedanceVideoSettingsPanel({ config, onConfigChange, theme, showTitle = true, className = "w-[320px] space-y-4 rounded-2xl px-1 py-0.5", collapsibleAdvanced = false }: VideoSettingsPanelProps) {
     const { t } = useI18n();
     const model = modelOptionName(config.model || config.videoModel);
     const resolution = normalizeSeedanceResolution(config.vquality, model);
@@ -114,6 +134,46 @@ function SeedanceVideoSettingsPanel({ config, onConfigChange, theme, showTitle, 
     const duration = normalizeSeedanceDuration(config.videoSeconds);
     const generateAudio = boolConfig(config.videoGenerateAudio, true);
     const watermark = boolConfig(config.videoWatermark, false);
+    const [advancedOpen, setAdvancedOpen] = useState(!collapsibleAdvanced);
+
+    const advancedBody = (
+        <>
+            <SettingGroup title={t("video.ratio")} color={theme.node.muted}>
+                <div className="grid grid-cols-3 gap-2.5">
+                    {seedanceRatioOptions.map((item) => (
+                        <button
+                            key={item.value}
+                            type="button"
+                            className="flex h-[68px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border bg-transparent px-1 text-sm transition hover:opacity-80"
+                            style={{ borderColor: ratio === item.value ? theme.node.text : theme.node.stroke, color: theme.node.text }}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onClick={() => onConfigChange("size", item.value)}
+                        >
+                            <SizePreview width={ratioPreview(item.value).width} height={ratioPreview(item.value).height} color={theme.node.text} />
+                            <span>{item.labelKey ? t(item.labelKey) : "auto"}</span>
+                            <span className="text-[10px] leading-none opacity-55">{item.value === "adaptive" ? "adaptive" : seedancePixelLabel(resolution, item.value)}</span>
+                        </button>
+                    ))}
+                </div>
+            </SettingGroup>
+            <SettingGroup title={t("video.duration")} color={theme.node.muted}>
+                <div className="grid grid-cols-4 gap-2.5">
+                    {seedanceDurationOptions.map((value) => (
+                        <OptionPill key={value} selected={duration === value} theme={theme} onClick={() => onConfigChange("videoSeconds", String(value))}>
+                            {value === -1 ? t("video.smart") : `${value}s`}
+                        </OptionPill>
+                    ))}
+                </div>
+                <NumberInput value={String(duration)} min={-1} max={15} theme={theme} onChange={(value) => onConfigChange("videoSeconds", value)} />
+            </SettingGroup>
+            <SettingGroup title={t("video.output")} color={theme.node.muted}>
+                <div className="grid gap-2 rounded-xl border p-2.5" style={{ borderColor: theme.node.stroke }}>
+                    <SwitchRow label={t("video.generateAudio")} checked={generateAudio} theme={theme} onChange={(checked) => onConfigChange("videoGenerateAudio", String(checked))} />
+                    <SwitchRow label={t("video.watermark")} checked={watermark} theme={theme} onChange={(checked) => onConfigChange("videoWatermark", String(checked))} />
+                </div>
+            </SettingGroup>
+        </>
+    );
 
     return (
         <ImageSettingsTheme theme={theme}>
@@ -132,42 +192,43 @@ function SeedanceVideoSettingsPanel({ config, onConfigChange, theme, showTitle, 
                     </div>
                     {isSeedanceFastModel(model) ? <div className="text-[11px] leading-4 opacity-55">{t("video.fastNo1080")}</div> : null}
                 </SettingGroup>
-                <SettingGroup title={t("video.ratio")} color={theme.node.muted}>
-                    <div className="grid grid-cols-3 gap-2.5">
-                        {seedanceRatioOptions.map((item) => (
-                            <button
-                                key={item.value}
-                                type="button"
-                                className="flex h-[68px] cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border bg-transparent px-1 text-sm transition hover:opacity-80"
-                                style={{ borderColor: ratio === item.value ? theme.node.text : theme.node.stroke, color: theme.node.text }}
-                                onMouseDown={(event) => event.stopPropagation()}
-                                onClick={() => onConfigChange("size", item.value)}
-                            >
-                                <SizePreview width={ratioPreview(item.value).width} height={ratioPreview(item.value).height} color={theme.node.text} />
-                                <span>{item.labelKey ? t(item.labelKey) : "auto"}</span>
-                                <span className="text-[10px] leading-none opacity-55">{item.value === "adaptive" ? "adaptive" : seedancePixelLabel(resolution, item.value)}</span>
-                            </button>
-                        ))}
-                    </div>
-                </SettingGroup>
-                <SettingGroup title={t("video.duration")} color={theme.node.muted}>
-                    <div className="grid grid-cols-4 gap-2.5">
-                        {seedanceDurationOptions.map((value) => (
-                            <OptionPill key={value} selected={duration === value} theme={theme} onClick={() => onConfigChange("videoSeconds", String(value))}>
-                                {value === -1 ? t("video.smart") : `${value}s`}
-                            </OptionPill>
-                        ))}
-                    </div>
-                    <NumberInput value={String(duration)} min={-1} max={15} theme={theme} onChange={(value) => onConfigChange("videoSeconds", value)} />
-                </SettingGroup>
-                <SettingGroup title={t("video.output")} color={theme.node.muted}>
-                    <div className="grid gap-2 rounded-xl border p-2.5" style={{ borderColor: theme.node.stroke }}>
-                        <SwitchRow label={t("video.generateAudio")} checked={generateAudio} theme={theme} onChange={(checked) => onConfigChange("videoGenerateAudio", String(checked))} />
-                        <SwitchRow label={t("video.watermark")} checked={watermark} theme={theme} onChange={(checked) => onConfigChange("videoWatermark", String(checked))} />
-                    </div>
-                </SettingGroup>
+                {collapsibleAdvanced ? (
+                    <AdvancedToggle
+                        open={advancedOpen}
+                        onToggle={() => setAdvancedOpen((value) => !value)}
+                        summary={[videoSizeLabel(ratio), videoSecondsLabel(String(duration)), generateAudio ? t("video.generateAudio") : null].filter(Boolean).join(" · ")}
+                        theme={theme}
+                    >
+                        {advancedBody}
+                    </AdvancedToggle>
+                ) : (
+                    advancedBody
+                )}
             </div>
         </ImageSettingsTheme>
+    );
+}
+
+function AdvancedToggle({ open, onToggle, summary, theme, children }: { open: boolean; onToggle: () => void; summary: string; theme: CanvasTheme; children: ReactNode }) {
+    const { t } = useI18n();
+    return (
+        <div className="space-y-3">
+            <button
+                type="button"
+                aria-expanded={open}
+                className="flex w-full items-center justify-between gap-2 rounded-lg py-1 text-left text-sm font-medium transition hover:opacity-80"
+                style={{ color: theme.node.text }}
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={onToggle}
+            >
+                <span className="min-w-0">
+                    <span className="block">{t("image.advanced")}</span>
+                    {!open ? <span className="mt-0.5 block truncate text-xs font-normal opacity-60">{summary}</span> : null}
+                </span>
+                <ChevronDown className={cn("size-4 shrink-0 opacity-60 transition-transform", open && "rotate-180")} />
+            </button>
+            {open ? <div className="space-y-4">{children}</div> : null}
+        </div>
     );
 }
 

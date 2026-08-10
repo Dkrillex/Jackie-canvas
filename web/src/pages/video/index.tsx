@@ -1,6 +1,6 @@
-import { ArrowLeft, ArrowRight, BookOpen, CheckSquare, ClipboardPaste, Download, FolderPlus, History, Link2, LoaderCircle, Music2, Plus, SlidersHorizontal, Sparkles, Trash2, Upload, VideoIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { App, Button, Checkbox, Drawer, Empty, Input, Modal, Tag, Typography } from "antd";
+import { ArrowLeft, ArrowRight, BookOpen, CheckSquare, ChevronDown, ClipboardPaste, Download, FolderPlus, History, Link2, LoaderCircle, Music2, Plus, SlidersHorizontal, Sparkles, Trash2, Upload } from "lucide-react";
+import { useEffect, useRef, useState, type WheelEvent } from "react";
+import { App, Button, Checkbox, Drawer, Input, Modal, Tag, Typography } from "antd";
 import localforage from "localforage";
 import { nanoid } from "nanoid";
 import { saveAs } from "file-saver";
@@ -12,6 +12,7 @@ import { VideoSettingsPanel, normalizeVideoResolutionValue, normalizeVideoSizeVa
 import { canvasThemes } from "@/lib/canvas-theme";
 import { formatBytes, formatDuration } from "@/lib/image-utils";
 import { boolConfig, isSeedanceRemoteMediaUrl, isSeedanceVideoConfig, normalizeSeedanceRatio, seedanceReferenceLabel, seedanceVideoReferenceError, seedanceVideoReferenceHint, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
+import { cn } from "@/lib/utils";
 import { deleteStoredMedia, resolveMediaUrl, uploadMediaFile } from "@/services/file-storage";
 import { resolveImageUrl, uploadImage } from "@/services/image-storage";
 import { isOssUploadReady, uploadBlobToOss } from "@/services/oss-upload";
@@ -71,6 +72,33 @@ type UpdateAiConfig = <K extends keyof AiConfig>(key: K, value: AiConfig[K]) => 
 const LOG_STORE_KEY = "infinite-canvas:video_generation_logs";
 const logStore = localforage.createInstance({ name: "infinite-canvas", storeName: "video_generation_logs" });
 
+const VIDEO_EXAMPLES = [
+    {
+        id: "cinematic",
+        titleKey: "wb.videoExample.cinematicTitle" as const,
+        prompt:
+            "Cinematic tracking shot along a rain-soaked city street at night, neon reflections on wet asphalt, shallow depth of field, slow push-in toward a lone figure under an umbrella, photoreal atmosphere.",
+    },
+    {
+        id: "product",
+        titleKey: "wb.videoExample.productTitle" as const,
+        prompt:
+            "Clean studio product turntable of a matte ceramic mug on a soft stone pedestal, cool daylight from the left, subtle rotation, commercial still-life lighting, high detail.",
+    },
+    {
+        id: "nature",
+        titleKey: "wb.videoExample.natureTitle" as const,
+        prompt:
+            "Wide aerial glide over a misty coastal cliff at golden hour, waves below, long soft shadows, calm camera move, photoreal landscape for a hero banner.",
+    },
+    {
+        id: "portrait",
+        titleKey: "wb.videoExample.portraitTitle" as const,
+        prompt:
+            "Editorial half-body portrait of a young designer in a sunlit workspace, gentle handheld drift, natural window light, warm neutrals, shallow depth of field.",
+    },
+];
+
 export default function VideoPage() {
     const { message } = App.useApp();
     const { t } = useI18n();
@@ -89,6 +117,7 @@ export default function VideoPage() {
     const [audioReferences, setAudioReferences] = useState<ReferenceAudio[]>([]);
     const [results, setResults] = useState<GenerationResult[]>([]);
     const [logs, setLogs] = useState<GenerationLog[]>([]);
+    const [logsReady, setLogsReady] = useState(false);
     const [running, setRunning] = useState(false);
     const [logsOpen, setLogsOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -99,7 +128,9 @@ export default function VideoPage() {
     const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
     const [previewLog, setPreviewLog] = useState<GenerationLog | null>(null);
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [mediaRefsOpen, setMediaRefsOpen] = useState(false);
     const [autoRunToken, setAutoRunToken] = useState(0);
+    const prevMediaRefCount = useRef(0);
     const [remoteMediaKind, setRemoteMediaKind] = useState<"video" | "audio" | null>(null);
     const [remoteMediaUrl, setRemoteMediaUrl] = useState("");
     const videoCommand = useWorkbenchAgentStore((state) => state.videoCommand);
@@ -120,6 +151,12 @@ export default function VideoPage() {
     useEffect(() => {
         void refreshLogs();
     }, []);
+
+    useEffect(() => {
+        const count = videoReferences.length + audioReferences.length;
+        if (count > 0 && prevMediaRefCount.current === 0) setMediaRefsOpen(true);
+        prevMediaRefCount.current = count;
+    }, [videoReferences.length, audioReferences.length]);
 
     const addReferences = async (files?: FileList | null) => {
         try {
@@ -358,6 +395,7 @@ export default function VideoPage() {
     const refreshLogs = async (resumePending = true) => {
         const nextLogs = await readStoredLogs();
         setLogs(nextLogs);
+        setLogsReady(true);
         if (resumePending) resumePendingLogs(nextLogs);
         return nextLogs;
     };
@@ -431,14 +469,35 @@ export default function VideoPage() {
         setResults(log.status === "pending" ? [{ id: log.id, status: "pending" }] : log.video ? [{ id: log.video.id, status: "success", video: log.video }] : [{ id: log.id, status: "failed", error: log.error || t("wb.generateFailed") }]);
     };
 
+    // Prefer narrow until hydrate finishes so empty History doesn't flash wide→narrow.
+    const historyNarrow = !logsReady || !logs.length;
+
     return (
         <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
-            <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:grid-cols-[300px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)]">
-                <aside className="thin-scrollbar hidden min-h-0 overflow-y-auto rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:block">
-                    <LogPanel logs={logs} selectedLogIds={selectedLogIds} activeLogId={previewLog?.id} onSelectedLogIdsChange={setSelectedLogIds} onCreateSession={createSession} onDeleteSelected={() => setDeleteConfirmOpen(true)} onPreviewLog={previewGenerationLog} />
+            <main
+                data-app-page-scroll
+                className={`grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:overflow-hidden ${
+                    historyNarrow ? "lg:grid-cols-[220px_minmax(0,1fr)]" : "lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]"
+                }`}
+            >
+                <aside
+                    className={`thin-scrollbar hidden min-h-0 overflow-y-auto rounded-lg border border-border bg-card shadow-sm dark:border-white/10 lg:block ${
+                        historyNarrow ? "p-3" : "p-4"
+                    }`}
+                >
+                    <LogPanel
+                        logs={logs}
+                        compact={historyNarrow}
+                        selectedLogIds={selectedLogIds}
+                        activeLogId={previewLog?.id}
+                        onSelectedLogIdsChange={setSelectedLogIds}
+                        onCreateSession={createSession}
+                        onDeleteSelected={() => setDeleteConfirmOpen(true)}
+                        onPreviewLog={previewGenerationLog}
+                    />
                 </aside>
 
-                <section className="grid gap-3 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)]">
+                <section className="grid gap-3 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[minmax(480px,540px)_minmax(0,1fr)]">
                     <div className="thin-scrollbar flex flex-col rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto">
                         <div className="flex items-start justify-between gap-3">
                             <h1 className="text-2xl font-semibold text-stone-950 dark:text-stone-100">{t("page.videoTitle")}</h1>
@@ -480,7 +539,10 @@ export default function VideoPage() {
                                         </Button>
                                     </div>
                                 </div>
-                                <div className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700">
+                                <div
+                                    className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700"
+                                    onWheel={scrollStripOnWheel}
+                                >
                                     {references.map((item, index) => (
                                         <div key={item.id} className="group relative size-20 shrink-0 overflow-hidden rounded-md border border-border dark:border-white/10">
                                             <img src={item.dataUrl} alt={item.name} className="size-full object-cover" />
@@ -495,62 +557,95 @@ export default function VideoPage() {
                                 </div>
                             </div>
 
-                            <div className="min-w-0">
-                                <div className="mb-2 flex items-center justify-between gap-3">
-                                    <span className="text-base font-semibold">{t("wb.refVideos")}</span>
-                                    <div className="flex gap-2">
-                                        <Button size="small" icon={<Link2 className="size-3.5" />} onClick={() => openRemoteMediaModal("video")}>
-                                            {t("wb.addUrl")}
-                                        </Button>
-                                        <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
-                                            {t("wb.upload")}
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700">
-                                    {videoReferences.map((item, index) => (
-                                        <div key={item.id} className="group relative h-20 w-32 shrink-0 overflow-hidden rounded-md border border-border bg-black dark:border-white/10">
-                                            <video src={item.url} className="size-full object-cover" muted preload="metadata" />
-                                            <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{seedanceReferenceLabel("video", index)}</span>
-                                            <ReferenceOrderButtons index={index} total={videoReferences.length} onMove={(offset) => setVideoReferences((value) => moveListItem(value, index, offset))} />
-                                            <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setVideoReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeRefVideo")}>
-                                                <Trash2 className="size-3.5" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                    {!videoReferences.length ? <div className="flex min-w-full items-center justify-center text-sm text-stone-500">{t("wb.noRefVideos")}</div> : null}
-                                </div>
-                            </div>
-
-                            <div className="min-w-0">
-                                <div className="mb-2 flex items-center justify-between gap-3">
-                                    <span className="text-base font-semibold">{t("wb.refAudios")}</span>
-                                    <div className="flex gap-2">
-                                        <Button size="small" icon={<Link2 className="size-3.5" />} onClick={() => openRemoteMediaModal("audio")}>
-                                            {t("wb.addUrl")}
-                                        </Button>
-                                        <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
-                                            {t("wb.upload")}
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700">
-                                    {audioReferences.map((item, index) => (
-                                        <div key={item.id} className="group relative flex h-20 w-48 shrink-0 flex-col justify-center gap-2 rounded-md border border-border bg-stone-50 px-2 dark:border-white/10 dark:bg-stone-900">
-                                            <div className="flex min-w-0 items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
-                                                <Music2 className="size-4 shrink-0" />
-                                                <span className="shrink-0 rounded bg-stone-200 px-1 text-[10px] text-stone-700 dark:bg-stone-800 dark:text-stone-200">{seedanceReferenceLabel("audio", index)}</span>
-                                                <span className="truncate">{item.name}</span>
+                            <div className="min-w-0 space-y-3">
+                                <button
+                                    type="button"
+                                    aria-expanded={mediaRefsOpen}
+                                    className="flex w-full items-center justify-between gap-2 rounded-lg py-1 text-left transition hover:opacity-80"
+                                    onClick={() => setMediaRefsOpen((value) => !value)}
+                                >
+                                    <span className="min-w-0">
+                                        <span className="block text-base font-semibold">{t("wb.moreReferences")}</span>
+                                        {!mediaRefsOpen ? (
+                                            <span className="mt-0.5 block truncate text-xs text-stone-500 dark:text-stone-400">
+                                                {[
+                                                    videoReferences.length ? t("wb.refVideoCount", { n: videoReferences.length }) : null,
+                                                    audioReferences.length ? t("wb.refAudioCount", { n: audioReferences.length }) : null,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(" · ") || t("wb.moreReferencesHint")}
+                                            </span>
+                                        ) : null}
+                                    </span>
+                                    <ChevronDown className={cn("size-4 shrink-0 text-stone-500 transition-transform dark:text-stone-400", mediaRefsOpen && "rotate-180")} />
+                                </button>
+                                {mediaRefsOpen ? (
+                                    <div className="space-y-5">
+                                        <div className="min-w-0">
+                                            <div className="mb-2 flex items-center justify-between gap-3">
+                                                <span className="text-sm font-semibold">{t("wb.refVideos")}</span>
+                                                <div className="flex gap-2">
+                                                    <Button size="small" icon={<Link2 className="size-3.5" />} onClick={() => openRemoteMediaModal("video")}>
+                                                        {t("wb.addUrl")}
+                                                    </Button>
+                                                    <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
+                                                        {t("wb.upload")}
+                                                    </Button>
+                                                </div>
                                             </div>
-                                            <audio src={item.url} controls className="h-8 w-full" preload="metadata" />
-                                            <ReferenceOrderButtons index={index} total={audioReferences.length} onMove={(offset) => setAudioReferences((value) => moveListItem(value, index, offset))} />
-                                            <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setAudioReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeRefAudio")}>
-                                                <Trash2 className="size-3.5" />
-                                            </button>
+                                            <div
+                                                className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700"
+                                                onWheel={scrollStripOnWheel}
+                                            >
+                                                {videoReferences.map((item, index) => (
+                                                    <div key={item.id} className="group relative h-20 w-32 shrink-0 overflow-hidden rounded-md border border-border bg-black dark:border-white/10">
+                                                        <video src={item.url} className="size-full object-cover" muted preload="metadata" />
+                                                        <span className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">{seedanceReferenceLabel("video", index)}</span>
+                                                        <ReferenceOrderButtons index={index} total={videoReferences.length} onMove={(offset) => setVideoReferences((value) => moveListItem(value, index, offset))} />
+                                                        <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setVideoReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeRefVideo")}>
+                                                            <Trash2 className="size-3.5" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                {!videoReferences.length ? <div className="flex min-w-full items-center justify-center text-sm text-stone-500">{t("wb.noRefVideos")}</div> : null}
+                                            </div>
                                         </div>
-                                    ))}
-                                    {!audioReferences.length ? <div className="flex min-w-full items-center justify-center text-center text-sm text-stone-500">{t("wb.noRefAudios")}</div> : null}
-                                </div>
+
+                                        <div className="min-w-0">
+                                            <div className="mb-2 flex items-center justify-between gap-3">
+                                                <span className="text-sm font-semibold">{t("wb.refAudios")}</span>
+                                                <div className="flex gap-2">
+                                                    <Button size="small" icon={<Link2 className="size-3.5" />} onClick={() => openRemoteMediaModal("audio")}>
+                                                        {t("wb.addUrl")}
+                                                    </Button>
+                                                    <Button size="small" icon={<Upload className="size-3.5" />} onClick={() => fileInputRef.current?.click()}>
+                                                        {t("wb.upload")}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <div
+                                                className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700"
+                                                onWheel={scrollStripOnWheel}
+                                            >
+                                                {audioReferences.map((item, index) => (
+                                                    <div key={item.id} className="group relative flex h-20 w-48 shrink-0 flex-col justify-center gap-2 rounded-md border border-border bg-stone-50 px-2 dark:border-white/10 dark:bg-stone-900">
+                                                        <div className="flex min-w-0 items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+                                                            <Music2 className="size-4 shrink-0" />
+                                                            <span className="shrink-0 rounded bg-stone-200 px-1 text-[10px] text-stone-700 dark:bg-stone-800 dark:text-stone-200">{seedanceReferenceLabel("audio", index)}</span>
+                                                            <span className="truncate">{item.name}</span>
+                                                        </div>
+                                                        <audio src={item.url} controls className="h-8 w-full" preload="metadata" />
+                                                        <ReferenceOrderButtons index={index} total={audioReferences.length} onMove={(offset) => setAudioReferences((value) => moveListItem(value, index, offset))} />
+                                                        <button type="button" className="absolute right-1 top-1 hidden size-6 items-center justify-center rounded bg-black/60 text-white group-hover:flex" onClick={() => setAudioReferences((value) => value.filter((ref) => ref.id !== item.id))} aria-label={t("wb.removeRefAudio")}>
+                                                            <Trash2 className="size-3.5" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                {!audioReferences.length ? <div className="flex min-w-full items-center justify-center text-center text-sm text-stone-500">{t("wb.noRefAudios")}</div> : null}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : null}
                             </div>
 
                             <div className="flex items-center justify-between rounded-lg border border-border bg-stone-50 px-3 py-2 text-sm dark:border-white/10 dark:bg-stone-900 sm:hidden">
@@ -567,8 +662,17 @@ export default function VideoPage() {
                             </div>
                         </div>
 
-                        <div className="mt-auto pt-6">
-                            <Button type="primary" size="large" block icon={<Sparkles className="size-4" />} loading={running} disabled={!canGenerate || running} onClick={() => void generate()}>
+                        <div className="sticky bottom-0 z-10 mt-auto border-t border-border/70 bg-card/95 pt-4 backdrop-blur-sm dark:border-white/10">
+                            <Button
+                                type="primary"
+                                size="large"
+                                block
+                                className="!h-12 !text-base !font-semibold"
+                                icon={<Sparkles className="size-4" />}
+                                loading={running}
+                                disabled={!canGenerate || running}
+                                onClick={() => void generate()}
+                            >
                                 {t("wb.generate")}
                             </Button>
                         </div>
@@ -584,10 +688,7 @@ export default function VideoPage() {
                                 {results.map((result) => (result.status === "success" && result.video ? <ResultVideoCard key={result.id} video={result.video} onDownload={downloadVideo} onSaveAsset={saveResultToAssets} /> : result.status === "failed" ? <FailedVideoCard key={result.id} error={result.error || t("wb.generateFailed")} onRetry={retryResult} /> : <PendingVideoCard key={result.id} />))}
                             </div>
                         ) : (
-                            <div className="flex min-h-[320px] flex-col items-center justify-center rounded-lg border border-dashed border-stone-300 text-center dark:border-stone-700 lg:min-h-[560px]">
-                                <VideoIcon className="mb-4 size-11 text-stone-400" />
-                                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("wb.noVideosYet")} />
-                            </div>
+                            <ExampleCasesPanel onPick={setPrompt} />
                         )}
                     </div>
                 </section>
@@ -607,8 +708,25 @@ export default function VideoPage() {
                 <LogPanel logs={logs} selectedLogIds={selectedLogIds} activeLogId={previewLog?.id} onSelectedLogIdsChange={setSelectedLogIds} onCreateSession={createSession} onDeleteSelected={() => setDeleteConfirmOpen(true)} onPreviewLog={previewGenerationLog} />
             </Drawer>
             <Drawer title={t("wb.params")} placement="bottom" height="82vh" open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-                <div className="grid grid-cols-2 gap-3 pb-4">
+                <div className="grid grid-cols-2 gap-3 pb-20">
                     <GenerationSettings config={effectiveConfig} model={model} updateConfig={updateConfig} openConfigDialog={openConfigDialog} />
+                </div>
+                <div className="sticky bottom-0 -mx-6 border-t border-border bg-card px-6 py-3 dark:border-white/10">
+                    <Button
+                        type="primary"
+                        size="large"
+                        block
+                        className="!h-12 !text-base !font-semibold"
+                        icon={<Sparkles className="size-4" />}
+                        loading={running}
+                        disabled={!canGenerate || running}
+                        onClick={() => {
+                            setSettingsOpen(false);
+                            void generate();
+                        }}
+                    >
+                        {t("wb.generate")}
+                    </Button>
                 </div>
             </Drawer>
             <PromptSelectDialog open={promptDialogOpen} onOpenChange={setPromptDialogOpen} onSelect={setPrompt} />
@@ -651,14 +769,39 @@ function GenerationSettings({ config, model, updateConfig, openConfigDialog }: {
 
     return (
         <>
-            <label className="col-span-2 block min-w-0 sm:col-span-1">
+            <label className="col-span-2 block min-w-0">
                 <span className="mb-1.5 block text-sm font-semibold sm:mb-2 sm:text-base">{t("common.model")}</span>
                 <ModelPicker config={config} value={model} onChange={(value) => updateConfig("videoModel", value)} capability="video" fullWidth onMissingConfig={() => openConfigDialog(false)} />
             </label>
             <div className="col-span-2">
-                <VideoSettingsPanel config={config} onConfigChange={(key, value) => updateConfig(key, value)} theme={theme} showTitle={false} className="space-y-4" />
+                <VideoSettingsPanel config={config} onConfigChange={(key, value) => updateConfig(key, value)} theme={theme} showTitle={false} className="space-y-4" collapsibleAdvanced />
             </div>
         </>
+    );
+}
+
+function ExampleCasesPanel({ onPick }: { onPick: (prompt: string) => void }) {
+    const { t } = useI18n();
+    return (
+        <div className="flex min-h-[280px] flex-col rounded-lg bg-secondary/40 px-2.5 py-4 dark:bg-white/[0.03] lg:min-h-0 lg:px-3 lg:py-5">
+            <div className="mx-auto flex w-full max-w-md flex-col">
+                <div className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-200">{t("wb.examplesTitle")}</div>
+                <p className="mb-2.5 text-xs text-stone-500 dark:text-stone-400">{t("wb.examplesDesc")}</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                    {VIDEO_EXAMPLES.map((item) => (
+                        <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => onPick(item.prompt)}
+                            className="rounded-lg border border-border/80 bg-card px-2.5 py-2.5 text-left transition hover:border-stone-400 hover:bg-secondary/50 dark:border-white/10 dark:hover:border-white/25 dark:hover:bg-white/5"
+                        >
+                            <div className="text-xs font-semibold text-stone-900 dark:text-stone-100">{t(item.titleKey)}</div>
+                            <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-stone-500 dark:text-stone-400">{item.prompt}</div>
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -721,6 +864,7 @@ function FailedVideoCard({ error, onRetry }: { error: string; onRetry: () => voi
 
 function LogPanel({
     logs,
+    compact = false,
     selectedLogIds,
     activeLogId,
     onSelectedLogIdsChange,
@@ -729,6 +873,7 @@ function LogPanel({
     onPreviewLog,
 }: {
     logs: GenerationLog[];
+    compact?: boolean;
     selectedLogIds: string[];
     activeLogId?: string;
     onSelectedLogIdsChange: (ids: string[]) => void;
@@ -742,26 +887,38 @@ function LogPanel({
 
     return (
         <>
-            <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold">{t("wb.generationLogs")}</h2>
-                <Tag className="m-0">{logs.length}</Tag>
+            <div className={`mb-3 flex items-center gap-2 ${compact ? "flex-col items-stretch" : "justify-between"}`}>
+                <h2 className={`font-semibold ${compact ? "text-sm leading-5" : "text-base"}`}>{compact ? t("wb.logs") : t("wb.generationLogs")}</h2>
+                <Tag className="m-0 w-fit">{logs.length}</Tag>
             </div>
-            <div className="mb-4 flex flex-wrap gap-2">
-                <Button size="small" icon={<Plus className="size-3.5" />} onClick={onCreateSession}>
+            <div className={`mb-4 flex gap-2 ${compact ? "flex-col" : "flex-wrap"}`}>
+                <Button size="small" icon={<Plus className="size-3.5" />} onClick={onCreateSession} block={compact}>
                     {t("action.new")}
                 </Button>
-                <Button size="small" icon={<CheckSquare className="size-3.5" />} disabled={!logs.length} onClick={toggleAll}>
-                    {allSelected ? t("action.deselect") : t("action.selectAll")}
-                </Button>
-                <Button size="small" danger icon={<Trash2 className="size-3.5" />} disabled={!selectedLogIds.length} onClick={onDeleteSelected}>
-                    {t("action.delete")}
-                </Button>
+                {!compact ? (
+                    <>
+                        <Button size="small" icon={<CheckSquare className="size-3.5" />} disabled={!logs.length} onClick={toggleAll}>
+                            {allSelected ? t("action.deselect") : t("action.selectAll")}
+                        </Button>
+                        <Button size="small" danger icon={<Trash2 className="size-3.5" />} disabled={!selectedLogIds.length} onClick={onDeleteSelected}>
+                            {t("action.delete")}
+                        </Button>
+                    </>
+                ) : null}
             </div>
             <div className="space-y-3">
                 {logs.map((log) => (
                     <LogCard key={log.id} log={log} selected={selectedLogIds.includes(log.id)} active={activeLogId === log.id} onSelectedChange={(checked) => onSelectedLogIdsChange(checked ? [...selectedLogIds, log.id] : selectedLogIds.filter((id) => id !== log.id))} onClick={() => onPreviewLog(log)} />
                 ))}
-                {!logs.length ? <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed border-stone-300 text-center text-sm text-stone-500 dark:border-stone-700">{t("wb.noLogs")}</div> : null}
+                {!logs.length ? (
+                    <div
+                        className={`flex items-center justify-center rounded-md bg-secondary/50 text-center text-stone-500 dark:bg-white/[0.04] dark:text-stone-400 ${
+                            compact ? "min-h-24 px-2 text-xs leading-5" : "min-h-48 text-sm"
+                        }`}
+                    >
+                        {t("wb.noLogs")}
+                    </div>
+                ) : null}
             </div>
         </>
     );
@@ -890,6 +1047,12 @@ function moveListItem<T>(items: T[], index: number, offset: number) {
     const next = [...items];
     [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
     return next;
+}
+
+function scrollStripOnWheel(event: WheelEvent<HTMLDivElement>) {
+    if (event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
+    event.preventDefault();
+    event.currentTarget.scrollLeft += event.deltaY;
 }
 
 function ReferenceOrderButtons({ index, total, onMove }: { index: number; total: number; onMove: (offset: number) => void }) {

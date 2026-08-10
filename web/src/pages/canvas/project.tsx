@@ -977,7 +977,7 @@ function InfiniteCanvasPage() {
     }, [applyHistory]);
 
     const createAndOpenProject = useCallback(() => {
-        const id = createProject(`Tennda LLM ${useCanvasStore.getState().projects.length + 1}`);
+        const id = createProject(`TENNDA AI ${useCanvasStore.getState().projects.length + 1}`);
         navigate(`/canvas/${id}`);
     }, [createProject, navigate]);
 

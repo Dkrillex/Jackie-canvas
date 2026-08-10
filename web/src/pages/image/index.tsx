@@ -1,15 +1,17 @@
-import { ArrowLeft, ArrowRight, BookOpen, CheckSquare, ClipboardPaste, Download, FolderPlus, History, ImagePlus, LoaderCircle, PenLine, Plus, SlidersHorizontal, Sparkles, Trash2, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { App, Button, Checkbox, Drawer, Empty, Image, Input, Modal, Tag, Tooltip, Typography } from "antd";
+import { ArrowLeft, ArrowRight, BookOpen, CheckSquare, ClipboardPaste, Download, FileText, FolderPlus, History, LoaderCircle, PenLine, Plus, SlidersHorizontal, Sparkles, Trash2, Upload } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { App, Button, Checkbox, Drawer, Image, Input, Modal, Tag, Tooltip, Typography } from "antd";
 import localforage from "localforage";
 import { saveAs } from "file-saver";
 
 import { ImageSettingsPanel } from "@/components/image-settings-panel";
 import { ModelPicker } from "@/components/model-picker";
 import { PromptSelectDialog } from "@/components/prompts/prompt-select-dialog";
+import { usePromptList } from "@/components/prompts/use-prompt-list";
 import { AssetPickerModal, type InsertAssetPayload } from "@/components/canvas/asset-picker-modal";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { imageReferenceLabel } from "@/lib/image-reference-prompt";
+import { PUBLIC_PROMPT_CATEGORY } from "@/services/api/prompt-source-presets";
 import { aiConfigNotReadyMessageKey, modelOptionLabel, useConfigStore, useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useThemeStore } from "@/stores/use-theme-store";
@@ -68,6 +70,33 @@ const LOG_STORE_KEY = "infinite-canvas:image_generation_logs";
 const RESULT_ACTION_BUTTON_CLASS = "min-w-0 px-1.5 [&_.ant-btn-icon]:shrink-0 [&>span:last-child]:min-w-0 [&>span:last-child]:truncate";
 const logStore = localforage.createInstance({ name: "infinite-canvas", storeName: "image_generation_logs" });
 
+const IMAGE_EXAMPLES = [
+    {
+        id: "product",
+        titleKey: "wb.example.productTitle" as const,
+        prompt:
+            "Studio product photo of a matte ceramic water bottle on a soft stone pedestal, cool daylight from the left, clean brand-safe composition, subtle reflection, high detail, commercial still life.",
+    },
+    {
+        id: "poster",
+        titleKey: "wb.example.posterTitle" as const,
+        prompt:
+            "Minimal poster layout for a summer fragrance launch: soft gradient sky, single glass bottle centered, generous negative space for typography, elegant lighting, print-ready marketing still.",
+    },
+    {
+        id: "portrait",
+        titleKey: "wb.example.portraitTitle" as const,
+        prompt:
+            "Editorial half-body portrait of a young designer in a sunlit workspace, natural window light, shallow depth of field, warm neutrals, candid yet polished lifestyle photography.",
+    },
+    {
+        id: "scene",
+        titleKey: "wb.example.sceneTitle" as const,
+        prompt:
+            "Wide cinematic still of a quiet coastal road at golden hour, low mist over the water, long shadows, photoreal atmosphere, balanced composition for a hero banner.",
+    },
+];
+
 export default function ImagePage() {
     const { message } = App.useApp();
     const { t } = useI18n();
@@ -83,6 +112,7 @@ export default function ImagePage() {
     const [references, setReferences] = useState<ReferenceImage[]>([]);
     const [results, setResults] = useState<GenerationResult[]>([]);
     const [logs, setLogs] = useState<GenerationLog[]>([]);
+    const [logsReady, setLogsReady] = useState(false);
     const [running, setRunning] = useState(false);
     const [logsOpen, setLogsOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -299,7 +329,10 @@ export default function ImagePage() {
         void logStore.setItem(log.id, serializeLog(log)).then(refreshLogs);
     };
 
-    const refreshLogs = async () => setLogs(await readStoredLogs());
+    const refreshLogs = async () => {
+        setLogs(await readStoredLogs());
+        setLogsReady(true);
+    };
 
     const previewGenerationLog = async (log: GenerationLog) => {
         setPreviewLog(log);
@@ -373,12 +406,25 @@ export default function ImagePage() {
         }
     };
 
+    // Prefer narrow until hydrate finishes so empty History doesn't flash wide→narrow.
+    const historyNarrow = !logsReady || !logs.length;
+
     return (
         <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
-            <main className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:grid-cols-[300px_minmax(0,1fr)] lg:overflow-hidden xl:grid-cols-[320px_minmax(0,1fr)]">
-                <aside className="thin-scrollbar hidden min-h-0 overflow-y-auto rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:block">
+            <main
+                data-app-page-scroll
+                className={`grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:overflow-hidden ${
+                    historyNarrow ? "lg:grid-cols-[220px_minmax(0,1fr)]" : "lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]"
+                }`}
+            >
+                <aside
+                    className={`thin-scrollbar hidden min-h-0 overflow-y-auto rounded-lg border border-border bg-card shadow-sm dark:border-white/10 lg:block ${
+                        historyNarrow ? "p-3" : "p-4"
+                    }`}
+                >
                     <LogPanel
                         logs={logs}
+                        compact={historyNarrow}
                         selectedLogIds={selectedLogIds}
                         activeLogId={previewLog?.id}
                         onSelectedLogIdsChange={setSelectedLogIds}
@@ -388,7 +434,7 @@ export default function ImagePage() {
                     />
                 </aside>
 
-                <section className="grid gap-3 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[420px_minmax(0,1fr)]">
+                <section className="grid gap-3 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[minmax(480px,540px)_minmax(0,1fr)]">
                     <div className="thin-scrollbar flex flex-col rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto">
                         <div>
                             <div className="flex items-start justify-between gap-3">
@@ -419,7 +465,7 @@ export default function ImagePage() {
                                         </Button>
                                     </div>
                                 </div>
-                                <Input.TextArea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={7} placeholder={t("wb.imagePromptPh")} />
+                                <Input.TextArea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={8} placeholder={t("wb.imagePromptPh")} />
                             </div>
 
                             <div className="min-w-0">
@@ -475,8 +521,17 @@ export default function ImagePage() {
                             </div>
                         </div>
 
-                        <div className="mt-auto pt-6">
-                            <Button type="primary" size="large" block icon={<Sparkles className="size-4" />} loading={running} disabled={!canGenerate || running} onClick={() => void generate()}>
+                        <div className="sticky bottom-0 z-10 mt-auto border-t border-border/70 bg-card/95 pt-4 backdrop-blur-sm dark:border-white/10">
+                            <Button
+                                type="primary"
+                                size="large"
+                                block
+                                className="!h-12 !text-base !font-semibold"
+                                icon={<Sparkles className="size-4" />}
+                                loading={running}
+                                disabled={!canGenerate || running}
+                                onClick={() => void generate()}
+                            >
                                 {t("wb.generate")}
                             </Button>
                         </div>
@@ -502,10 +557,7 @@ export default function ImagePage() {
                                 )}
                             </div>
                         ) : (
-                            <div className="flex min-h-[320px] flex-col items-center justify-center rounded-lg border border-dashed border-stone-300 text-center dark:border-stone-700 lg:min-h-[560px]">
-                                <ImagePlus className="mb-4 size-11 text-stone-400" />
-                                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("wb.noImagesYet")} />
-                            </div>
+                            <ExampleCasesPanel onPick={(value) => setPrompt(value)} />
                         )}
                     </div>
                 </section>
@@ -532,9 +584,26 @@ export default function ImagePage() {
                     onPreviewLog={(log) => void previewGenerationLog(log)}
                 />
             </Drawer>
-            <Drawer title={t("wb.params")} placement="bottom" size="82vh" open={settingsOpen} onClose={() => setSettingsOpen(false)}>
-                <div className="grid grid-cols-2 gap-3 pb-4">
+            <Drawer title={t("wb.params")} placement="bottom" height="82vh" open={settingsOpen} onClose={() => setSettingsOpen(false)}>
+                <div className="grid grid-cols-2 gap-3 pb-20">
                     <GenerationSettings config={effectiveConfig} model={model} updateConfig={updateConfig} openConfigDialog={openConfigDialog} />
+                </div>
+                <div className="sticky bottom-0 -mx-6 border-t border-border bg-card px-6 py-3 dark:border-white/10">
+                    <Button
+                        type="primary"
+                        size="large"
+                        block
+                        className="!h-12 !text-base !font-semibold"
+                        icon={<Sparkles className="size-4" />}
+                        loading={running}
+                        disabled={!canGenerate || running}
+                        onClick={() => {
+                            setSettingsOpen(false);
+                            void generate();
+                        }}
+                    >
+                        {t("wb.generate")}
+                    </Button>
                 </div>
             </Drawer>
             <PromptSelectDialog open={promptDialogOpen} onOpenChange={setPromptDialogOpen} onSelect={setPrompt} />
@@ -552,14 +621,84 @@ function GenerationSettings({ config, model, updateConfig, openConfigDialog }: {
 
     return (
         <>
-            <label className="col-span-2 block min-w-0 sm:col-span-1">
+            <label className="col-span-2 block min-w-0">
                 <span className="mb-1.5 block text-sm font-semibold sm:mb-2 sm:text-base">{t("common.model")}</span>
                 <ModelPicker config={config} value={model} onChange={(value) => updateConfig("imageModel", value)} capability="image" fullWidth onMissingConfig={() => openConfigDialog(false)} />
             </label>
             <div className="col-span-2">
-                <ImageSettingsPanel config={config} onConfigChange={(key, value) => updateConfig(key, value)} theme={theme} showTitle={false} className="space-y-4" maxCount={10} />
+                <ImageSettingsPanel
+                    config={config}
+                    onConfigChange={(key, value) => updateConfig(key, value)}
+                    theme={theme}
+                    showTitle={false}
+                    className="space-y-4"
+                    maxCount={10}
+                    collapsibleAdvanced
+                />
             </div>
         </>
+    );
+}
+
+function ExampleCasesPanel({ onPick }: { onPick: (prompt: string) => void }) {
+    const { t } = useI18n();
+    const { items } = usePromptList({ keyword: "", tags: [], category: PUBLIC_PROMPT_CATEGORY, includePersonal: false, pageSize: 4 });
+    const libraryItems = useMemo(() => {
+        const withCover = items.filter((item) => item.coverUrl);
+        return (withCover.length >= 2 ? withCover : items).slice(0, 4);
+    }, [items]);
+
+    return (
+        <div className="flex min-h-[280px] flex-col rounded-lg bg-secondary/40 px-2.5 py-4 dark:bg-white/[0.03] lg:min-h-0 lg:px-3 lg:py-5">
+            <div className="mx-auto flex w-full max-w-md flex-col gap-5">
+                {libraryItems.length ? (
+                    <section>
+                        <div className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-200">{t("wb.libraryTitle")}</div>
+                        <p className="mb-2.5 text-xs text-stone-500 dark:text-stone-400">{t("wb.libraryDesc")}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            {libraryItems.map((item) => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => onPick(item.prompt)}
+                                    className="overflow-hidden rounded-lg border border-border/80 bg-card text-left transition hover:border-stone-400 hover:bg-secondary/50 dark:border-white/10 dark:hover:border-white/25 dark:hover:bg-white/5"
+                                >
+                                    {item.coverUrl ? (
+                                        <img src={item.coverUrl} alt={item.title} className="aspect-[3/2] w-full object-cover" loading="lazy" />
+                                    ) : (
+                                        <span className="grid aspect-[3/2] w-full place-items-center bg-stone-100 text-stone-400 dark:bg-stone-900 dark:text-stone-600">
+                                            <FileText className="size-6" />
+                                        </span>
+                                    )}
+                                    <div className="px-2 py-1.5">
+                                        <div className="line-clamp-1 text-[11px] font-semibold text-stone-900 dark:text-stone-100">{item.title}</div>
+                                        <div className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-stone-500 dark:text-stone-400">{item.description || item.prompt}</div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+                ) : null}
+
+                <section>
+                    <div className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-200">{t("wb.examplesTitle")}</div>
+                    <p className="mb-2.5 text-xs text-stone-500 dark:text-stone-400">{t("wb.examplesDesc")}</p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                        {IMAGE_EXAMPLES.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => onPick(item.prompt)}
+                                className="rounded-lg border border-border/80 bg-card px-2.5 py-2.5 text-left transition hover:border-stone-400 hover:bg-secondary/50 dark:border-white/10 dark:hover:border-white/25 dark:hover:bg-white/5"
+                            >
+                                <div className="text-xs font-semibold text-stone-900 dark:text-stone-100">{t(item.titleKey)}</div>
+                                <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-stone-500 dark:text-stone-400">{item.prompt}</div>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            </div>
+        </div>
     );
 }
 
@@ -654,6 +793,7 @@ function updateResultAt(results: GenerationResult[], index: number, next: Partia
 
 function LogPanel({
     logs,
+    compact = false,
     selectedLogIds,
     activeLogId,
     onSelectedLogIdsChange,
@@ -662,6 +802,7 @@ function LogPanel({
     onPreviewLog,
 }: {
     logs: GenerationLog[];
+    compact?: boolean;
     selectedLogIds: string[];
     activeLogId?: string;
     onSelectedLogIdsChange: (ids: string[]) => void;
@@ -675,22 +816,24 @@ function LogPanel({
 
     return (
         <>
-            <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                    <h2 className="text-base font-semibold">{t("wb.generationLogs")}</h2>
-                </div>
-                <Tag className="m-0">{logs.length}</Tag>
+            <div className={`mb-3 flex items-center gap-2 ${compact ? "flex-col items-stretch" : "justify-between"}`}>
+                <h2 className={`font-semibold ${compact ? "text-sm leading-5" : "text-base"}`}>{compact ? t("wb.logs") : t("wb.generationLogs")}</h2>
+                <Tag className="m-0 w-fit">{logs.length}</Tag>
             </div>
-            <div className="mb-4 flex flex-wrap gap-2">
-                <Button size="small" icon={<Plus className="size-3.5" />} onClick={onCreateSession}>
+            <div className={`mb-4 flex gap-2 ${compact ? "flex-col" : "flex-wrap"}`}>
+                <Button size="small" icon={<Plus className="size-3.5" />} onClick={onCreateSession} block={compact}>
                     {t("action.new")}
                 </Button>
-                <Button size="small" icon={<CheckSquare className="size-3.5" />} disabled={!logs.length} onClick={toggleAll}>
-                    {allSelected ? t("action.deselect") : t("action.selectAll")}
-                </Button>
-                <Button size="small" danger icon={<Trash2 className="size-3.5" />} disabled={!selectedLogIds.length} onClick={onDeleteSelected}>
-                    {t("action.delete")}
-                </Button>
+                {!compact ? (
+                    <>
+                        <Button size="small" icon={<CheckSquare className="size-3.5" />} disabled={!logs.length} onClick={toggleAll}>
+                            {allSelected ? t("action.deselect") : t("action.selectAll")}
+                        </Button>
+                        <Button size="small" danger icon={<Trash2 className="size-3.5" />} disabled={!selectedLogIds.length} onClick={onDeleteSelected}>
+                            {t("action.delete")}
+                        </Button>
+                    </>
+                ) : null}
             </div>
             <div className="space-y-3">
                 {logs.map((log) => (
@@ -703,7 +846,15 @@ function LogPanel({
                         onClick={() => onPreviewLog(log)}
                     />
                 ))}
-                {!logs.length ? <div className="flex min-h-48 items-center justify-center rounded-lg border border-dashed border-stone-300 text-center text-sm text-stone-500 dark:border-stone-700">{t("wb.noLogs")}</div> : null}
+                {!logs.length ? (
+                    <div
+                        className={`flex items-center justify-center rounded-md bg-secondary/50 text-center text-stone-500 dark:bg-white/[0.04] dark:text-stone-400 ${
+                            compact ? "min-h-24 px-2 text-xs leading-5" : "min-h-48 text-sm"
+                        }`}
+                    >
+                        {t("wb.noLogs")}
+                    </div>
+                ) : null}
             </div>
         </>
     );

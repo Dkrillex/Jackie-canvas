@@ -14,6 +14,10 @@ export type TenndaModelSpecs = {
     extras?: { label: string; value: string }[];
 };
 
+export type TenndaModelPreview =
+    | { kind: "image" | "video"; cover: string }
+    | { kind: "chat" | "code" | "report" | "audio" };
+
 export type TenndaModelEntry = {
     /** Upstream model id sent to /gw */
     name: string;
@@ -28,6 +32,10 @@ export type TenndaModelEntry = {
     uses: string[];
     /** Playground workbench path */
     href: string;
+    /** Featured hero card in its capability group on the home page */
+    featured?: boolean;
+    /** Visual preview on home model cards */
+    preview: TenndaModelPreview;
     /** Longer intro for the model detail page */
     overview: string;
     highlights: string[];
@@ -45,6 +53,8 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         focus: "Quality",
         uses: ["Posters", "Product", "Brand"],
         href: "/image",
+        featured: true,
+        preview: { kind: "image", cover: "/models/illusion-cover.jpg" },
         overview:
             "Tennda Illusion is the flagship image model in the Tennda Vision family. It is tuned for brand-safe poster layouts, product photography, and marketing stills where prompt adherence and composition matter more than raw speed.\n\nUse it when you need a polished first frame for campaigns, packaging mockups, or hero creatives. Pair detailed scene instructions with optional reference images in Image Studio for consistent style across a batch.",
         highlights: ["Strong prompt adherence", "Brand & product framing", "Best for final-quality stills"],
@@ -69,6 +79,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         focus: "Speed",
         uses: ["Drafts", "Layouts", "Iterate"],
         href: "/image",
+        preview: { kind: "image", cover: "/models/flash-cover.jpg" },
         overview:
             "Tennda Flash prioritizes turnaround time for sketching ideas, testing layouts, and exploring visual directions before committing to a flagship render.\n\nIt fits early creative loops: mood boards, thumbnail grids, and prompt ablation. Move promising frames to Illusion or Dream when you are ready to polish.",
         highlights: ["Lowest latency drafts", "Layout exploration", "Iterate before polish"],
@@ -93,6 +104,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         focus: "Style",
         uses: ["Cinema", "Mood", "Still"],
         href: "/image",
+        preview: { kind: "image", cover: "/models/dream-cover.jpg" },
         overview:
             "Tennda Dream leans into stylized, cinematic stills with rich atmosphere and mood. It is a strong choice for key art, storyboard frames, and concept images that need a distinctive look.\n\nPrompt for lighting, lens language, and palette. Dream responds well to cinematic direction and emotional tone.",
         highlights: ["Cinematic mood", "Stylized fidelity", "Concept & key art"],
@@ -117,6 +129,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         focus: "Preview",
         uses: ["Preview", "Motion", "Pitch"],
         href: "/video",
+        preview: { kind: "video", cover: "/models/motion-lite-cover.jpg" },
         overview:
             "Tennda Motion Lite is the lightweight entry in the Tennda Motion family for short previews and early motion direction.\n\nUse it to validate camera moves, pacing, and scene beats before spending a longer render on Motion Fast or Cinema.",
         highlights: ["Quick motion previews", "Pitch-friendly clips", "Low-friction iteration"],
@@ -141,6 +154,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         focus: "Speed",
         uses: ["Clips", "Boards", "Cuts"],
         href: "/video",
+        preview: { kind: "video", cover: "/models/motion-fast-cover.jpg" },
         overview:
             "Tennda Motion Fast balances speed and quality for short clips, storyboard tests, and cut experiments.\n\nIt is the workhorse for production loops where you need many variants quickly—then promote a select few to Cinema for richer reference-driven shots.",
         highlights: ["Speed-first clips", "Storyboard tests", "Variant batches"],
@@ -165,6 +179,8 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         focus: "Cinema",
         uses: ["Reference", "Shot", "Story"],
         href: "/video",
+        featured: true,
+        preview: { kind: "video", cover: "/models/cinema-cover.jpg" },
         overview:
             "Tennda Cinema targets richer, reference-driven video for longer creative shots and story sequences.\n\nBring clear shot language and optional references in Video Studio when you need cinematic continuity beyond a quick preview.",
         highlights: ["Reference-driven shots", "Longer creative clips", "Story-ready motion"],
@@ -189,8 +205,9 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         focus: "Chat",
         uses: ["Q&A", "Rewrite", "Draft"],
         href: "/agent",
+        preview: { kind: "chat" },
         overview:
-            "Tennda Mini is the lightweight text model in the Tennda LLM family—optimized for snappy chat, rewriting, and short drafts.\n\nIt is the default for Agent cloud fallback and everyday prompting when you want speed over deep multi-step reasoning.",
+            "Tennda Mini is the lightweight text model in the TENNDA AI family—optimized for snappy chat, rewriting, and short drafts.\n\nIt is the default for Agent cloud fallback and everyday prompting when you want speed over deep multi-step reasoning.",
         highlights: ["Low latency chat", "Rewrite & polish", "Everyday drafting"],
         specs: {
             context: "128K tokens",
@@ -213,6 +230,8 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         focus: "Reason",
         uses: ["Plans", "Briefs", "Prompts"],
         href: "/agent",
+        featured: true,
+        preview: { kind: "code" },
         overview:
             "Tennda Reason is built for deeper planning, creative briefs, and structured prompt engineering.\n\nReach for it when Agent Studio or text workflows need multi-step thinking, clearer outlines, or higher-quality system-style instructions.",
         highlights: ["Deeper planning", "Creative briefs", "Structured prompts"],
@@ -237,6 +256,8 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         focus: "Speech",
         uses: ["Narration", "Demo", "VO"],
         href: "/agent",
+        featured: true,
+        preview: { kind: "audio" },
         overview:
             "Tennda Waves is the speech model in the Tennda Voice family for natural narration, product demos, and spoken walkthroughs.\n\nGenerate voiceovers from Agent Studio tools or audio-capable workflows when you need clean TTS for demos and explainers.",
         highlights: ["Natural narration", "Product demos", "Walkthrough VO"],
@@ -259,7 +280,7 @@ export const TENNDA_CAPABILITY_ORDER: TenndaModelCapability[] = ["image", "video
 export const TENNDA_DISPLAY_NAME_BY_MODEL = Object.fromEntries(TENNDA_MODEL_CATALOG.map((item) => [item.name, item.displayName])) as Record<string, string>;
 
 /** Hugging Face profile / models page opened from top nav. */
-export const TENNDA_HUGGINGFACE_URL = "https://huggingface.co/Tennda";
+export const TENNDA_HUGGINGFACE_URL = "https://huggingface.co/ChenXiangXi/Test-SMALL-Model";
 
 export function tenndaChannelModels() {
     return TENNDA_MODEL_CATALOG.map(({ name, displayName, capability }) => ({ name, displayName, capability }));

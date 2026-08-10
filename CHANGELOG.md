@@ -4,85 +4,33 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] Hugging Face 外链改为 `https://huggingface.co/ChenXiangXi/Test-SMALL-Model`。
++ [调整][Jackie] 模型详情：Image/Video/Text/Audio + 预览卡切换；仅 Text 显示「Tennda LLM」；收紧装饰，Specs 白底圆角，API id 高亮。
++ [优化][Jackie] 首页模型卡片：主推布局；Image/Video 封面，Text/Audio 用对话/代码/TTS 预览。
++ [调整][Jackie] 对外品牌 TENNDA AI；首页 hero 副文案同步 multimodal / agentic 表述。
++ [优化][Jackie] 生图/视频工作台：History 空态收窄、Advanced 折叠、Results 空态案例；顶栏胶囊仅跟随整页滚动。
++ [调整][Jackie] 视频参考媒体默认收进 More references；Drawer / 参考条滚动与透明底 i18n 小修。
++ [优化][Jackie] Agent Studio：冷蓝轻面板；流水线按需显示；侧栏突出图/视频/语音工具；流水线状态与 tools 计数修复。
 + [调整][Jackie] 全站主体风格对齐 tennda.com：冷灰蓝背景 `#f5f7fa`、品牌蓝主色 `#0175DA`、青点阵与顶栏光晕；营销页与顶栏悬浮胶囊同步为冷色卡片面。
 + [调整][Jackie] 顶栏一级导航改为 Models / Playground / Developer / Hugging Face；工作台工具收拢到 Playground 下拉。
-+ [新增][Jackie] 模型详情页 `/models/:slug`：顶部可横向切换模型卡片，含 overview / highlights / 规格参数（上下文、最大输出、入参/出参价等），底部提供当前模型的 Python API 示例，并可跳转对应 Playground。
-+ [新增][Jackie] Developer 文档页 `/developer/docs`：说明同源 `/gw` OpenAI 兼容调用与鉴权；对外仅展示 `tennda-*` 模型 id；支持按能力切换 Python / curl 示例。
++ [新增][Jackie] 模型详情页 `/models/:slug`：overview / highlights / 规格 / Python API，并可跳转对应 Playground。
++ [新增][Jackie] Developer 文档页 `/developer/docs`：同源 `/gw` 鉴权说明；对外仅 `tennda-*` 模型 id；按能力切换 Python / curl。
 + [调整][Jackie] 首页模型卡片 Try 进入模型详情，不再直接跳工作台。
 + [新增][Jackie] Agent Studio（`/agent`）：云端工具循环对话，内置生图/视频/TTS 与站点工具，支持远程 HTTP MCP；全员可用，发送需登录。
-+ [调整][Jackie] Agent Studio 对话输入区复用侧栏 `AgentChatComposer`（圆角卡片、圆形发送/停止、模型选择在输入区左侧）。
-+ [新增][Jackie] Agent Studio 对话与产物历史写入 IndexedDB（localforage），刷新后可恢复；Clear 可清空。
-+ [优化][Jackie] Agent Studio 页面视觉：画布主题氛围底、圆角对话壳、侧栏 Tab 与建议提示卡片。
++ [调整][Jackie] Agent Studio 对话输入区复用侧栏 `AgentChatComposer`；对话与产物写入 IndexedDB，可 Clear。
 + [调整][Jackie] 首页模型 lineup 底部增加 Agent Studio 入口；文本/语音模型卡片引导至 `/agent`。
-+ [调整][Jackie] 首页 hero 副文案改为 Built and trained by Tennda… unified multimodal engine。
-+ [调整][Jackie] 首页 hero CTA 下方增加 Inference network online 与 Singapore / Tokyo / Frankfurt 状态行。
-+ [调整][Jackie] 首页模型分组标题：图片 Tennda Vision、视频 Tennda Motion、文本 Tennda LLM、音频 Tennda Voice；原 Tennda Vision 展示名改为 Tennda Illusion；Tennda Nano → Tennda Mini；音频模型 Tennda Voice → Tennda Waves。
-+ [调整][Jackie] 首页 hero CTA 改为 Explore Tennda Models（滚到模型区）与 View Model architecture（Hugging Face）。
-+ [优化][Jackie] 首页模型分组头图与卡片网格排列：图标与标题对齐，卡片间距与断点列数更清晰。
-+ [优化][Jackie] 首页模型 lineup 按能力分组，并补充数量统计、用途标签与工作台入口，内容更完整。
-+ [调整][Jackie] 首页隐藏 Prompt library 整块展示；提示词库仍可通过导航与 hero「Browse prompts」进入。
-+ [调整][Jackie] 首页 hero 装饰由 ASCII 莫比乌斯环改为 Token Stream（漂移的 LLM token 行）。
-+ [调整][Jackie] 更换 Tennda 品牌 Logo（透明底）：顶栏展示新图，浏览器 favicon 与 apple-touch-icon 同步更新；首页 hero 不放 Logo。
-+ [调整][Jackie] 清理登录/API/Toast/配置/画布/Agent 等用户可见中文硬编码，统一英文展示（`zh.ts` 目录保留但不生效）。
-+ [优化][Jackie] 首页在原石色点阵上加强科技感：角标卡片、扫描线与编号标签。
-+ [修复][Jackie] 提示词选择弹窗与公开库门控对齐；内置来源不再回退中文 registry；非 admin 点 Codex 状态打开 Agent 面板而非 Account。
-+ [调整][Jackie] 首页模型 lineup 文案去掉 canvas；卡片网格与 `TENNDA_MODEL_CATALOG` 保持一致（无 Canvas/Pixel/Chat/Wan）。
-+ [调整][Jackie] 默认对话模型移除 Tennda Chat（`gpt-5.5`），仅保留 Nano / Reason；默认文本模型改为 Reason。
-+ [调整][Jackie] 默认生图模型移除 Tennda Canvas / Pixel（`gemini-3.1-flash-image` / `gemini-2.5-flash-image`），仅保留 Vision / Flash / Dream。
-+ [调整][Jackie] 默认视频模型移除 Wan2.7 系列，仅保留 Veo 3.1 Lite/Fast 与 Seedance NSFW。
-+ [修复][Jackie] 首页提示词示例与公开提示词库对齐为同一套 DavidWu GPT Image 2 数据。
-+ [调整][Jackie] 提示词库 Category/Tags 筛选仅 `admin` 可见；普通用户仅展示 DavidWu GPT Image 2。
-+ [调整][Jackie] 提示词库全英：UI 文案英文化；内置来源改拉英文 README / `title_en`；停用中文-only Banana Quicker。
-+ [调整][Jackie] 画布功能仅 `admin` 可见：导航显示「My canvases」，可访问 `/canvas`；普通用户仍隐藏并跳转生图。
-+ [调整][Jackie] `admin` 在模型选择器中显示「展示名: 实际上游模型名」；普通用户仅见 Tennda 展示名。
-+ [调整][Jackie] 模型选择器厂商图标仅 `admin` 可见，普通用户统一显示默认图标，避免从图标推断上游模型。
-+ [调整][Jackie] 顶栏齿轮 Settings 按钮仅 `admin` 可见；普通用户用账户入口打开 Account。
-+ [新增][Jackie] 顶栏 Settings 旁增加 Hugging Face 入口，跳转模型页（`TENNDA_HUGGINGFACE_URL`）。
-+ [调整][Jackie] Agent 面板 Log Tab 仅 `admin` 可见。
-+ [调整][Jackie] 配置弹窗仅 `admin` 可见 Generation preferences / WebDAV / Agent，普通用户只保留 Account。
-+ [调整][Jackie] 首页底部展示全英文提示词库示例（可跳转 Prompts）。
-+ [调整][Jackie] 云端 Agent 对话注入 Tennda 自研文本模型 system 提示词。
-+ [新增][Jackie] Agent 面板未连接本地 Agent 时可直接与 Tennda Nano（`gpt-5.4-nano`）对话；连上本地 Agent 后仍走 Codex。
-+ [调整][Jackie] 隐藏画布入口：导航/首页不再展示画布，直接访问 `/canvas` 重定向到生图；登录默认进入生图。
-+ [调整][Jackie] Tennda LLM 故事版：品牌更名、自研模型展示名门面、首页模型介绍、强制英文并隐藏语言切换（`tennda-dev`）。
-+ [修复][Jackie] 账户剩余金额按平台 `quotaDollar/quota` 直接展示，不再误减 `usedQuota` 导致显示 $0.00。
-+ [调整][Jackie] 用户中心展示当前同步的 API Key（脱敏/显示/复制）；刷新时重新拉取 auto 密钥。
-+ [调整][Jackie] 登录/刷新后自动拉取账号 `group=auto` 启用密钥写入默认渠道，退出清空；移除写死的内置 API Key。
-+ [调整][Jackie] 登录改为 MaaS `/prod-api/auth/login`（密码登录 + JWT），会话校验走 `/system/user/getInfo`；本地/Vercel 增加 `/prod-api` 代理。
-+ [调整][Jackie] 「开始生成」等生成操作需登录；未登录点击会提示并弹出登录框。
-+ [新增][Jackie] 首页 hero 增加字编码莫比乌斯环装饰（风格参考 OOMOL）。
-+ [调整][Jackie] 更新默认模型：生图 gpt-image-2 / Gemini 3.1&2.5 Flash Image / Seedream；视频 Veo 3.1 / Seedance NSFW / Wan2.7；文本 gpt-5.5 / gpt-5.6-sol；默认生图张数为 1。
-+ [调整][Jackie] 去掉首页 hero 装饰虚线圆。
-+ [优化][Jackie] 合并会话 hydrate 与账户页刷新，避免 `/api/user/self` 被重复请求。
-+ [调整][Jackie] 配置账户页只展示登录账号与剩余金额，不再显示用户名称/积分/已用积分。
-+ [调整][Jackie] 配置页隐藏「渠道」「提示词来源」「对象存储」入口（默认渠道/内置来源/默认 OSS 与相关逻辑仍保留）。
-+ [修复][Jackie] Gemini Nano Banana 生图模型（如 `gemini-3.1-flash-lite-image`）在 OpenAI 兼容渠道下改为走 `generateContent`，避免误调 `/images/generations` 报 not supported。
-+ [新增][Jackie] WorkBuddy / CodeBuddy 插件清单与 marketplace（与 Codex 共用 `plugins/infinite-canvas` skills / MCP），并补充安装文档。
-+ [调整][Jackie] 恢复全站 Agent 右侧面板与顶栏/画布入口，配置页 Agent 连接支持说明 Codex / WorkBuddy。
-+ [新增][Jackie] 补充 `@jackie-canvas/canvas-agent` 发布到 npm 的流程文档。
-+ [调整][Jackie] 本地 Canvas Agent npm 包名改为 `@jackie-canvas/canvas-agent`。
-+ [调整][Jackie] 画布默认生图张数改为 1。
-+ [调整][Jackie] 默认视频模型列表新增 `seedance-2-0-NSFW`。
-+ [新增][Jackie] 对象存储（阿里云 OSS）配置与上传：Seedance 参考视频/音频本地文件可自动上传到 `super-jackie/canvas/` 并转为公网 https。
-+ [新增][Jackie] 视频创作台参考视频/音频支持粘贴公网 https 或 `asset://` 链接（Seedance 所需）。
-+ [修复][Jackie] Seedance 参考视频/音频仅接受公网 https 或 `asset://`，本地上传改为提前提示，避免上游 `InvalidParameter`。
-+ [修复][Jackie] 图生图 `/images/edits` 不再传上游不支持的 `response_format` / `output_format`。
-+ [修复][Jackie] 画布配置节点切换到视频模式时按能力选择模型，避免仍用旧图片模型误走 `/v1/videos`。
-+ [修复][Jackie] 画布配置节点未使用 `@` 引用时，自动带上已连接的上游图片/视频/音频作为生成参考。
-+ [修复][Jackie] Seedream 4/5 生图按模型要求映射尺寸（默认至少约 2K / 3686400 像素），避免 `size` 过小被拒绝。
-+ [修复][Jackie] Seedance 任务轮询兼容 `code: "success"` 响应，避免进行中任务被误判为失败。
-+ [修复][Jackie] Seedance 视频在默认 OpenAI 兼容渠道改为调用 `/v1/video/generations`；火山方舟 Agent Plan 仍走 `/contents/generations/tasks`。
-+ [调整][Jackie] 默认渠道模型列表补充 Seedream / Gemini 生图与 Seedance 视频模型；视频默认模型改为 `seedance-2-0`。
-+ [调整][Jackie] 第三方提示词库按界面语言切换数据源：英文抓取各仓库英文 README / `title_en`，中文仍用中文 README / `title_cn`；切换语言后首页与提示词库会重新加载。
-+ [新增][Jackie] 支持中英双语：默认英文，顶栏可切换语言；导航、首页、登录、配置、生图/视频工作台、提示词库、素材库、画布主界面与节点工具/对话框已接入 i18n。
-+ [修复][Jackie] Vercel `/gw` 恢复外部 rewrite，并排除 SPA 回退；补充 Middleware 代理以保留登录 Cookie，修复登录 405。
-+ [修复][Jackie] 移除与 antd 6 冲突的 `@ant-design/pro-components`，修复 Vercel/npm 安装 `ERESOLVE` 失败。
-+ [调整][Jackie] 恢复画布入口（导航「我的画布」、首页「打开画布」），登录后默认进入画布。
-+ [修复][Jackie] Vercel 登录会话：`/gw` 改为 Serverless 代理并转发/清洗 Set-Cookie，同时请求携带 `New-Api-User`，避免登录后 `/self` 一直 401。
-+ [修复][Jackie] Vercel 部署为 `/gw` 增加外部反向代理 rewrite，避免登录 POST 落到静态页返回 405。
-+ [调整][Jackie] 顶栏配置入口（齿轮与导航「配置」）仅登录后显示；渠道 Base URL / API Key 仅 `admin` 账号可见可编辑，普通用户界面不渲染这两项。
-+ [调整][Jackie] 产品展示名统一为 Jackie Canvas；隐藏顶栏与画布菜单中的文档入口。
-+ [新增][Jackie] 仓库 Agent Skill：`jackie-canvas` / `jackie-canvas-nodes` / `jackie-canvas-agent`。
++ [调整][Jackie] 首页 hero：Token Stream、Inference network 状态行、Explore Models / Hugging Face CTA；分组名为 Vision / Motion / LLM / Voice。
++ [调整][Jackie] 首页隐藏 Prompt library 整块；提示词库仍可通过导航进入。
++ [调整][Jackie] 更换 Tennda 品牌 Logo / favicon；全站用户可见文案英文化（强制英文）。
++ [修复][Jackie] 提示词选择弹窗与公开库门控对齐；非 admin 点 Codex 状态打开 Agent 面板而非 Account。
++ [调整][Jackie] 默认模型精简：文本 Mini/Reason，生图 Illusion/Flash/Dream，视频 Motion Lite/Fast/Cinema。
++ [调整][Jackie] 提示词库 Category/Tags 仅 `admin`；普通用户仅 DavidWu GPT Image 2；内置来源全英。
++ [调整][Jackie] 画布仅 `admin`；模型选择器/配置齿轮/Agent Log 等 admin 门控；普通用户不暴露上游品牌图标。
++ [调整][Jackie] 登录走 MaaS `/prod-api` + JWT；拉取 `group=auto` Key；生成需登录；账户展示脱敏 Key 与余额。
++ [修复][Jackie] Gemini Nano Banana 在 OpenAI 兼容渠道下走 `generateContent`。
++ [新增][Jackie] WorkBuddy / CodeBuddy 插件清单与 `@jackie-canvas/canvas-agent` 发布文档；OSS 上传与 Seedance 参考音视频。
++ [修复][Jackie] Seedance / Seedream / 图生图参数与轮询兼容性多处修复；Vercel `/gw` 与 `/prod-api` 代理修复。
++ [新增][Jackie] 无限画布与生图/视频工作台、提示词库、素材库、配置与登录流程骨架。
 
 ### Upstream（合入上游）
 

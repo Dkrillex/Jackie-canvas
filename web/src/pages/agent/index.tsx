@@ -1,4 +1,4 @@
-import { Bot, CheckCircle2, ImageIcon, LoaderCircle, Plus, Sparkles, Trash2, Unplug, Video, Wifi, Wrench, XCircle } from "lucide-react";
+import { Bot, CheckCircle2, ImageIcon, LoaderCircle, type LucideIcon, Plus, Sparkles, Trash2, Unplug, Video, Wifi, Wrench, XCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { App, Button, Empty, Input, Tooltip } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,7 @@ import { ModelPicker } from "@/components/model-picker";
 import { BUILTIN_TOOL_DEFS } from "@/lib/agent-studio/builtin-tools";
 import { connectMcpHttp, mcpToolName } from "@/lib/agent-studio/mcp-http-client";
 import { historyFromStudioMessages, runStudioAgentLoop } from "@/lib/agent-studio/studio-loop";
-import type { StudioArtifact } from "@/lib/agent-studio/types";
+import type { StudioArtifact, StudioMessage } from "@/lib/agent-studio/types";
 import { cn } from "@/lib/utils";
 import { buildGenerationConfig } from "@/lib/canvas/canvas-generation-helpers";
 import { canvasThemes } from "@/lib/canvas-theme";
@@ -24,6 +24,18 @@ import { useUserStore } from "@/stores/use-user-store";
 import type { AgentToolDefinition } from "@/services/api/image";
 
 type SideTab = "tools" | "mcp" | "artifacts";
+type PipelineStep = "plan" | "tool" | "result" | "artifact";
+type PipelineStatus = "idle" | "active" | "done" | "failed";
+type ThemeTokens = (typeof canvasThemes)[keyof typeof canvasThemes];
+
+/** Tennda-facing tools shown in the sidebar; other builtins stay available to the agent. */
+const FEATURED_BUILTIN_IDS = ["generate_image", "generate_video", "generate_speech"] as const;
+
+const FEATURED_TOOL_UI: Record<(typeof FEATURED_BUILTIN_IDS)[number], { icon: LucideIcon; blurbKey: MessageKey }> = {
+    generate_image: { icon: ImageIcon, blurbKey: "studio.tool.blurb.image" },
+    generate_video: { icon: Video, blurbKey: "studio.tool.blurb.video" },
+    generate_speech: { icon: Sparkles, blurbKey: "studio.tool.blurb.speech" },
+};
 
 const SUGGESTIONS: { key: MessageKey; icon: ReactNode }[] = [
     { key: "studio.suggest.image", icon: <ImageIcon className="size-3.5" /> },
@@ -31,6 +43,73 @@ const SUGGESTIONS: { key: MessageKey; icon: ReactNode }[] = [
     { key: "studio.suggest.speech", icon: <Sparkles className="size-3.5" /> },
     { key: "studio.suggest.prompts", icon: <Wrench className="size-3.5" /> },
 ];
+
+const PIPELINE_STEPS: { id: PipelineStep; labelKey: MessageKey }[] = [
+    { id: "plan", labelKey: "studio.pipeline.plan" },
+    { id: "tool", labelKey: "studio.pipeline.tool" },
+    { id: "result", labelKey: "studio.pipeline.result" },
+    { id: "artifact", labelKey: "studio.pipeline.artifact" },
+];
+
+function lastTurnMessages(messages: StudioMessage[]) {
+    let lastUser = -1;
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+        if (messages[i].role === "user") {
+            lastUser = i;
+            break;
+        }
+    }
+    return lastUser < 0 ? messages : messages.slice(lastUser + 1);
+}
+
+/** Assistant bubbles that are pre-tool plans (not the final reply after tools). */
+function planMessageIds(messages: StudioMessage[], sending: boolean): Set<string> {
+    const ids = new Set<string>();
+    let lastUser = -1;
+    for (let i = 0; i < messages.length; i += 1) {
+        if (messages[i].role === "user") lastUser = i;
+    }
+    let idx = 0;
+    while (idx < messages.length) {
+        if (messages[idx].role !== "user") {
+            idx += 1;
+            continue;
+        }
+        const turnUserIdx = idx;
+        idx += 1;
+        const pending: string[] = [];
+        let sawTool = false;
+        while (idx < messages.length && messages[idx].role !== "user") {
+            const item = messages[idx];
+            if (item.role === "assistant" && !sawTool) pending.push(item.id);
+            if (item.role === "tool") sawTool = true;
+            idx += 1;
+        }
+        if (sawTool || (sending && turnUserIdx === lastUser)) {
+            for (const id of pending) ids.add(id);
+        }
+    }
+    return ids;
+}
+
+function derivePipeline(messages: StudioMessage[], sending: boolean): Record<PipelineStep, PipelineStatus> {
+    const turn = lastTurnMessages(messages);
+    const tools = turn.filter((item) => item.role === "tool");
+    const assistants = turn.filter((item) => item.role === "assistant");
+    const hasPlanText = assistants.some((item) => item.text.trim() && item.text !== "…");
+    const hasStreamingPlan = assistants.some((item) => item.streamId);
+    const toolRunning = tools.some((item) => item.toolStatus === "running");
+    const toolFailed = tools.some((item) => item.toolStatus === "failed");
+    const toolDoneOk = tools.some((item) => item.toolStatus === "done");
+    const hasArtifact = tools.some((item) => (item.artifacts?.length || 0) > 0) || turn.some((item) => (item.artifacts?.length || 0) > 0);
+
+    const plan: PipelineStatus = hasPlanText || tools.length ? "done" : hasStreamingPlan || sending ? "active" : "idle";
+    const tool: PipelineStatus = toolRunning ? "active" : toolFailed ? "failed" : toolDoneOk || tools.length ? "done" : "idle";
+    const result: PipelineStatus = toolRunning ? "active" : toolFailed ? "failed" : toolDoneOk ? "done" : "idle";
+    const artifact: PipelineStatus = hasArtifact ? "done" : toolRunning ? "active" : "idle";
+
+    return { plan, tool, result, artifact };
+}
 
 export default function AgentStudioPage() {
     const { t } = useI18n();
@@ -82,8 +161,14 @@ export default function AgentStudioPage() {
         return model ? { ...base, model, textModel: model, systemPrompt: "" } : { ...base, systemPrompt: "" };
     }, [effectiveConfig, model]);
 
-    const toolsOn = BUILTIN_TOOL_DEFS.length - disabledBuiltinIds.length;
+    const featuredTools = BUILTIN_TOOL_DEFS.filter((tool) => (FEATURED_BUILTIN_IDS as readonly string[]).includes(tool.id));
+    // Only featured tools are toggleable in UI; ignore stale disables for hidden builtins.
+    const effectiveDisabledBuiltinIds = disabledBuiltinIds.filter((id) => (FEATURED_BUILTIN_IDS as readonly string[]).includes(id));
+    const featuredOn = featuredTools.filter((tool) => !effectiveDisabledBuiltinIds.includes(tool.id)).length;
     const mcpOn = mcpServers.filter((item) => item.connected).length;
+    const pipeline = useMemo(() => derivePipeline(messages, sending), [messages, sending]);
+    const planIds = useMemo(() => planMessageIds(messages, sending), [messages, sending]);
+    const showPipeline = sending || lastTurnMessages(messages).some((item) => item.role === "tool");
 
     useEffect(() => {
         if (!model && textConfig.textModel) setModel(textConfig.textModel);
@@ -94,7 +179,7 @@ export default function AgentStudioPage() {
     }, [messages.length, sending]);
 
     const activeTools: AgentToolDefinition[] = useMemo(() => {
-        const builtin = enabledStudioBuiltinTools(disabledBuiltinIds).map(({ name, description, parameters }) => ({ name, description, parameters }));
+        const builtin = enabledStudioBuiltinTools(effectiveDisabledBuiltinIds).map(({ name, description, parameters }) => ({ name, description, parameters }));
         const mcp = mcpServers.flatMap((server) =>
             server.connected
                 ? server.tools.map((tool) => ({
@@ -105,7 +190,7 @@ export default function AgentStudioPage() {
                 : [],
         );
         return [...builtin, ...mcp];
-    }, [disabledBuiltinIds, mcpServers]);
+    }, [effectiveDisabledBuiltinIds, mcpServers]);
 
     const send = async () => {
         const text = prompt.trim();
@@ -224,67 +309,49 @@ export default function AgentStudioPage() {
     };
 
     const panelStyle = {
-        background: themeName === "dark" ? "#2a2e3c" : "#ffffff",
-        borderColor: themeName === "dark" ? "rgba(255,255,255,0.1)" : "#e4e7ec",
+        background: themeName === "dark" ? "rgba(42,46,60,0.92)" : "rgba(255,255,255,0.92)",
+        borderColor: themeName === "dark" ? "rgba(255,255,255,0.1)" : "rgba(1,117,218,0.12)",
         color: themeName === "dark" ? "#ffffff" : "#1f2937",
+        boxShadow: themeName === "dark" ? "0 18px 40px -28px rgba(0,0,0,0.55)" : "0 18px 40px -28px rgba(1,117,218,0.22)",
     };
 
     return (
-        <main className="flex h-full flex-col overflow-hidden bg-background text-foreground">
-            <div className="mx-auto flex h-full w-full max-w-[1440px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-6 md:py-7">
-                <header className="flex items-center justify-between gap-3 px-1">
-                    <div className="flex min-w-0 items-center gap-3">
-                        <span
-                            className="grid size-10 shrink-0 place-items-center rounded-2xl border shadow-sm"
-                            style={{ background: theme.toolbar.panel, borderColor: theme.node.stroke, color: theme.node.text }}
-                        >
-                            <Bot className="size-5" />
-                        </span>
-                        <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <h1 className="truncate text-lg font-semibold tracking-tight md:text-xl">{t("studio.title")}</h1>
-                                <span
-                                    className="hidden rounded-full border px-2 py-0.5 font-mono text-[10px] tracking-[0.16em] uppercase sm:inline-flex"
-                                    style={{ borderColor: theme.node.stroke, color: theme.node.muted }}
-                                >
-                                    Studio
-                                </span>
-                            </div>
-                            <p className="mt-0.5 truncate text-xs leading-5 md:text-sm" style={{ color: theme.node.muted }}>
-                                {t("studio.desc")}
-                            </p>
+        <main className="tennda-page-bg flex h-full flex-col overflow-hidden text-foreground">
+            <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col gap-3 px-4 py-3 md:gap-3.5 md:px-6 md:py-4">
+                <header className="flex items-end justify-between gap-3 px-0.5">
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h1 className="truncate text-lg font-semibold tracking-tight md:text-xl">{t("studio.title")}</h1>
+                            <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-[0.14em] text-primary uppercase">Studio</span>
                         </div>
+                        <p className="mt-1 truncate text-xs leading-4 text-muted-foreground">{t("studio.desc")}</p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                        <div className="hidden items-center gap-1.5 text-[11px] md:flex" style={{ color: theme.node.muted }}>
-                            <span className="rounded-full border px-2 py-1" style={{ borderColor: theme.node.stroke, background: theme.toolbar.panel }}>
-                                {toolsOn} tools
-                            </span>
-                            <span className="rounded-full border px-2 py-1" style={{ borderColor: theme.node.stroke, background: theme.toolbar.panel }}>
-                                {mcpOn} MCP
-                            </span>
-                            <span className="rounded-full border px-2 py-1" style={{ borderColor: theme.node.stroke, background: theme.toolbar.panel }}>
-                                {artifacts.length} files
-                            </span>
+                    <div className="flex shrink-0 items-center gap-3">
+                        <div className="hidden items-center gap-2 font-mono text-[11px] text-muted-foreground md:flex">
+                            <span>{featuredOn} tools</span>
+                            <span className="opacity-30">·</span>
+                            <span>{mcpOn} MCP</span>
+                            <span className="opacity-30">·</span>
+                            <span>{artifacts.length} files</span>
                         </div>
                         <Tooltip title={t("studio.clear")}>
                             <Button
                                 type="text"
                                 shape="circle"
-                                className="!h-9 !w-9"
+                                className="!h-8 !w-8"
                                 disabled={sending || !messages.length}
-                                icon={<Trash2 className="size-4" />}
+                                icon={<Trash2 className="size-3.5" />}
                                 onClick={clearChat}
                                 aria-label={t("studio.clear")}
-                                style={{ color: theme.node.muted }}
                             />
                         </Tooltip>
                     </div>
                 </header>
 
-                <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] lg:gap-5">
-                    <section className="flex min-h-0 flex-col overflow-hidden rounded-[28px] border shadow-[0_18px_50px_-28px_rgba(28,25,23,0.35)]" style={panelStyle}>
-                        <div ref={listRef} className="hide-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 md:px-6 md:py-6">
+                <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,320px)]">
+                    <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border backdrop-blur-sm" style={panelStyle}>
+                        {showPipeline ? <PipelineRail theme={theme} status={pipeline} /> : null}
+                        <div ref={listRef} className="hide-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3 md:px-5 md:py-4">
                             {!messages.length ? (
                                 <EmptyChat theme={theme} onPick={(value) => setPrompt(value)} />
                             ) : (
@@ -297,86 +364,110 @@ export default function AgentStudioPage() {
                                         toolStatus={item.toolStatus}
                                         artifacts={item.artifacts}
                                         streamId={item.streamId}
+                                        showPlan={item.role === "assistant" && planIds.has(item.id)}
                                         theme={theme}
                                     />
                                 ))
                             )}
                         </div>
-                        <AgentChatComposer
-                            prompt={prompt}
-                            sending={sending}
-                            placeholder={t("studio.placeholder")}
-                            theme={theme}
-                            onPromptChange={setPrompt}
-                            onSubmit={() => void send()}
-                            onStop={stop}
-                            left={
-                                <ModelPicker
-                                    config={textConfig}
-                                    value={textConfig.model}
-                                    onChange={setModel}
-                                    capability="text"
-                                    onMissingConfig={() => openConfigDialog(true)}
-                                    className="!h-9 !max-w-[12rem]"
-                                />
-                            }
-                        />
+                        <div className="border-t" style={{ borderColor: theme.node.stroke }}>
+                            <AgentChatComposer
+                                prompt={prompt}
+                                sending={sending}
+                                autoGrow
+                                placeholder={t("studio.placeholder")}
+                                theme={theme}
+                                onPromptChange={setPrompt}
+                                onSubmit={() => void send()}
+                                onStop={stop}
+                                left={
+                                    <ModelPicker
+                                        config={textConfig}
+                                        value={textConfig.model}
+                                        onChange={setModel}
+                                        capability="text"
+                                        onMissingConfig={() => openConfigDialog(true)}
+                                        className="!h-9 !max-w-[12rem]"
+                                    />
+                                }
+                            />
+                        </div>
                     </section>
 
-                    <aside className="flex min-h-0 flex-col overflow-hidden rounded-[28px] border shadow-[0_18px_50px_-28px_rgba(28,25,23,0.28)]" style={panelStyle}>
+                    <aside className="flex min-h-0 flex-col overflow-hidden rounded-2xl border backdrop-blur-sm" style={panelStyle}>
                         <AgentPanelTabs
                             value={sideTab}
                             theme={theme}
                             onChange={setSideTab}
                             items={[
-                                { value: "tools", label: t("studio.tab.tools"), count: toolsOn },
+                                { value: "tools", label: t("studio.tab.tools"), count: featuredOn },
                                 { value: "mcp", label: t("studio.tab.mcp"), count: mcpServers.length || undefined },
                                 { value: "artifacts", label: t("studio.tab.artifacts"), count: artifacts.length || undefined },
                             ]}
                         />
-                        <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-5 pt-3 md:px-4 md:pb-6 md:pt-4">
+                        <div className="hide-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-3 md:px-3.5 md:pb-5">
                             {sideTab === "tools" ? (
                                 <div>
-                                    <p className="mb-3 px-0.5 text-xs leading-5" style={{ color: theme.node.muted }}>
-                                        {t("studio.tools.hint")}
-                                    </p>
-                                    <div className="flex flex-col gap-2.5">
-                                        {BUILTIN_TOOL_DEFS.map((tool) => {
+                                    <p className="mb-2.5 px-0.5 text-[11px] leading-4 text-muted-foreground">{t("studio.tools.hint")}</p>
+                                    <div className="flex flex-col gap-2">
+                                        {featuredTools.map((tool) => {
                                             const enabled = !disabledBuiltinIds.includes(tool.id);
+                                            const meta = FEATURED_TOOL_UI[tool.id as (typeof FEATURED_BUILTIN_IDS)[number]];
+                                            const Icon = meta.icon;
                                             return (
                                                 <button
                                                     key={tool.id}
                                                     type="button"
                                                     onClick={() => toggleBuiltin(tool.id, !enabled)}
                                                     className={cn(
-                                                        "flex w-full flex-col items-start rounded-2xl border px-3.5 py-3 text-left transition hover:opacity-95",
-                                                        enabled ? "bg-white shadow-sm dark:bg-stone-900" : "bg-white/70 dark:bg-stone-900/50",
+                                                        "group flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2.5 text-left transition",
+                                                        enabled ? "bg-background/80 hover:border-primary/35" : "bg-background/40 opacity-60 hover:opacity-80",
                                                     )}
-                                                    style={{
-                                                        borderColor: enabled ? theme.node.stroke : `color-mix(in srgb, ${theme.node.stroke} 55%, transparent)`,
-                                                        opacity: enabled ? 1 : 0.55,
-                                                        color: theme.node.text,
-                                                    }}
+                                                    style={{ borderColor: theme.node.stroke, color: theme.node.text }}
                                                 >
-                                                    <div className="flex w-full items-center justify-between gap-2">
-                                                        <span className="font-mono text-xs font-medium">{tool.name}</span>
-                                                        <span
-                                                            className="rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide"
-                                                            style={{
-                                                                borderColor: enabled ? "rgba(22,163,74,.28)" : theme.node.stroke,
-                                                                color: enabled ? "#16a34a" : theme.node.muted,
-                                                                background: enabled ? "rgba(22,163,74,.06)" : "transparent",
-                                                            }}
-                                                        >
-                                                            {enabled ? "ON" : "OFF"}
+                                                    <span
+                                                        className="grid size-8 shrink-0 place-items-center rounded-lg"
+                                                        style={{ background: enabled ? "rgba(1,117,218,0.1)" : `color-mix(in srgb, ${theme.node.text} 6%, transparent)`, color: enabled ? "#0175DA" : theme.node.muted }}
+                                                    >
+                                                        <Icon className="size-3.5" />
+                                                    </span>
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="flex items-center justify-between gap-2">
+                                                            <span className="truncate font-mono text-[11px] font-medium">{tool.name}</span>
+                                                            <span
+                                                                className="shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide"
+                                                                style={{
+                                                                    color: enabled ? "#16a34a" : theme.node.muted,
+                                                                    background: enabled ? "rgba(22,163,74,.1)" : "transparent",
+                                                                }}
+                                                            >
+                                                                {enabled ? "ON" : "OFF"}
+                                                            </span>
                                                         </span>
-                                                    </div>
-                                                    <span className="mt-1.5 text-[11px] leading-4" style={{ color: theme.node.muted }}>
-                                                        {tool.description}
+                                                        <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{t(meta.blurbKey)}</span>
                                                     </span>
                                                 </button>
                                             );
                                         })}
+                                        <button
+                                            type="button"
+                                            onClick={() => setSideTab("mcp")}
+                                            className="group flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2.5 text-left transition hover:border-primary/35"
+                                            style={{ borderColor: theme.node.stroke, color: theme.node.text, background: "color-mix(in srgb, #0175DA 4%, transparent)" }}
+                                        >
+                                            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                                                <Wifi className="size-3.5" />
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="flex items-center justify-between gap-2">
+                                                    <span className="font-mono text-[11px] font-medium">MCP</span>
+                                                    <span className="font-mono text-[10px] text-muted-foreground">
+                                                        {mcpOn}/{mcpServers.length}
+                                                    </span>
+                                                </span>
+                                                <span className="mt-0.5 block text-[11px] leading-4 text-muted-foreground">{t("studio.tools.infraHint")}</span>
+                                            </span>
+                                        </button>
                                     </div>
                                 </div>
                             ) : null}
@@ -460,35 +551,75 @@ export default function AgentStudioPage() {
     );
 }
 
-function EmptyChat({ theme, onPick }: { theme: (typeof canvasThemes)[keyof typeof canvasThemes]; onPick: (value: string) => void }) {
+function PipelineRail({ theme, status }: { theme: ThemeTokens; status: Record<PipelineStep, PipelineStatus> }) {
     const { t } = useI18n();
     return (
-        <div className="mx-auto flex max-w-xl flex-col items-center px-2 py-10 text-center md:py-16">
-            <span
-                className="grid size-14 place-items-center rounded-[22px] border shadow-sm"
-                style={{ borderColor: theme.node.stroke, background: `color-mix(in srgb, ${theme.node.text} 4%, ${theme.toolbar.panel})`, color: theme.node.text }}
-            >
-                <Bot className="size-7" />
-            </span>
-            <h2 className="mt-5 text-xl font-semibold tracking-tight">{t("studio.emptyTitle")}</h2>
-            <p className="mt-2 text-sm leading-6" style={{ color: theme.node.muted }}>
-                {t("studio.empty")}
-            </p>
-            <div className="mt-6 grid w-full gap-2 sm:grid-cols-2">
+        <div className="flex shrink-0 items-center gap-1 border-b px-3 py-2 md:px-5" style={{ borderColor: theme.node.stroke, background: "color-mix(in srgb, #0175DA 4%, transparent)" }}>
+            {PIPELINE_STEPS.map((step, index) => {
+                const state = status[step.id];
+                const color = state === "failed" ? "#dc2626" : state === "active" ? "#0175DA" : state === "done" ? "#16a34a" : theme.node.muted;
+                return (
+                    <div key={step.id} className="flex min-w-0 flex-1 items-center gap-1">
+                        <div className="flex min-w-0 items-center gap-1.5">
+                            <span
+                                className={cn("grid size-5 shrink-0 place-items-center rounded-full border text-[10px] font-semibold", state === "active" && "animate-pulse")}
+                                style={{ borderColor: color, color, background: state === "idle" ? "transparent" : `color-mix(in srgb, ${color} 12%, transparent)` }}
+                            >
+                                {state === "done" ? <CheckCircle2 className="size-3" /> : state === "failed" ? <XCircle className="size-3" /> : state === "active" ? <LoaderCircle className="size-3 animate-spin" /> : index + 1}
+                            </span>
+                            <span className="truncate text-[11px] font-medium tracking-wide" style={{ color }}>
+                                {t(step.labelKey)}
+                            </span>
+                        </div>
+                        {index < PIPELINE_STEPS.length - 1 ? <span className="mx-1 hidden h-px min-w-3 flex-1 sm:block" style={{ background: `color-mix(in srgb, ${color} 35%, ${theme.node.stroke})` }} /> : null}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+function StageLabel({ label }: { label: string }) {
+    return <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] tracking-[0.12em] text-primary uppercase">{label}</span>;
+}
+
+function EmptyChat({ theme, onPick }: { theme: ThemeTokens; onPick: (value: string) => void }) {
+    const { t } = useI18n();
+    return (
+        <div className="mx-auto flex min-h-full max-w-xl flex-col justify-center px-1 py-3">
+            <div className="text-center">
+                <span className="mx-auto grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
+                    <Bot className="size-5" />
+                </span>
+                <h2 className="mt-3 text-lg font-semibold tracking-tight">{t("studio.emptyTitle")}</h2>
+                <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-muted-foreground">{t("studio.empty")}</p>
+            </div>
+
+            <div className="mt-5 rounded-xl border px-3 py-2.5" style={{ borderColor: theme.node.stroke, background: "color-mix(in srgb, #0175DA 4%, transparent)" }}>
+                <div className="mb-2 text-[10px] font-medium tracking-[0.14em] text-primary uppercase">{t("studio.emptyFlow")}</div>
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                    {PIPELINE_STEPS.map((step, index) => (
+                        <span key={step.id} className="inline-flex items-center gap-1.5">
+                            <span className="rounded-md border bg-background/80 px-1.5 py-0.5 font-medium text-foreground/80" style={{ borderColor: theme.node.stroke }}>
+                                {t(step.labelKey)}
+                            </span>
+                            {index < PIPELINE_STEPS.length - 1 ? <span className="opacity-40">→</span> : null}
+                        </span>
+                    ))}
+                </div>
+            </div>
+
+            <div className="mt-4 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
                 {SUGGESTIONS.map((item) => (
                     <button
                         key={item.key}
                         type="button"
                         onClick={() => onPick(t(item.key))}
-                        className="flex items-start gap-2 rounded-2xl border px-3 py-3 text-left text-xs leading-5 transition hover:opacity-90"
-                        style={{
-                            borderColor: theme.node.stroke,
-                            background: `color-mix(in srgb, ${theme.node.text} 3%, transparent)`,
-                            color: theme.node.text,
-                        }}
+                        className="flex items-start gap-2 rounded-xl border bg-background/70 px-3 py-2.5 text-left transition hover:border-primary/40 hover:bg-primary/[0.04]"
+                        style={{ borderColor: theme.node.stroke, color: theme.node.text }}
                     >
-                        <span className="mt-0.5 shrink-0 opacity-60">{item.icon}</span>
-                        <span>{t(item.key)}</span>
+                        <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">{item.icon}</span>
+                        <span className="line-clamp-2 text-[11px] leading-4">{t(item.key)}</span>
                     </button>
                 ))}
             </div>
@@ -503,6 +634,7 @@ function ChatBubble({
     toolStatus,
     artifacts,
     streamId,
+    showPlan,
     theme,
 }: {
     role: string;
@@ -511,39 +643,45 @@ function ChatBubble({
     toolStatus?: "running" | "done" | "failed";
     artifacts?: StudioArtifact[];
     streamId?: string;
+    showPlan?: boolean;
     theme: (typeof canvasThemes)[keyof typeof canvasThemes];
 }) {
     const { t } = useI18n();
     if (role === "tool") {
         const tone =
             toolStatus === "failed"
-                ? { color: "#dc2626", border: "rgba(220,38,38,.22)", bg: "rgba(220,38,38,.05)", icon: <XCircle className="size-4" />, label: t("studio.tool.failed") }
+                ? { color: "#dc2626", border: "rgba(220,38,38,.22)", bg: "rgba(220,38,38,.05)", icon: <XCircle className="size-3.5" />, label: t("studio.tool.failed") }
                 : toolStatus === "running"
-                  ? { color: "#2563eb", border: "rgba(37,99,235,.22)", bg: "rgba(37,99,235,.05)", icon: <LoaderCircle className="size-4 animate-spin" />, label: t("studio.tool.running") }
-                  : { color: "#16a34a", border: "rgba(22,163,74,.22)", bg: "rgba(22,163,74,.05)", icon: <CheckCircle2 className="size-4" />, label: t("studio.tool.done") };
+                  ? { color: "#2563eb", border: "rgba(37,99,235,.22)", bg: "rgba(37,99,235,.05)", icon: <LoaderCircle className="size-3.5 animate-spin" />, label: t("studio.tool.running") }
+                  : { color: "#16a34a", border: "rgba(22,163,74,.22)", bg: "rgba(22,163,74,.05)", icon: <CheckCircle2 className="size-3.5" />, label: t("studio.tool.done") };
         return (
-            <div className="flex items-start gap-3">
-                <StudioAvatar theme={theme} />
-                <div className="min-w-0 flex-1 rounded-2xl border px-3.5 py-3" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
+            <div className="flex items-start gap-2.5">
+                <StudioAvatar />
+                <div className="min-w-0 flex-1 space-y-2 rounded-xl border px-3 py-2.5" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
                     <div className="flex flex-wrap items-center gap-2">
-                        <span className="grid size-8 place-items-center rounded-xl border" style={{ borderColor: tone.border, color: tone.color, background: tone.bg }}>
-                            {tone.icon}
-                        </span>
+                        <StageLabel label={t("studio.stage.tool")} />
                         <span className="font-mono text-xs">{toolName}</span>
-                        <span className="rounded-full border px-2 py-0.5 text-[11px]" style={{ borderColor: tone.border, color: tone.color, background: tone.bg }}>
+                        <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px]" style={{ borderColor: tone.border, color: tone.color, background: tone.bg }}>
+                            {tone.icon}
                             {tone.label}
                         </span>
                     </div>
                     {text ? (
-                        <p className="mt-2 text-sm leading-6" style={{ color: theme.node.muted }}>
-                            {text}
-                        </p>
-                    ) : null}
-                    {artifacts?.map((item) => (
-                        <div key={item.id} className="mt-3">
-                            <ArtifactCard artifact={item} theme={theme} compact />
+                        <div className="space-y-1">
+                            <StageLabel label={t("studio.stage.result")} />
+                            <p className="text-sm leading-5" style={{ color: theme.node.muted }}>
+                                {text}
+                            </p>
                         </div>
-                    ))}
+                    ) : null}
+                    {artifacts?.length ? (
+                        <div className="space-y-1.5">
+                            <StageLabel label={t("studio.stage.artifact")} />
+                            {artifacts.map((item) => (
+                                <ArtifactCard key={item.id} artifact={item} theme={theme} compact />
+                            ))}
+                        </div>
+                    ) : null}
                 </div>
             </div>
         );
@@ -553,7 +691,7 @@ function ChatBubble({
         return (
             <div className="flex justify-end">
                 <div
-                    className="max-w-[86%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md border px-3.5 py-2.5 text-sm leading-6"
+                    className="max-w-[86%] whitespace-pre-wrap break-words rounded-2xl rounded-br-md border px-3 py-2 text-sm leading-5"
                     style={{
                         color: theme.node.text,
                         background: `color-mix(in srgb, ${theme.node.text} 7%, ${theme.toolbar.panel})`,
@@ -568,9 +706,9 @@ function ChatBubble({
 
     if (role === "error") {
         return (
-            <div className="flex items-start gap-3">
-                <StudioAvatar theme={theme} />
-                <div className="max-w-[92%] rounded-2xl border px-3.5 py-2.5 text-sm leading-6 text-red-600" style={{ borderColor: "rgba(220,38,38,.22)", background: "rgba(220,38,38,.05)" }}>
+            <div className="flex items-start gap-2.5">
+                <StudioAvatar />
+                <div className="max-w-[92%] rounded-xl border px-3 py-2 text-sm leading-5 text-red-600" style={{ borderColor: "rgba(220,38,38,.22)", background: "rgba(220,38,38,.05)" }}>
                     {text}
                 </div>
             </div>
@@ -578,9 +716,10 @@ function ChatBubble({
     }
 
     return (
-        <div className="flex items-start gap-3">
-            <StudioAvatar theme={theme} />
-            <div className="min-w-0 flex-1 text-sm leading-6" style={{ color: theme.node.text }}>
+        <div className="flex items-start gap-2.5">
+            <StudioAvatar />
+            <div className="min-w-0 flex-1 space-y-1.5 text-sm leading-5" style={{ color: theme.node.text }}>
+                {showPlan ? <StageLabel label={t("studio.stage.plan")} /> : null}
                 <Streamdown animated isAnimating={!!streamId}>
                     {text}
                 </Streamdown>
@@ -589,14 +728,10 @@ function ChatBubble({
     );
 }
 
-function StudioAvatar({ theme }: { theme: (typeof canvasThemes)[keyof typeof canvasThemes] }) {
+function StudioAvatar() {
     return (
-        <span
-            className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border"
-            style={{ borderColor: theme.node.stroke, background: theme.toolbar.panel, color: theme.node.text }}
-            aria-hidden
-        >
-            <Bot className="size-4 opacity-80" />
+        <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-primary/10 text-primary" aria-hidden>
+            <Bot className="size-3.5" />
         </span>
     );
 }
@@ -607,7 +742,7 @@ function ArtifactCard({
     compact,
 }: {
     artifact: StudioArtifact;
-    theme: (typeof canvasThemes)[keyof typeof canvasThemes];
+    theme: ThemeTokens;
     compact?: boolean;
 }) {
     const [src, setSrc] = useState(artifact.url || "");
