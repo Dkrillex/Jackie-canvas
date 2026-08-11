@@ -122,9 +122,10 @@ function resourceText(node: CanvasNodeData): string | undefined {
 }
 
 function resourceKind(node: CanvasNodeData): CanvasResourceKind | null {
-    if (node.type === CanvasNodeType.Image && node.metadata?.content) return "image";
-    if (node.type === CanvasNodeType.Video && node.metadata?.content) return "video";
-    if (node.type === CanvasNodeType.Audio && node.metadata?.content) return "audio";
+    // Seedance cloud assets may only have asset:// (no https preview); still count as references.
+    if (node.type === CanvasNodeType.Image && (node.metadata?.content || node.metadata?.seedanceAssetUrl)) return "image";
+    if (node.type === CanvasNodeType.Video && (node.metadata?.content || node.metadata?.seedanceAssetUrl)) return "video";
+    if (node.type === CanvasNodeType.Audio && (node.metadata?.content || node.metadata?.seedanceAssetUrl)) return "audio";
     if (node.type === CanvasNodeType.Text && (node.metadata?.content || node.metadata?.prompt)) return "text";
     // Plugin nodes declare their input eligibility through definition.resource.
     return getNodeDefinition(node.type)?.resource?.(node)?.kind || null;

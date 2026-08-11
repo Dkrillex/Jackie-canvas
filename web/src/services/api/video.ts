@@ -265,7 +265,9 @@ async function buildSeedanceContent(prompt: string, references: ReferenceImage[]
 
 async function resolveSeedanceImageUrl(image: ReferenceImage) {
     // Prefer asset:// / https. Never send data: or blob: to Seedance (causes 413 / binary body).
-    if (image.url?.startsWith("asset://")) return image.url;
+    // Retry / legacy paths may keep asset:// on dataUrl when url is missing — accept either.
+    const assetUrl = [image.url, image.dataUrl].find((value) => value?.startsWith("asset://"));
+    if (assetUrl) return assetUrl;
     if (isPublicMediaUrl(image.url || "")) return image.url!;
     if (isPublicMediaUrl(image.dataUrl || "")) return image.dataUrl;
     return uploadLocalMediaToOss(image.dataUrl || image.url || "", image.storageKey, image.name || "reference.png", "image");
@@ -284,6 +286,9 @@ async function resolveSeedanceAudioUrl(audio: ReferenceAudio) {
 }
 
 async function uploadLocalMediaToOss(url: string, storageKey: string | undefined, fileName: string, kind: "image" | "video" | "audio") {
+    if (url.startsWith("asset://")) {
+        throw new Error(apiText("seedanceNeedsPublicOrOss", { label: apiText(`seedanceLocalLabel.${kind}`) }));
+    }
     const oss = useConfigStore.getState().oss;
     if (!isOssUploadReady(oss)) {
         throw new Error(apiText("seedanceNeedsPublicOrOss", { label: apiText(`seedanceLocalLabel.${kind}`) }));

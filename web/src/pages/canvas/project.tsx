@@ -2264,7 +2264,16 @@ function InfiniteCanvasPage() {
                     pendingChildIds = [videoId];
                     setNodes((prev) =>
                         isEmptyVideoNode
-                            ? prev.map((node) => (node.id === nodeId ? { ...node, ...videoNode } : node))
+                            ? prev.map((node) =>
+                                  node.id === nodeId
+                                      ? {
+                                            ...node,
+                                            ...videoNode,
+                                            // Keep Seedance cloud fields from the empty asset node; a full metadata replace would drop asset://.
+                                            metadata: { ...node.metadata, ...videoNode.metadata },
+                                        }
+                                      : node,
+                              )
                             : [...prev.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, status: NODE_STATUS_SUCCESS } } : node)), videoNode],
                     );
                     if (!isEmptyVideoNode) setConnections((prev) => [...prev, { id: nanoid(), fromNodeId: nodeId, toNodeId: videoId }]);
@@ -2321,7 +2330,15 @@ function InfiniteCanvasPage() {
                     pendingChildIds = [audioId];
                     setNodes((prev) =>
                         isEmptyAudioNode
-                            ? prev.map((node) => (node.id === nodeId ? { ...node, ...audioNode } : node))
+                            ? prev.map((node) =>
+                                  node.id === nodeId
+                                      ? {
+                                            ...node,
+                                            ...audioNode,
+                                            metadata: { ...node.metadata, ...audioNode.metadata },
+                                        }
+                                      : node,
+                              )
                             : [...prev.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, status: NODE_STATUS_SUCCESS } } : node)), audioNode],
                     );
                     if (!isEmptyAudioNode) setConnections((prev) => [...prev, { id: nanoid(), fromNodeId: nodeId, toNodeId: audioId }]);
@@ -2977,7 +2994,9 @@ function InfiniteCanvasPage() {
                 </InfiniteCanvas>
 
                 <CanvasNodeHoverToolbar
-                    node={isNodeDragging || isNodeResizing || nodeImageSettingsOpen || expandedImageNodeId ? null : toolbarNode}
+                    // Config nodes are themselves interactive panels; keep the floating toolbar hidden for them
+                    // and while a prompt/composer panel is open so it cannot cover controls after zoom.
+                    node={isNodeDragging || isNodeResizing || nodeImageSettingsOpen || expandedImageNodeId || dialogNodeId || toolbarNode?.type === CanvasNodeType.Config ? null : toolbarNode}
                     viewport={viewport}
                     extraTools={toolbarNode ? buildNodeToolbarItems(toolbarNode) : undefined}
                     onKeep={keepNodeToolbar}
