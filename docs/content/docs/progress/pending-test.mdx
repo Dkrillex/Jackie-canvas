@@ -7,6 +7,7 @@ description: Implemented changes that still need manual verification
 
 The current release needs manual verification in these areas:
 
+- Canvas config composer `@` mentions: open Assemble prompt, type `@` mid-text and near the bottom of a long prompt; the image/text candidate menu should appear next to the caret (not always under the whole panel), flip above when space below is tight, and still insert the selected reference at the caret.
 - Jackie Jobs mock (`/jobs`): switch Client/Creator roles; mock recharge credits (1=USD); post job with Markdown brief + local image insert/preview → quote → freeze on accept → submit delivery → accept with cost → show fee/payout/profit; ledger updates; Reset demo clears local job store. No real backend/payment.
 - Jackie branding: product name shows as Jackie Canvas (not the old 无限画布 / Infinite Canvas copy) in page title, home copy, canvas library defaults, and settings/storage labels.
 - Jackie auth: boot hydrates session; unauthenticated users see login modal from the user icon; config gear and `/config` nav appear only after login; image/video Generate buttons prompt login first; account tab shows balance and auto API key, with logout clearing the session key.
