@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import { resolveUpstreamModelName } from "@/constant/tennda-models";
 import { buildApiUrl, modelOptionName, resolveModelRequestConfig, resolveModelScript, type AiConfig, type ModelChannel } from "@/stores/use-config-store";
 import { normalizePluginImages, runModelPlugin } from "./model-plugin";
 import { nanoid } from "nanoid";
@@ -73,9 +74,9 @@ type StreamCallbacks = {
 };
 
 function supportsReasoningSummary(model: string) {
-    const id = model.toLowerCase();
+    const id = resolveUpstreamModelName(modelOptionName(model)).toLowerCase();
     if (/nano|mini|lite|flash/.test(id)) return false;
-    return /gpt-5\.6|o1|o3|o4|-sol|reason/.test(id);
+    return /gpt-5\.6|o1|o3|o4|-sol|reason/.test(id) || modelOptionName(model).toLowerCase().includes("reason");
 }
 
 function reasoningFromPayload(payload?: ResponseApiPayload) {
@@ -166,11 +167,11 @@ function normalizeQuality(quality: string) {
 }
 
 function isSeedreamModel(model: string) {
-    return modelOptionName(model).toLowerCase().includes("seedream");
+    return resolveUpstreamModelName(modelOptionName(model)).toLowerCase().includes("seedream");
 }
 
 function isSeedreamLegacyModel(model: string) {
-    const value = modelOptionName(model).toLowerCase();
+    const value = resolveUpstreamModelName(modelOptionName(model)).toLowerCase();
     return value.includes("seedream-3") || value.includes("seedream_3") || value.includes("seedream3");
 }
 
@@ -325,13 +326,13 @@ function resolveGeminiImageSize(quality: string, dimensions: { width: number; he
 }
 
 function supportsGeminiImageSize(model: string) {
-    const value = model.toLowerCase();
+    const value = resolveUpstreamModelName(modelOptionName(model)).toLowerCase();
     return value.includes("gemini-3") || value.includes("3.1") || value.includes("3-pro");
 }
 
 /** Nano Banana / Gemini 原生生图模型不能走 OpenAI `/images/generations`，必须用 generateContent。 */
 function usesGeminiImageGeneration(model: string) {
-    const value = model.toLowerCase();
+    const value = resolveUpstreamModelName(modelOptionName(model)).toLowerCase();
     return value.includes("gemini") && value.includes("image");
 }
 

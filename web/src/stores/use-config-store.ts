@@ -3,14 +3,22 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 
-import { TENNDA_DISPLAY_NAME_BY_MODEL, tenndaChannelModels } from "@/constant/tennda-models";
+import {
+    resolveTenndaApiModelId,
+    resolveUpstreamModelName,
+    TENNDA_DISPLAY_NAME_BY_MODEL,
+    TENNDA_MODEL_CATALOG,
+    tenndaApiModelId,
+    tenndaChannelModels,
+} from "@/constant/tennda-models";
 
 export type ApiCallFormat = "openai" | "gemini";
 export type ModelCapability = "image" | "video" | "text" | "audio";
 
 export type ChannelModel = {
+    /** Public api id sent to `/gw` (e.g. tennda-illusion); gateway maps to upstream. */
     name: string;
-    /** UI facade label; requests still use `name` */
+    /** UI facade label */
     displayName?: string;
     capability: ModelCapability;
     script?: string;
@@ -98,11 +106,11 @@ export const defaultConfig: AiConfig = {
             models: tenndaChannelModels(),
         },
     ],
-    model: "default::gpt-image-2",
-    imageModel: "default::gpt-image-2",
-    videoModel: "default::veo-3.1-lite-generate-001",
-    textModel: "default::gpt-5.6-sol",
-    audioModel: "default::gpt-4o-mini-tts",
+    model: "default::tennda-illusion",
+    imageModel: "default::tennda-illusion",
+    videoModel: "default::tennda-motion-lite",
+    textModel: "default::tennda-reason",
+    audioModel: "default::tennda-waves",
     audioVoice: "alloy",
     audioFormat: "mp3",
     audioSpeed: "1",
@@ -113,28 +121,20 @@ export const defaultConfig: AiConfig = {
     videoWatermark: "false",
     systemPrompt: "",
     models: [
-        "default::gpt-image-2",
-        "default::gemini-3.1-flash-lite-image",
-        "default::seedream-5-0-260128",
-        "default::veo-3.1-lite-generate-001",
-        "default::veo-3.1-fast-generate-001",
-        "default::seedance-2-0-NSFW",
-        "default::gpt-5.4-nano",
-        "default::gpt-5.6-sol",
-        "default::gpt-4o-mini-tts",
+        "default::tennda-illusion",
+        "default::tennda-flash",
+        "default::tennda-dream",
+        "default::tennda-motion-lite",
+        "default::tennda-motion-fast",
+        "default::tennda-cinema",
+        "default::tennda-mini",
+        "default::tennda-reason",
+        "default::tennda-waves",
     ],
-    imageModels: [
-        "default::gpt-image-2",
-        "default::gemini-3.1-flash-lite-image",
-        "default::seedream-5-0-260128",
-    ],
-    videoModels: [
-        "default::veo-3.1-lite-generate-001",
-        "default::veo-3.1-fast-generate-001",
-        "default::seedance-2-0-NSFW",
-    ],
-    textModels: ["default::gpt-5.4-nano", "default::gpt-5.6-sol"],
-    audioModels: ["default::gpt-4o-mini-tts"],
+    imageModels: ["default::tennda-illusion", "default::tennda-flash", "default::tennda-dream"],
+    videoModels: ["default::tennda-motion-lite", "default::tennda-motion-fast", "default::tennda-cinema"],
+    textModels: ["default::tennda-mini", "default::tennda-reason"],
+    audioModels: ["default::tennda-waves"],
     quality: "auto",
     size: "1:1",
     background: "",
@@ -186,7 +186,10 @@ const IMAGE_KEYWORDS = ["seedream", "gpt-image", "image", "dall-e", "dalle", "im
 
 /** Best-effort default capability for a freshly fetched model name; user can override in the channel editor. */
 export function guessCapability(name: string): ModelCapability {
-    const value = name.toLowerCase();
+    const cleaned = name.trim();
+    const catalog = TENNDA_MODEL_CATALOG.find((item) => item.name === cleaned || tenndaApiModelId(item.slug) === cleaned);
+    if (catalog) return catalog.capability;
+    const value = resolveUpstreamModelName(cleaned).toLowerCase();
     if (VIDEO_KEYWORDS.some((keyword) => value.includes(keyword))) return "video";
     if (AUDIO_KEYWORDS.some((keyword) => value.includes(keyword))) return "audio";
     if (IMAGE_KEYWORDS.some((keyword) => value.includes(keyword))) return "image";
@@ -410,7 +413,8 @@ export function modelOptionLabel(config: AiConfig, value: string, options?: { re
     const channel = decoded ? config.channels.find((item) => item.id === decoded.channelId) : undefined;
     const model = channel?.models.find((item) => item.name === modelName);
     const display = model?.displayName?.trim() || TENNDA_DISPLAY_NAME_BY_MODEL[modelName] || modelName;
-    if (options?.revealUpstream && display !== modelName) return `${display}: ${modelName}`;
+    const upstream = resolveUpstreamModelName(modelName);
+    if (options?.revealUpstream && display !== upstream) return `${display}: ${upstream}`;
     return display;
 }
 
@@ -422,12 +426,17 @@ export function normalizeModelOptionValue(value: string | undefined, channels: M
     const model = (value || "").trim();
     if (!model) return "";
     const decoded = decodeChannelModel(model);
+    const rawName = decoded?.model || model;
+    // Persist may still hold upstream wire names; prefer public tennda-* api id.
+    const candidates = Array.from(new Set([resolveTenndaApiModelId(rawName), rawName].filter(Boolean)));
     if (decoded) {
         const channel = channels.find((item) => item.id === decoded.channelId);
-        return channel && channel.models.some((item) => item.name === decoded.model) ? model : "";
+        const matched = channel?.models.find((item) => candidates.includes(item.name));
+        return channel && matched ? encodeChannelModel(channel.id, matched.name) : "";
     }
-    const channel = channels.find((item) => item.models.some((entry) => entry.name === model)) || channels[0];
-    return channel && channel.models.some((item) => item.name === model) ? encodeChannelModel(channel.id, model) : model;
+    const channel = channels.find((item) => item.models.some((entry) => candidates.includes(entry.name))) || channels[0];
+    const matched = channel?.models.find((entry) => candidates.includes(entry.name));
+    return channel && matched ? encodeChannelModel(channel.id, matched.name) : "";
 }
 
 export function resolveModelChannel(config: AiConfig, value: string) {

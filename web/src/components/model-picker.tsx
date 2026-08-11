@@ -3,6 +3,7 @@ import { Cpu } from "lucide-react";
 
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { resolveUpstreamModelName } from "@/constant/tennda-models";
 import { modelOptionLabel, modelOptionName, selectableModelsByCapability, type AiConfig, type ModelCapability } from "@/stores/use-config-store";
 import { useI18n, useLocaleStore } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
@@ -104,7 +105,7 @@ function ModelLabel({ model, label, isAdmin }: { model: string; label: string; i
 }
 
 function ModelIcon({ model, isAdmin }: { model: string; isAdmin: boolean }) {
-    const icon = isAdmin ? resolveModelIcon(modelOptionName(model)) : "";
+    const icon = isAdmin ? resolveModelIcon(resolveUpstreamModelName(modelOptionName(model))) : "";
     return icon ? <img src={icon} alt="" className="size-4 shrink-0 dark:invert" /> : <Cpu className="size-4 shrink-0 opacity-70" />;
 }
 

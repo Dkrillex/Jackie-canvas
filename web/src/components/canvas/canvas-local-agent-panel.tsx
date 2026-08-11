@@ -28,8 +28,8 @@ const MAX_ATTACHMENTS = 6;
 const MAX_ATTACHMENT_PAYLOAD_BYTES = 28 * 1024 * 1024;
 const SCROLL_BOTTOM_THRESHOLD = 48;
 const DEFAULT_AGENT_URL = "http://127.0.0.1:17371";
-/** Cloud fallback when local Agent is offline — upstream id stays gpt-5.4-nano. */
-const CLOUD_CHAT_MODEL = "default::gpt-5.4-nano";
+/** Cloud fallback when local Agent is offline — public api id; gateway maps to gpt-5.4-nano. */
+const CLOUD_CHAT_MODEL = "default::tennda-mini";
 const AGENT_CONNECT_STEPS: Array<{ titleKey: MessageKey; textKey: MessageKey; command?: string }> = [
     { titleKey: "agent.step1.title", textKey: "agent.step1.text" },
     { titleKey: "agent.step2.title", textKey: "agent.step2.text", command: "npx -y @jackie-canvas/canvas-agent" },

@@ -2,10 +2,12 @@ import { nanoid } from "nanoid";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
+import { resolveTenndaApiModelId } from "@/constant/tennda-models";
 import { BUILTIN_TOOL_DEFS } from "@/lib/agent-studio/builtin-tools";
 import type { McpHttpSession } from "@/lib/agent-studio/mcp-http-client";
 import { localForageStorage } from "@/lib/localforage-storage";
 import type { StudioArtifact, StudioMessage, StudioMcpServer } from "@/lib/agent-studio/types";
+import { decodeChannelModel, encodeChannelModel } from "@/stores/use-config-store";
 
 const MAX_PERSISTED_MESSAGES = 120;
 const MAX_PERSISTED_ARTIFACTS = 80;
@@ -131,6 +133,7 @@ export const useAgentStudioStore = create<AgentStudioState>()(
                 if (!state) return;
                 useAgentStudioStore.setState({
                     sending: false,
+                    model: migrateStudioModel(state.model || ""),
                     messages: (state.messages || []).map(persistableMessage),
                     artifacts: (state.artifacts || []).map(persistableArtifact),
                 });
@@ -141,4 +144,15 @@ export const useAgentStudioStore = create<AgentStudioState>()(
 
 export function enabledStudioBuiltinTools(disabledBuiltinIds: string[]) {
     return BUILTIN_TOOL_DEFS.filter((tool) => !disabledBuiltinIds.includes(tool.id));
+}
+
+/** Map persisted upstream wire names (e.g. default::gpt-5.6-sol) to tennda-* api ids. */
+function migrateStudioModel(value: string) {
+    const trimmed = value.trim();
+    if (!trimmed) return "";
+    const decoded = decodeChannelModel(trimmed);
+    const raw = decoded?.model || trimmed;
+    const apiId = resolveTenndaApiModelId(raw);
+    if (apiId === raw) return trimmed;
+    return decoded ? encodeChannelModel(decoded.channelId, apiId) : apiId;
 }

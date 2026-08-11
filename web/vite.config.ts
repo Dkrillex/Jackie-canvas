@@ -56,11 +56,11 @@ export default defineConfig({
     },
     server: {
         proxy: {
+            // Local Tennda gateway (model alias rewrite). Run: `node gateway/server.js`
             "/gw": {
-                target: "https://api.gravitex.ai",
+                target: "http://127.0.0.1:8787",
                 changeOrigin: true,
-                secure: true,
-                rewrite: (path) => path.replace(/^\/gw/, ""),
+                secure: false,
             },
             "/prod-api": {
                 target: "https://maas.gravitex.ai",

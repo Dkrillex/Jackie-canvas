@@ -1,3 +1,4 @@
+import { resolveUpstreamModelName } from "@/constant/tennda-models";
 import { modelOptionName, resolveModelRequestConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
 import { isOssUploadReady } from "@/services/oss-upload";
 import type { ReferenceImage } from "@/types/image";
@@ -65,13 +66,13 @@ export function isSeedanceVideoConfig(config: AiConfig | Pick<AiConfig, "model" 
 }
 
 export function isSeedanceVideoModel(model: string) {
-    const value = model.toLowerCase();
+    const value = resolveUpstreamModelName(modelOptionName(model)).toLowerCase();
     return value.includes("seedance") || value.includes("doubao-seedance");
 }
 
 export function isSeedanceFastModel(model: string) {
-    const value = model.toLowerCase();
-    return isSeedanceVideoModel(value) && value.includes("fast");
+    const value = resolveUpstreamModelName(modelOptionName(model)).toLowerCase();
+    return isSeedanceVideoModel(value) && (value.includes("fast") || modelOptionName(model).toLowerCase().includes("motion-fast"));
 }
 
 export function isArkPlanBaseUrl(baseUrl: string) {

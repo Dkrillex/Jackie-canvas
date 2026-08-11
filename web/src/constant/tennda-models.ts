@@ -19,10 +19,10 @@ export type TenndaModelPreview =
     | { kind: "chat" | "code" | "report" | "audio" };
 
 export type TenndaModelEntry = {
-    /** Upstream model id sent to /gw */
+    /** Real upstream wire name (gateway maps tennda-* → this before gravitex). */
     name: string;
     displayName: string;
-    /** URL slug for /models/:slug */
+    /** URL slug for /models/:slug and public api id `tennda-{slug}` */
     slug: string;
     capability: TenndaModelCapability;
     tagline: string;
@@ -277,13 +277,44 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
 
 export const TENNDA_CAPABILITY_ORDER: TenndaModelCapability[] = ["image", "video", "text", "audio"];
 
-export const TENNDA_DISPLAY_NAME_BY_MODEL = Object.fromEntries(TENNDA_MODEL_CATALOG.map((item) => [item.name, item.displayName])) as Record<string, string>;
+/** Public API model id shown in Developer docs / request body (Tennda-branded). */
+export function tenndaApiModelId(slug: string) {
+    return `tennda-${slug}`;
+}
+
+export const TENNDA_UPSTREAM_BY_API_ID = Object.fromEntries(TENNDA_MODEL_CATALOG.map((item) => [tenndaApiModelId(item.slug), item.name])) as Record<string, string>;
+
+export const TENNDA_API_ID_BY_UPSTREAM = Object.fromEntries(TENNDA_MODEL_CATALOG.map((item) => [item.name, tenndaApiModelId(item.slug)])) as Record<string, string>;
+
+export const TENNDA_DISPLAY_NAME_BY_MODEL = Object.fromEntries(
+    TENNDA_MODEL_CATALOG.flatMap((item) => [
+        [item.name, item.displayName],
+        [tenndaApiModelId(item.slug), item.displayName],
+    ]),
+) as Record<string, string>;
 
 /** Hugging Face profile / models page opened from top nav. */
 export const TENNDA_HUGGINGFACE_URL = "https://huggingface.co/ChenXiangXi/Test-SMALL-Model";
 
+/** Resolve public api id or upstream wire name → upstream wire name (for client heuristics). */
+export function resolveUpstreamModelName(model: string) {
+    const cleaned = model.trim().replace(/^models\//, "");
+    return TENNDA_UPSTREAM_BY_API_ID[cleaned] || cleaned;
+}
+
+/** Resolve upstream wire name or api id → public `tennda-*` id when known. */
+export function resolveTenndaApiModelId(model: string) {
+    const cleaned = model.trim().replace(/^models\//, "");
+    if (cleaned.startsWith("tennda-")) return cleaned;
+    return TENNDA_API_ID_BY_UPSTREAM[cleaned] || cleaned;
+}
+
 export function tenndaChannelModels() {
-    return TENNDA_MODEL_CATALOG.map(({ name, displayName, capability }) => ({ name, displayName, capability }));
+    return TENNDA_MODEL_CATALOG.map(({ slug, displayName, capability }) => ({
+        name: tenndaApiModelId(slug),
+        displayName,
+        capability,
+    }));
 }
 
 export function getTenndaModelBySlug(slug: string) {
@@ -292,9 +323,4 @@ export function getTenndaModelBySlug(slug: string) {
 
 export function tenndaModelDetailPath(slug: string) {
     return `/models/${slug}`;
-}
-
-/** Public API model id shown in Developer docs (Tennda-branded; not the upstream wire name). */
-export function tenndaApiModelId(slug: string) {
-    return `tennda-${slug}`;
 }

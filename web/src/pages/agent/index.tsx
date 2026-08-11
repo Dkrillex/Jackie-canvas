@@ -17,7 +17,7 @@ import { buildGenerationConfig } from "@/lib/canvas/canvas-generation-helpers";
 import { canvasThemes } from "@/lib/canvas-theme";
 import type { MessageKey } from "@/i18n";
 import { resolveMediaUrl } from "@/services/file-storage";
-import { aiConfigNotReadyMessageKey, useConfigStore, useEffectiveConfig } from "@/stores/use-config-store";
+import { aiConfigNotReadyMessageKey, normalizeModelOptionValue, useConfigStore, useEffectiveConfig } from "@/stores/use-config-store";
 import { enabledStudioBuiltinTools, useAgentStudioStore } from "@/stores/use-agent-studio-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useThemeStore } from "@/stores/use-theme-store";
@@ -211,8 +211,9 @@ export default function AgentStudioPage() {
     const showPipeline = sending || lastTurnMessages(messages).some((item) => item.role === "tool");
 
     useEffect(() => {
-        if (!model && textConfig.textModel) setModel(textConfig.textModel);
-    }, [model, setModel, textConfig.textModel]);
+        const next = normalizeModelOptionValue(model || textConfig.textModel, effectiveConfig.channels);
+        if (next && next !== model) setModel(next);
+    }, [effectiveConfig.channels, model, setModel, textConfig.textModel]);
 
     useEffect(() => {
         listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });

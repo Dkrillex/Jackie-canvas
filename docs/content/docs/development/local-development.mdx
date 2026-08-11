@@ -5,9 +5,22 @@ description: 前端优先的本地开发方式
 
 # 本地开发
 
-当前主应用以 `web/` 前端为主，AI 请求由浏览器前台直连用户自己的 OpenAI 兼容接口。
+当前主应用以 `web/` 前端为主。AI 请求走同源 `/gw`：开发时由 Vite 代理到本地 Tennda 网关（`gateway/`），网关把公开的 `tennda-*` 模型 id 映射成上游 wire name 后再转发。
 
-## 1. 启动前端
+## 1. 启动模型网关
+
+```bash
+cd gateway
+node server.js
+```
+
+默认监听：
+
+```text
+http://127.0.0.1:8787
+```
+
+## 2. 启动前端
 
 ```bash
 cd web
@@ -21,11 +34,11 @@ bun run dev
 http://localhost:3000
 ```
 
-## 2. 配置模型
+## 3. 配置模型
 
-打开右上角配置弹窗，填写自己的 `Base URL`、`API Key` 和模型名。第三方提示词和 WebDAV 都由浏览器前端直连。
+打开右上角配置弹窗，填写自己的 `Base URL`（默认 `/gw`）、`API Key`。默认渠道模型名为 `tennda-*` api id（如 `tennda-illusion`），不要在普通请求里填上游真实模型名。第三方提示词和 WebDAV 仍由浏览器前端直连。
 
-## 3. 启动文档站
+## 4. 启动文档站
 
 如果需要单独调整文档站，在 `docs` 目录执行：
 
@@ -36,5 +49,10 @@ bun run dev
 ## 常见场景
 
 - 改画布、页面和交互：主要看 `web/`
+- 改模型别名映射：同步改 `gateway/model-map.js` 与 `web/src/constant/tennda-models.ts`
 - 改提示词缓存：主要看 `web/src/services/api/prompts.ts`
 - 改文档站内容：主要看 `docs/content/docs/`
+
+## Vercel 生产
+
+Vercel **不需要**单独部署 `gateway/server.js`。生产由仓库根目录 `middleware.js`（Edge）完成 `/gw` 代理与 `tennda-*` → 上游模型映射。按现有方式部署本仓库即可；`vercel.json` 只做 SPA fallback，不要再把 `/gw` rewrite 到 gravitex（会绕过映射）。

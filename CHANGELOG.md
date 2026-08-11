@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [新增][Jackie] Tennda 模型网关：浏览器只发 `tennda-*` api id，本地 `gateway/` 与 Vercel `middleware` 映射为上游模型后再转发 `/gw`；生产不单独部署网关进程；去掉旁路映射的 `/gw` rewrite，保留 `/prod-api` rewrite 作登录兜底。
 + [调整][Jackie] 手机端隐藏画布与本地 Codex Agent；配置弹窗自适应宽度并隐藏桌面专属 Tab；Agent Studio 窄屏侧栏改抽屉。
 + [优化][Jackie] 首页 hero / 登录弹窗窄屏间距；生图/视频参考图删除按钮触控常显。
 + [修复][Jackie] Agent Studio：工具轮次结束后最终回答排在 Tool/Result 之后；仅有 Thinking 时不再误标 PLAN。
