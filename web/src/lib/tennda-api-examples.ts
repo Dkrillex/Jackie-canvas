@@ -3,7 +3,7 @@ import type { TenndaModelCapability } from "@/constant/tennda-models";
 const PYTHON_HEADER = `import os
 import requests
 
-BASE_URL = os.environ.get("TENNDA_BASE_URL", "https://YOUR_HOST/gw")
+BASE_URL = os.environ.get("TENNDA_BASE_URL", "https://ai.tennda.com/gw")
 API_KEY = os.environ["TENNDA_API_KEY"]
 
 headers = {
@@ -419,7 +419,7 @@ print(resp.json())`;
 
 export function tenndaCurlSnippet(capability: TenndaModelCapability, apiId: string) {
     if (capability === "image") {
-        return `curl -X POST "https://YOUR_HOST/gw/v1/images/generations" \\
+        return `curl -X POST "https://ai.tennda.com/gw/v1/images/generations" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -432,7 +432,7 @@ export function tenndaCurlSnippet(capability: TenndaModelCapability, apiId: stri
     }
 
     if (capability === "video") {
-        return `curl -X POST "https://YOUR_HOST/gw/v1/videos" \\
+        return `curl -X POST "https://ai.tennda.com/gw/v1/videos" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -445,7 +445,7 @@ export function tenndaCurlSnippet(capability: TenndaModelCapability, apiId: stri
     }
 
     if (capability === "audio") {
-        return `curl -X POST "https://YOUR_HOST/gw/v1/audio/speech" \\
+        return `curl -X POST "https://ai.tennda.com/gw/v1/audio/speech" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -458,7 +458,7 @@ export function tenndaCurlSnippet(capability: TenndaModelCapability, apiId: stri
   --output tennda-speech.mp3`;
     }
 
-    return `curl -X POST "https://YOUR_HOST/gw/v1/responses" \\
+    return `curl -X POST "https://ai.tennda.com/gw/v1/responses" \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{

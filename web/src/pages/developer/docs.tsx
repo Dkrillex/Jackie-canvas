@@ -60,7 +60,7 @@ export default function DeveloperDocsPage() {
                     <div className="relative z-[2] space-y-3">
                         <h2 className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{t("developer.docs.baseUrl")}</h2>
                         <code className="block border border-border bg-stone-50 px-4 py-3 font-mono text-sm dark:border-stone-700 dark:bg-stone-900">
-                            https://YOUR_HOST/gw
+                            https://ai.tennda.com/gw
                         </code>
                         <p className="text-sm leading-6 text-stone-500 dark:text-stone-400">{t("developer.docs.note")}</p>
                     </div>
