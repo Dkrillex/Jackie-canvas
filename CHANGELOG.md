@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 默认渠道新增 seedance-2-0-mini-NSFW / fast-NSFW / fast / mini，视频默认模型改为 seedance-2-0-mini-NSFW。
 + [修复][Jackie] Seedance 云素材二次生成：无预览也算参考、组装提示词未 @ 时仍带上已连接素材，并正确识别 `asset://`，避免必须删掉重拖。
 + [修复][Jackie] 生成配置节点与打开组装提示词/节点面板时不再显示悬浮工具栏，避免缩放后挡住操作。
 + [优化][Jackie] 组装提示词 `@` 引用菜单改为贴着光标弹出，空间不足时翻到上方。
