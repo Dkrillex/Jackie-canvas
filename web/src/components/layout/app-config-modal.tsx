@@ -285,10 +285,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                         label: t("config.tab.user"),
                         children: (
                             <Form layout="vertical" requiredMark={false}>
-                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-stone-200 p-3 dark:border-stone-800">
+                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border p-3 dark:border-border">
                                     <div className="min-w-0">
                                         <div className="text-sm font-semibold">{t("config.account")}</div>
-                                        <div className="mt-1 text-xs text-stone-500">{sessionUser ? t("config.loggedInHint") : t("config.loggedOutHint")}</div>
+                                        <div className="mt-1 text-xs text-muted-foreground">{sessionUser ? t("config.loggedInHint") : t("config.loggedOutHint")}</div>
                                     </div>
                                     <div className="flex shrink-0 gap-2">
                                         {sessionUser ? (
@@ -314,12 +314,12 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                 {userInfoError ? <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">{userInfoError}</div> : null}
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <Form.Item label={t("config.accountName")} className="mb-0">
-                                        <div className="flex h-8 items-center text-base font-semibold text-stone-800 dark:text-stone-100">
+                                        <div className="flex h-8 items-center text-base font-semibold text-foreground/90 dark:text-foreground">
                                             {loadingUserInfo ? t("config.loading") : sessionUser?.username || userInfo?.tokenName || t("config.empty")}
                                         </div>
                                     </Form.Item>
                                     <Form.Item label={t("config.balanceLeft")} className="mb-0">
-                                        <div className="flex h-8 items-center text-base font-semibold text-stone-800 dark:text-stone-100">
+                                        <div className="flex h-8 items-center text-base font-semibold text-foreground/90 dark:text-foreground">
                                             {loadingUserInfo
                                                 ? t("config.loading")
                                                 : userInfo
@@ -332,7 +332,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                     <Form.Item label={t("config.apiKey")} extra={t("config.apiKeyHint")} className="mb-0 md:col-span-2">
                                         {sessionApiKey ? (
                                             <div className="flex items-center gap-2">
-                                                <code className="min-w-0 flex-1 truncate rounded-md bg-stone-100 px-3 py-1.5 text-sm text-stone-800 dark:bg-stone-900 dark:text-stone-100">
+                                                <code className="min-w-0 flex-1 truncate rounded-md bg-muted px-3 py-1.5 text-sm text-foreground/90 dark:bg-muted dark:text-foreground">
                                                     {showApiKey ? sessionApiKey : maskApiKey(sessionApiKey)}
                                                 </code>
                                                 <Tooltip title={showApiKey ? t("action.hide") : t("action.show")}>
@@ -343,7 +343,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                                 </Tooltip>
                                             </div>
                                         ) : (
-                                            <div className="flex h-8 items-center text-sm text-stone-500">{loadingUserInfo ? t("config.loading") : t("config.apiKeyEmpty")}</div>
+                                            <div className="flex h-8 items-center text-sm text-muted-foreground">{loadingUserInfo ? t("config.loading") : t("config.apiKeyEmpty")}</div>
                                         )}
                                     </Form.Item>
                                 </div>
@@ -407,16 +407,16 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                         label: "WebDAV",
                         children: (
                             <Form layout="vertical" requiredMark={false}>
-                                <section className="rounded-lg border border-stone-200 p-3 dark:border-stone-800">
+                                <section className="rounded-lg border border-border p-3 dark:border-border">
                                     <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                                         <div>
                                             <div className="flex items-center gap-2 text-sm font-semibold">
                                                 <Cloud className="size-4" />
                                                 {t("config.webdav")}
                                             </div>
-                                            <div className="mt-1 text-xs text-stone-500">{t("config.webdavHint")}</div>
+                                            <div className="mt-1 text-xs text-muted-foreground">{t("config.webdavHint")}</div>
                                         </div>
-                                        <div className="text-xs text-stone-500">{webdav.lastSyncedAt ? t("config.webdavLast", { time: formatWebdavTime(webdav.lastSyncedAt) }) : t("config.webdavNever")}</div>
+                                        <div className="text-xs text-muted-foreground">{webdav.lastSyncedAt ? t("config.webdavLast", { time: formatWebdavTime(webdav.lastSyncedAt) }) : t("config.webdavNever")}</div>
                                     </div>
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <Form.Item label={t("config.webdavUrl")} className="mb-4">
@@ -439,7 +439,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                         <Button type="primary" icon={<RefreshCw className="size-4" />} disabled={!webdavReady || testingWebdav} loading={syncingWebdav} onClick={() => void syncWebdav()}>
                                             {syncingWebdav ? t("config.webdavSyncing") : t("config.webdavSync")}
                                         </Button>
-                                        {webdavSyncStatus ? <span className="text-xs text-stone-500">{webdavSyncStatus}</span> : null}
+                                        {webdavSyncStatus ? <span className="text-xs text-muted-foreground">{webdavSyncStatus}</span> : null}
                                     </div>
                                     {syncingWebdav || webdavSyncStatus ? <WebdavProgressGrid progress={webdavDomainProgress} /> : null}
                                 </section>
@@ -451,24 +451,24 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                         label: "Agent",
                         children: (
                             <Form layout="vertical" requiredMark={false}>
-                                <section className="rounded-lg border border-stone-200 p-3 dark:border-stone-800">
+                                <section className="rounded-lg border border-border p-3 dark:border-border">
                                     <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                                         <div>
                                             <div className="flex items-center gap-2 text-sm font-semibold">
                                                 <Link2 className="size-4" />
                                                 {t("config.codex")}
                                             </div>
-                                            <div className="mt-1 text-xs text-stone-500">{t("config.codexHint")}</div>
+                                            <div className="mt-1 text-xs text-muted-foreground">{t("config.codexHint")}</div>
                                         </div>
-                                        <div className={agentConnectError ? "text-xs text-red-600" : "text-xs text-stone-500"}>{agentConnectError ? t("config.codexFailed") : agentConnected ? agentActivity || t("config.codexConnected") : agentEnabled ? t("config.codexConnecting") : t("config.codexDisconnected")}</div>
+                                        <div className={agentConnectError ? "text-xs text-red-600" : "text-xs text-muted-foreground"}>{agentConnectError ? t("config.codexFailed") : agentConnected ? agentActivity || t("config.codexConnected") : agentEnabled ? t("config.codexConnecting") : t("config.codexDisconnected")}</div>
                                     </div>
                                     <div className="mb-4 grid gap-2 md:grid-cols-2">
                                         {codexSetupStepKeys.map((step, index) => (
-                                            <div key={t(step.titleKey)} className="rounded-md border border-stone-200 p-3 dark:border-stone-800">
-                                                <div className="text-xs font-semibold text-stone-500">{t("config.codexStep", { n: index + 1 })}</div>
+                                            <div key={t(step.titleKey)} className="rounded-md border border-border p-3 dark:border-border">
+                                                <div className="text-xs font-semibold text-muted-foreground">{t("config.codexStep", { n: index + 1 })}</div>
                                                 <div className="mt-1 text-sm font-medium">{t(step.titleKey)}</div>
-                                                <div className="mt-1 text-xs leading-5 text-stone-500">{t(step.textKey)}</div>
-                                                {step.command ? <code className="mt-2 block overflow-x-auto rounded bg-stone-100 px-2 py-1.5 text-[11px] text-stone-700 dark:bg-stone-900 dark:text-stone-200">{step.command}</code> : null}
+                                                <div className="mt-1 text-xs leading-5 text-muted-foreground">{t(step.textKey)}</div>
+                                                {step.command ? <code className="mt-2 block overflow-x-auto rounded bg-muted px-2 py-1.5 text-[11px] text-foreground/80 dark:bg-muted dark:text-foreground">{step.command}</code> : null}
                                             </div>
                                         ))}
                                     </div>
@@ -481,10 +481,10 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                     </div>
                                     <div className="grid gap-4 md:grid-cols-2">
                                         <Form.Item label="Local URL" className="mb-4">
-                                            <Input prefix={<Link2 className="mr-1 size-4 text-stone-400" />} value={agentUrl} placeholder="http://127.0.0.1:17371" onChange={(event) => updateAgentConfig({ url: event.target.value })} />
+                                            <Input prefix={<Link2 className="mr-1 size-4 text-muted-foreground" />} value={agentUrl} placeholder="http://127.0.0.1:17371" onChange={(event) => updateAgentConfig({ url: event.target.value })} />
                                         </Form.Item>
                                         <Form.Item label="Connect token" className="mb-4">
-                                            <Input.Password prefix={<KeyRound className="mr-1 size-4 text-stone-400" />} value={agentToken} placeholder={t("config.codexTokenPh")} onChange={(event) => updateAgentConfig({ token: event.target.value })} />
+                                            <Input.Password prefix={<KeyRound className="mr-1 size-4 text-muted-foreground" />} value={agentToken} placeholder={t("config.codexTokenPh")} onChange={(event) => updateAgentConfig({ token: event.target.value })} />
                                         </Form.Item>
                                     </div>
                                     {agentConnectError ? <div className="mb-3 rounded-md border border-red-200 px-3 py-2 text-xs text-red-600 dark:border-red-900/60">{agentConnectError}</div> : null}
@@ -493,12 +493,12 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                             {agentConnected ? t("config.codexDisconnect") : agentEnabled ? t("config.codexCancel") : t("config.codexConnect")}
                                         </Button>
                                     </div>
-                                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-stone-200 px-3 py-2 dark:border-stone-800">
+                                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border px-3 py-2 dark:border-border">
                                         <div className="flex min-w-0 items-center gap-2">
-                                            <ShieldCheck className="size-4 text-stone-500" />
+                                            <ShieldCheck className="size-4 text-muted-foreground" />
                                             <div>
                                                 <div className="text-sm font-medium">{t("config.codexConfirmTitle")}</div>
-                                                <div className="mt-0.5 text-xs text-stone-500">{t("config.codexConfirmDesc")}</div>
+                                                <div className="mt-0.5 text-xs text-muted-foreground">{t("config.codexConfirmDesc")}</div>
                                             </div>
                                         </div>
                                         <Switch checked={agentConfirmTools} onChange={(confirmTools) => setAgentState({ confirmTools })} />
@@ -533,7 +533,7 @@ export function AppConfigModal() {
             title={
                 <div>
                     <div className="text-lg font-semibold">{t("config.modalTitle")}</div>
-                    <div className="mt-1 text-xs font-normal text-stone-500">{t("config.modalDesc")}</div>
+                    <div className="mt-1 text-xs font-normal text-muted-foreground">{t("config.modalDesc")}</div>
                 </div>
             }
             open={isConfigOpen}
@@ -564,10 +564,10 @@ function WebdavProgressGrid({ progress }: { progress: Record<AppSyncDomainKey, W
                 const item = progress[key];
                 const count = item.total ? `${item.current || 0}/${item.total}` : "";
                 return (
-                    <div key={key} className="rounded-md border border-stone-200 px-3 py-2 dark:border-stone-800">
+                    <div key={key} className="rounded-md border border-border px-3 py-2 dark:border-border">
                         <div className="mb-1 flex min-w-0 items-center justify-between gap-3 text-xs">
-                            <span className="shrink-0 font-medium text-stone-700 dark:text-stone-200">{item.label}</span>
-                            <span className="min-w-0 truncate text-right text-stone-500">
+                            <span className="shrink-0 font-medium text-foreground/80 dark:text-foreground">{item.label}</span>
+                            <span className="min-w-0 truncate text-right text-muted-foreground">
                                 {item.stage}
                                 {count ? ` · ${count}` : ""}
                             </span>

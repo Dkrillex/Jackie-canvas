@@ -160,7 +160,7 @@
     }
 
     .ai-title-aurora {
-        background: linear-gradient(90deg, #1f2937 0%, #1f2937 34%, #7C5CFC 52%, #1f2937 70%, #1f2937 100%);
+        background: linear-gradient(90deg, #1a1625 0%, #2a2150 28%, #7C5CFC 52%, #5B41D9 68%, #1a1625 100%);
         background-size: 220% 100%;
         -webkit-background-clip: text;
         background-clip: text;
@@ -229,10 +229,11 @@
         }
     }
 
-    /* Homepage tech accents — stay on stone palette */
+    /* Homepage / docs tech accents — Illucent violet */
     .home-tech-panel {
         position: relative;
         isolation: isolate;
+        border-radius: 1rem;
     }
 
     .home-tech-panel::before {
@@ -273,13 +274,13 @@
         position: absolute;
         width: 10px;
         height: 10px;
-        border-color: #8891a5;
+        border-color: rgba(124, 92, 252, 0.35);
         transition: border-color 0.2s ease;
     }
 
     .dark .home-tech-corners::before,
     .dark .home-tech-corners::after {
-        border-color: #5a6270;
+        border-color: rgba(196, 181, 253, 0.35);
     }
 
     .home-tech-corners::before {
@@ -369,10 +370,10 @@
     .prompt-filter-tag.ant-tag-checkable {
         margin: 0;
         border: 1px solid transparent;
-        border-radius: 6px;
-        padding: 5px 10px;
-        color: #57534e;
-        font-size: 14px;
+        border-radius: 999px;
+        padding: 6px 12px;
+        color: var(--muted-foreground);
+        font-size: 13px;
         line-height: 1;
         transition:
             background 0.15s ease,
@@ -382,40 +383,39 @@
     }
 
     .prompt-filter-tag.ant-tag-checkable:hover {
-        background: rgba(28, 25, 23, 0.06);
-        color: #1c1917;
+        background: rgba(124, 92, 252, 0.08);
+        color: var(--foreground);
     }
 
     .prompt-filter-tag.ant-tag-checkable.is-active,
     .prompt-filter-tag.ant-tag-checkable-checked {
-        background: #111111;
-        border-color: #111111;
+        background: #7C5CFC;
+        border-color: #7C5CFC;
         color: #ffffff;
         font-weight: 600;
+        box-shadow: 0 6px 18px rgba(124, 92, 252, 0.22);
     }
 
     .dark .prompt-filter-tag.ant-tag-checkable {
-        color: #e7e5e4;
+        color: var(--muted-foreground);
     }
 
     .dark .prompt-filter-tag.ant-tag-checkable:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(196, 181, 253, 0.12);
         color: #ffffff;
     }
 
     .dark .prompt-filter-tag.ant-tag-checkable.is-active,
     .dark .prompt-filter-tag.ant-tag-checkable-checked {
-        background: rgba(250, 250, 249, 0.96);
-        border-color: rgba(255, 255, 255, 0.88);
-        box-shadow:
-            0 0 0 1px rgba(255, 255, 255, 0.18),
-            0 6px 18px rgba(0, 0, 0, 0.22);
-        color: #0c0a09 !important;
+        background: #9B87FF;
+        border-color: #9B87FF;
+        box-shadow: 0 6px 18px rgba(155, 135, 255, 0.28);
+        color: #16141F !important;
         font-weight: 700;
     }
 
     .thin-scrollbar {
-        scrollbar-color: rgba(120, 113, 108, 0.45) transparent;
+        scrollbar-color: rgba(124, 92, 252, 0.45) transparent;
         scrollbar-width: thin;
     }
 
@@ -425,7 +425,7 @@
     }
 
     .thin-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(120, 113, 108, 0.45);
+        background: rgba(124, 92, 252, 0.45);
         border-radius: 999px;
     }
 
@@ -435,7 +435,7 @@
     }
 
     .hover-scrollbar:hover {
-        scrollbar-color: rgba(120, 113, 108, 0.5) transparent;
+        scrollbar-color: rgba(124, 92, 252, 0.5) transparent;
     }
 
     .hover-scrollbar::-webkit-scrollbar {
@@ -449,12 +449,12 @@
     }
 
     .hover-scrollbar:hover::-webkit-scrollbar-track {
-        background: rgba(120, 113, 108, 0.12);
+        background: rgba(124, 92, 252, 0.12);
         border-radius: 999px;
     }
 
     .hover-scrollbar:hover::-webkit-scrollbar-thumb {
-        background: rgba(120, 113, 108, 0.5);
+        background: rgba(124, 92, 252, 0.5);
     }
 
     .hover-scrollbar-hint {
@@ -462,7 +462,7 @@
     }
 
     .hover-scrollbar-hint::after {
-        background: rgba(120, 113, 108, 0.42);
+        background: rgba(124, 92, 252, 0.42);
         border-radius: 999px;
         bottom: 4px;
         content: "";
@@ -481,7 +481,7 @@
 
     .canvas-control-select.ant-select .ant-select-selector,
     .canvas-control-number.ant-input-number {
-        border-color: rgba(120, 113, 108, 0.32) !important;
+        border-color: rgba(124, 92, 252, 0.32) !important;
         box-shadow: none !important;
     }
 

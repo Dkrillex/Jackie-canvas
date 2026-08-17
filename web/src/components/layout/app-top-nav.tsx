@@ -1,7 +1,7 @@
-import { Bot, Check, ChevronDown, Cpu, Menu } from "lucide-react";
-import { Button, Dropdown, Tooltip } from "antd";
+import { Check, ChevronDown, Menu } from "lucide-react";
+import { Dropdown } from "antd";
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 
 import { filterPlaygroundTools, type NavigationToolSlug } from "@/constant/navigation-tools";
 import {
@@ -18,8 +18,6 @@ import { UserStatusActions } from "@/components/layout/user-status-actions";
 import { useIsMobileNav } from "@/hooks/use-media-query";
 import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { useAgentStore } from "@/stores/use-agent-store";
-import { useConfigStore } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 
@@ -38,14 +36,7 @@ export function AppTopNav() {
     const isMobile = useIsMobileNav();
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const autoConnectRef = useRef(false);
     const user = useUserStore((state) => state.user);
-    const agentToken = useAgentStore((state) => state.token);
-    const agentEnabled = useAgentStore((state) => state.enabled);
-    const agentConnected = useAgentStore((state) => state.connected);
-    const connectAgent = useAgentStore((state) => state.connectAgent);
-    const togglePanel = useAgentStore((state) => state.togglePanel);
-    const panelOpen = useAgentStore((state) => state.panelOpen);
     const hideHeader = /^\/canvas\/[^/]+/.test(pathname);
     const slug = pathname.split("/").filter(Boolean)[0];
     const isAdmin = (user?.username || "").trim().toLowerCase() === "admin";
@@ -69,12 +60,6 @@ export function AppTopNav() {
     useEffect(() => {
         if (!isMobile) setMobileNavOpen(false);
     }, [isMobile]);
-
-    useEffect(() => {
-        if (isMobile || autoConnectRef.current || agentEnabled || agentConnected || !agentToken.trim()) return;
-        autoConnectRef.current = true;
-        connectAgent({ silent: true });
-    }, [agentConnected, agentEnabled, agentToken, connectAgent, isMobile]);
 
     useEffect(() => {
         setScrolled(false);
@@ -106,10 +91,10 @@ export function AppTopNav() {
                         label: (
                             <Link to={tenndaModelDetailPath(model.slug)} className="flex min-w-[12.5rem] items-start gap-2 py-0.5">
                                 <div className="min-w-0 flex-1">
-                                    <div className={cn("truncate text-sm", selected ? "font-semibold text-primary" : "font-medium text-stone-900 dark:text-stone-100")}>
+                                    <div className={cn("truncate text-sm", selected ? "font-semibold text-primary" : "font-medium text-foreground dark:text-foreground")}>
                                         {model.displayName}
                                     </div>
-                                    <div className="text-[11px] text-stone-400">{model.focus}</div>
+                                    <div className="text-[11px] text-muted-foreground">{model.focus}</div>
                                 </div>
                                 {selected ? <Check className="mt-0.5 size-3.5 shrink-0 text-primary" /> : null}
                             </Link>
@@ -162,7 +147,7 @@ export function AppTopNav() {
                         )}
                     >
                         <div className="flex min-w-0 items-center justify-self-start">
-                            <Link to="/" className="flex h-full shrink-0 items-center gap-2.5 text-sm font-semibold leading-none tracking-tight text-stone-950 transition hover:opacity-80 dark:text-stone-100">
+                            <Link to="/" className="flex h-full shrink-0 items-center gap-2.5 text-sm font-semibold leading-none tracking-tight text-foreground transition hover:opacity-80 dark:text-foreground">
                                 <img src="/logo.svg" alt="Illucent AI" className={cn("w-auto rounded-sm transition-all", scrolled ? "h-6" : "h-7")} />
                                 <span className={cn("font-medium", scrolled ? "text-sm" : "text-base")}>Illucent AI</span>
                             </Link>
@@ -197,7 +182,7 @@ export function AppTopNav() {
                                 target="_blank"
                                 rel="noreferrer"
                                 className={cn(
-                                    "relative flex shrink-0 items-center text-sm leading-6 text-stone-500 transition hover:text-stone-950 dark:text-stone-400 dark:hover:text-stone-100",
+                                    "relative flex shrink-0 items-center text-sm leading-6 text-muted-foreground transition hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
                                     scrolled ? "h-12" : "h-14 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-transparent",
                                 )}
                             >
@@ -208,7 +193,7 @@ export function AppTopNav() {
                         <div className="col-start-2 my-auto flex h-9 min-w-0 items-center justify-end gap-1.5 justify-self-end whitespace-nowrap md:col-start-3 md:gap-2">
                             <button
                                 type="button"
-                                className="inline-flex size-8 shrink-0 items-center justify-center text-stone-600 transition hover:text-stone-950 md:hidden dark:text-stone-300 dark:hover:text-white"
+                                className="inline-flex size-8 shrink-0 items-center justify-center text-muted-foreground transition hover:text-foreground md:hidden dark:text-muted-foreground dark:hover:text-white"
                                 onClick={() => setMobileNavOpen(true)}
                                 aria-label={t("nav.menu")}
                                 title={t("nav.drawer")}
@@ -216,10 +201,6 @@ export function AppTopNav() {
                                 <Menu className="size-5" />
                             </button>
                             <div className="hidden items-center gap-1.5 md:flex md:gap-2">
-                                <CodexStatusButton />
-                                <Tooltip title={panelOpen ? t("agent.collapsePanel") : t("agent.openPanel")}>
-                                    <Button type="text" shape="circle" className="!h-8 !w-8 !min-w-8" icon={<Bot className="size-4" />} onClick={togglePanel} aria-label={t("agent.openPanel")} />
-                                </Tooltip>
                                 <UserStatusActions />
                             </div>
                         </div>
@@ -240,32 +221,5 @@ function navTriggerClass(active: boolean, scrolled: boolean) {
         active
             ? cn("font-medium text-foreground", !scrolled && "after:bg-primary")
             : cn("text-muted-foreground hover:text-foreground", !scrolled && "after:bg-transparent"),
-    );
-}
-
-function CodexStatusButton() {
-    const { t } = useI18n();
-    const isAdmin = (useUserStore((state) => state.user)?.username || "").trim().toLowerCase() === "admin";
-    const connected = useAgentStore((state) => state.connected);
-    const enabled = useAgentStore((state) => state.enabled);
-    const activity = useAgentStore((state) => state.activity);
-    const connectError = useAgentStore((state) => state.connectError);
-    const openPanel = useAgentStore((state) => state.openPanel);
-    const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
-    const color = connectError ? "#dc2626" : connected ? "#16a34a" : enabled ? "#d97706" : "currentColor";
-    const title = connectError || (connected ? activity || t("config.codexConnected") : enabled ? t("config.codexConnecting") : t("config.codexDisconnected"));
-    return (
-        <Tooltip title={title}>
-            <Button
-                type="text"
-                shape="circle"
-                className="relative !h-8 !w-8 !min-w-8"
-                onClick={() => (isAdmin ? openConfigDialog(false, "codex") : openPanel())}
-                aria-label={isAdmin ? t("config.codex") : t("agent.openPanel")}
-            >
-                <Cpu className="size-4" style={{ color }} />
-                <span className="absolute right-1 top-1 size-2 rounded-full border border-background" style={{ background: color }} />
-            </Button>
-        </Tooltip>
     );
 }

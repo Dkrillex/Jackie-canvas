@@ -11,10 +11,11 @@ export default function ConfigPage() {
 
     if (!user) {
         return (
-            <main data-app-page-scroll className="h-full overflow-y-auto bg-background">
+            <main data-app-page-scroll className="tennda-page-bg h-full overflow-y-auto">
                 <div className="mx-auto flex max-w-6xl flex-col items-start gap-4 px-6 py-16">
-                    <h1 className="text-xl font-semibold text-stone-950 dark:text-stone-100">{t("config.pageTitle")}</h1>
-                    <p className="text-sm text-stone-500">{t("config.loginHint")}</p>
+                    <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">Account</div>
+                    <h1 className="text-2xl font-semibold tracking-tight text-foreground">{t("config.pageTitle")}</h1>
+                    <p className="text-sm text-muted-foreground">{t("config.loginHint")}</p>
                     <Button type="primary" onClick={() => openLoginModal("/config")}>
                         {t("action.login")}
                     </Button>
@@ -24,11 +25,12 @@ export default function ConfigPage() {
     }
 
     return (
-        <main data-app-page-scroll className="h-full overflow-y-auto bg-background">
-            <div className="mx-auto max-w-6xl px-6 py-6">
-                <div className="mb-5">
-                    <h1 className="text-xl font-semibold text-stone-950 dark:text-stone-100">{t("config.pageTitle")}</h1>
-                    <p className="mt-1 text-sm text-stone-500">{t("config.pageDesc")}</p>
+        <main data-app-page-scroll className="tennda-page-bg h-full overflow-y-auto">
+            <div className="mx-auto max-w-6xl px-6 py-8">
+                <div className="mb-6">
+                    <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">Account</div>
+                    <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{t("config.pageTitle")}</h1>
+                    <p className="mt-1 text-sm text-muted-foreground">{t("config.pageDesc")}</p>
                 </div>
                 <AppConfigPanel />
             </div>

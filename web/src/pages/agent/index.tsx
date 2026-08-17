@@ -543,8 +543,9 @@ export default function AgentStudioPage() {
             <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col gap-3 px-4 py-3 md:gap-3.5 md:px-6 md:py-4">
                 <header className="flex items-end justify-between gap-3 px-0.5">
                     <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="truncate text-lg font-semibold tracking-tight md:text-xl">{t("studio.title")}</h1>
+                        <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">Playground · Agent</div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <h1 className="truncate text-xl font-semibold tracking-tight md:text-2xl">{t("studio.title")}</h1>
                             <span className="rounded-md bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-[0.14em] text-primary uppercase">Studio</span>
                         </div>
                         <p className="mt-1 truncate text-xs leading-4 text-muted-foreground">{t("studio.desc")}</p>

@@ -90,7 +90,7 @@ export function ModelSelectModal({ open, channel, selectedNames, onConfirm, onCl
             onCancel={onClose}
             title={
                 <span>
-                    Select channel models <span className="ml-2 text-xs font-normal text-stone-500">Selected {selected.size} / {new Set([...existing, ...fetched]).size}</span>
+                    Select channel models <span className="ml-2 text-xs font-normal text-muted-foreground">Selected {selected.size} / {new Set([...existing, ...fetched]).size}</span>
                 </span>
             }
             styles={{ body: { maxHeight: "62vh", overflowY: "auto" } }}
@@ -104,14 +104,14 @@ export function ModelSelectModal({ open, channel, selectedNames, onConfirm, onCl
             ]}
         >
             <div className="flex flex-wrap items-center gap-3">
-                <Input className="min-w-[200px] flex-1" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search models" prefix={<Search className="size-4 text-stone-400" />} allowClear />
+                <Input className="min-w-[200px] flex-1" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search models" prefix={<Search className="size-4 text-muted-foreground" />} allowClear />
                 <Input className="min-w-[180px] flex-1" value={manual} onChange={(event) => setManual(event.target.value)} onPressEnter={addManual} placeholder="Model name" />
                 <Button onClick={addManual}>Add model</Button>
                 <Button icon={<RefreshCw className="size-4" />} loading={loading} onClick={() => void fetchModels()}>
                     Fetch models
                 </Button>
             </div>
-            <div className="mt-2 text-xs text-stone-500">If the upstream has no OpenAI /models endpoint, add model names manually here.</div>
+            <div className="mt-2 text-xs text-muted-foreground">If the upstream has no OpenAI /models endpoint, add model names manually here.</div>
 
             <Tabs
                 className="mt-3"
@@ -124,7 +124,7 @@ export function ModelSelectModal({ open, channel, selectedNames, onConfirm, onCl
             />
 
             <div className="mb-3 flex items-center justify-between gap-2">
-                <span className="text-xs text-stone-500">Selected in list {visibleSelectedCount} / {visibleList.length}</span>
+                <span className="text-xs text-muted-foreground">Selected in list {visibleSelectedCount} / {visibleList.length}</span>
                 <div className="flex gap-2">
                     <Button size="small" disabled={!visibleList.length} onClick={() => selectVisible(true)}>
                         Select all in list
@@ -146,7 +146,7 @@ export function ModelSelectModal({ open, channel, selectedNames, onConfirm, onCl
                     ))}
                 </div>
             ) : (
-                <div className="py-8 text-center text-sm text-stone-500">{activeTab === "new" ? 'Click "Fetch models" to load upstream models, or add a name manually.' : "No selected models yet."}</div>
+                <div className="py-8 text-center text-sm text-muted-foreground">{activeTab === "new" ? 'Click "Fetch models" to load upstream models, or add a name manually.' : "No selected models yet."}</div>
             )}
         </Modal>
     );

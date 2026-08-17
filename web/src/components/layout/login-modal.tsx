@@ -36,15 +36,29 @@ export function LoginModal() {
     };
 
     return (
-        <Modal title={t("login.title")} open={open} onCancel={closeLoginModal} footer={null} centered destroyOnHidden width="min(420px, calc(100vw - 32px))">
+        <Modal
+            title={null}
+            open={open}
+            onCancel={closeLoginModal}
+            footer={null}
+            centered
+            destroyOnHidden
+            width="min(420px, calc(100vw - 32px))"
+            className="illucent-login-modal"
+        >
+            <div className="mb-6 flex flex-col items-center text-center">
+                <img src="/logo.svg" alt="Illucent AI" className="h-11 w-11 rounded-xl shadow-[0_10px_28px_-12px_rgba(124,92,252,0.75)]" />
+                <h2 className="mt-4 text-xl font-semibold tracking-tight text-foreground">{t("login.title")}</h2>
+                <p className="mt-1.5 text-sm text-muted-foreground">{t("login.subtitle")}</p>
+            </div>
             <Form layout="vertical" requiredMark={false} onFinish={() => void handleSubmit()}>
                 <Form.Item label={t("login.username")} required>
-                    <Input value={username} autoComplete="username" placeholder={t("login.usernamePlaceholder")} onChange={(event) => setUsername(event.target.value)} />
+                    <Input size="large" value={username} autoComplete="username" placeholder={t("login.usernamePlaceholder")} onChange={(event) => setUsername(event.target.value)} />
                 </Form.Item>
                 <Form.Item label={t("login.password")} required>
-                    <Input.Password value={password} autoComplete="current-password" placeholder={t("login.passwordPlaceholder")} onChange={(event) => setPassword(event.target.value)} />
+                    <Input.Password size="large" value={password} autoComplete="current-password" placeholder={t("login.passwordPlaceholder")} onChange={(event) => setPassword(event.target.value)} />
                 </Form.Item>
-                <Button type="primary" htmlType="submit" block loading={submitting}>
+                <Button type="primary" htmlType="submit" size="large" block loading={submitting}>
                     {t("login.submit")}
                 </Button>
             </Form>

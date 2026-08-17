@@ -92,7 +92,7 @@ export default function IndexPage() {
                     <TokenStream />
                     <div className="relative z-10 flex flex-col items-center">
                         <h1 className="ai-title-aurora font-heading max-w-5xl text-balance text-4xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">Illucent AI</h1>
-                        <p className="mt-5 max-w-3xl text-balance text-base leading-7 text-stone-500 sm:mt-8 sm:text-lg sm:leading-8 dark:text-stone-400">{t("home.hero.description")}</p>
+                        <p className="mt-5 max-w-3xl text-balance text-base leading-7 text-muted-foreground sm:mt-8 sm:text-lg sm:leading-8 dark:text-muted-foreground">{t("home.hero.description")}</p>
                         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
                             <Button type="primary" size="large" onClick={exploreModels} icon={<ArrowRight className="size-4" />} iconPlacement="end">
                                 {t("home.cta")}
@@ -102,11 +102,11 @@ export default function IndexPage() {
                             </Button>
                         </div>
                         <div className="mt-6 flex flex-col items-center gap-1.5">
-                            <div className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.14em] text-stone-500 uppercase dark:text-stone-400">
+                            <div className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.14em] text-muted-foreground uppercase dark:text-muted-foreground">
                                 <span className="size-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.18)]" aria-hidden />
                                 {t("home.networkStatus")}
                             </div>
-                            <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 dark:text-stone-500">{t("home.networkRegions")}</div>
+                            <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground dark:text-muted-foreground">{t("home.networkRegions")}</div>
                         </div>
                     </div>
                 </div>
@@ -114,11 +114,11 @@ export default function IndexPage() {
                 <section id="tennda-models" className="relative mx-auto mb-24 max-w-6xl border-t border-border pt-14 dark:border-white/10">
                     <div className="mb-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
                         <div>
-                            <div className="mb-3 font-mono text-[11px] tracking-[0.22em] text-stone-400 dark:text-stone-500">
+                            <div className="mb-3 font-mono text-[11px] tracking-[0.22em] text-muted-foreground dark:text-muted-foreground">
                                 {t("home.showcaseIndex")} / MODELS
                             </div>
-                            <h2 className="max-w-xl text-3xl font-semibold tracking-tight text-stone-950 sm:text-4xl dark:text-stone-100">{t("home.showcaseTitle")}</h2>
-                            <p className="mt-4 max-w-2xl text-base leading-7 text-stone-500 dark:text-stone-400">{t("home.showcaseDesc")}</p>
+                            <h2 className="max-w-xl text-3xl font-semibold tracking-tight text-foreground sm:text-4xl dark:text-foreground">{t("home.showcaseTitle")}</h2>
+                            <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground dark:text-muted-foreground">{t("home.showcaseDesc")}</p>
                         </div>
                         <div className="home-tech-corners grid grid-cols-2 gap-px border border-border bg-border sm:grid-cols-4 dark:border-white/10 dark:bg-white/10">
                             {TENNDA_CAPABILITY_ORDER.map((capability) => {
@@ -130,9 +130,9 @@ export default function IndexPage() {
                                         onClick={() => openPath(capabilityHref[capability])}
                                         className="bg-card px-4 py-3 text-left transition hover:bg-secondary/60 dark:hover:bg-white/5"
                                     >
-                                        <div className="font-mono text-[10px] tracking-[0.18em] text-stone-400 dark:text-stone-500">{capabilityCode[capability]}</div>
-                                        <div className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-stone-950 dark:text-stone-100">{count}</div>
-                                        <div className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{t(capabilityLabelKey[capability])}</div>
+                                        <div className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground dark:text-muted-foreground">{capabilityCode[capability]}</div>
+                                        <div className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-foreground dark:text-foreground">{count}</div>
+                                        <div className="mt-0.5 text-xs text-muted-foreground dark:text-muted-foreground">{t(capabilityLabelKey[capability])}</div>
                                     </button>
                                 );
                             })}
@@ -153,20 +153,20 @@ export default function IndexPage() {
                                                     <Icon className="size-5" />
                                                 </span>
                                                 <div className="min-w-0">
-                                                    <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 dark:text-stone-500">
+                                                    <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground dark:text-muted-foreground">
                                                         {capabilityCode[capability]} · {String(groupIndex + 1).padStart(2, "0")}
                                                     </div>
-                                                    <h3 className="mt-0.5 text-xl font-semibold tracking-tight text-stone-950 sm:text-2xl dark:text-stone-100">
+                                                    <h3 className="mt-0.5 text-xl font-semibold tracking-tight text-foreground sm:text-2xl dark:text-foreground">
                                                         {t(capabilityTitleKey[capability])}
                                                     </h3>
                                                 </div>
                                             </div>
-                                            <p className="mt-3 max-w-2xl text-sm leading-6 text-stone-500 dark:text-stone-400">{t(capabilityDescKey[capability])}</p>
+                                            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground dark:text-muted-foreground">{t(capabilityDescKey[capability])}</p>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => openPath(capabilityHref[capability])}
-                                            className="inline-flex shrink-0 items-center gap-1.5 self-start font-mono text-xs tracking-[0.12em] text-stone-600 transition hover:gap-2.5 hover:text-stone-950 sm:self-auto dark:text-stone-400 dark:hover:text-stone-100"
+                                            className="inline-flex shrink-0 items-center gap-1.5 self-start font-mono text-xs tracking-[0.12em] text-muted-foreground transition hover:gap-2.5 hover:text-foreground sm:self-auto dark:text-muted-foreground dark:hover:text-foreground"
                                         >
                                             {t("home.models.openWorkbench").toUpperCase()}
                                             <ArrowRight className="size-3.5" />
@@ -186,9 +186,9 @@ export default function IndexPage() {
                     <div className="home-tech-panel home-tech-corners mt-14 border border-border bg-white/80 p-6 md:p-8 dark:border-white/10 dark:bg-card/70">
                         <div className="relative z-[2] grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,0.8fr)] lg:items-end lg:gap-10">
                             <div className="min-w-0">
-                                <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 dark:text-stone-500">{t("home.models.footerIndex")}</div>
-                                <h3 className="mt-2 text-xl font-semibold tracking-tight text-stone-950 dark:text-stone-100">{t("home.models.footerTitle")}</h3>
-                                <p className="mt-2 max-w-lg text-sm leading-6 text-stone-500 dark:text-stone-400">{t("home.models.footerDesc")}</p>
+                                <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground dark:text-muted-foreground">{t("home.models.footerIndex")}</div>
+                                <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground dark:text-foreground">{t("home.models.footerTitle")}</h3>
+                                <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground dark:text-muted-foreground">{t("home.models.footerDesc")}</p>
                             </div>
                             <div className="flex w-full flex-col gap-2 sm:max-w-sm lg:max-w-none lg:justify-self-end">
                                 <Button type="primary" size="large" block onClick={() => openPath("/agent")} icon={<Bot className="size-4" />}>
@@ -307,9 +307,9 @@ function ModelCard({
                 }
             }}
             className={cn(
-                "model-card flex h-full cursor-pointer overflow-hidden rounded-2xl border border-stone-200/80 bg-white/85 text-left outline-none transition-[border-color,box-shadow,background-color] duration-300",
+                "model-card flex h-full cursor-pointer overflow-hidden rounded-2xl border border-border/80 bg-white/85 text-left outline-none transition-[border-color,box-shadow,background-color] duration-300",
                 split ? "flex-col sm:flex-row" : "flex-col",
-                "hover:border-primary/40 hover:bg-white hover:shadow-[0_16px_36px_-28px_rgba(124, 92, 252,0.4)]",
+                "hover:border-primary/40 hover:bg-white hover:shadow-[0_16px_36px_-28px_rgba(124,92,252,0.4)]",
                 "focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20",
                 "dark:border-white/10 dark:bg-card/65 dark:hover:border-primary/45 dark:hover:bg-card/90",
             )}
@@ -322,12 +322,12 @@ function ModelCard({
                         {featured ? <FeaturedBadge label={t("home.models.featured")} /> : null}
                     </div>
                 ) : null}
-                <h4 className={cn("font-semibold tracking-tight text-stone-950 dark:text-stone-100", featured || split ? "text-lg md:text-xl" : "text-[15px]")}>
+                <h4 className={cn("font-semibold tracking-tight text-foreground dark:text-foreground", featured || split ? "text-lg md:text-xl" : "text-[15px]")}>
                     {model.displayName}
                 </h4>
                 <p
                     className={cn(
-                        "mt-1 text-stone-500 dark:text-stone-400",
+                        "mt-1 text-muted-foreground dark:text-muted-foreground",
                         featured || split ? "text-sm leading-6" : "line-clamp-2 flex-1 text-xs leading-5",
                         split && "sm:max-w-md",
                     )}
@@ -337,13 +337,13 @@ function ModelCard({
                 {featured ? (
                     <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {model.uses.map((use) => (
-                            <span key={use} className="rounded-md bg-stone-100/80 px-2 py-0.5 text-[11px] text-stone-500 dark:bg-stone-800/80 dark:text-stone-400">
+                            <span key={use} className="rounded-md bg-muted/80 px-2 py-0.5 text-[11px] text-muted-foreground dark:bg-muted/80 dark:text-muted-foreground">
                                 {use}
                             </span>
                         ))}
                     </div>
                 ) : null}
-                <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium tracking-[0.08em] text-stone-700 transition-[gap,color] [.model-card:hover_&]:gap-2 [.model-card:hover_&]:text-primary dark:text-stone-300">
+                <span className="mt-2.5 inline-flex items-center gap-1 text-xs font-medium tracking-[0.08em] text-foreground/80 transition-[gap,color] [.model-card:hover_&]:gap-2 [.model-card:hover_&]:text-primary dark:text-muted-foreground">
                     {t("home.models.try").toUpperCase()}
                     <ArrowRight className="size-3.5" />
                 </span>
@@ -354,7 +354,7 @@ function ModelCard({
 
 function FocusBadge({ label }: { label: string }) {
     return (
-        <span className="rounded-full bg-stone-100 px-2.5 py-0.5 text-[10px] font-medium tracking-[0.14em] text-stone-600 uppercase dark:bg-stone-800 dark:text-stone-300">
+        <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-medium tracking-[0.14em] text-muted-foreground uppercase dark:bg-muted dark:text-muted-foreground">
             {label}
         </span>
     );
@@ -378,7 +378,7 @@ function ModelPreview({
     const split = variant === "split";
     const uiPreview = preview.kind === "chat" || preview.kind === "code" || preview.kind === "report" || preview.kind === "audio";
     const shell = cn(
-        "relative isolate overflow-hidden bg-stone-100 dark:bg-stone-900",
+        "relative isolate overflow-hidden bg-muted dark:bg-muted",
         split
             ? "h-48 w-full shrink-0 sm:h-auto sm:min-h-[14rem] sm:w-[48%] sm:max-w-md sm:self-stretch"
             : featured
@@ -420,25 +420,25 @@ function ModelPreview({
 
     if (preview.kind === "chat") {
         return (
-            <div className={cn(shell, "flex flex-col bg-[#eef1f4] dark:bg-stone-950")} aria-hidden>
-                <div className="flex shrink-0 items-center gap-1.5 border-b border-stone-200/80 bg-[#f7f8fa] px-2.5 py-1.5 dark:border-white/10 dark:bg-stone-900">
+            <div className={cn(shell, "flex flex-col bg-[#eef1f4] dark:bg-card")} aria-hidden>
+                <div className="flex shrink-0 items-center gap-1.5 border-b border-border/80 bg-[#f7f8fa] px-2.5 py-1.5 dark:border-white/10 dark:bg-muted">
                     <span className="size-1.5 rounded-full bg-[#ff5f57]" />
                     <span className="size-1.5 rounded-full bg-[#febc2e]" />
                     <span className="size-1.5 rounded-full bg-[#28c840]" />
-                    <span className="ml-1 truncate text-[10px] font-medium tracking-[0.12em] text-stone-500 uppercase dark:text-stone-400">Mini · chat</span>
+                    <span className="ml-1 truncate text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase dark:text-muted-foreground">Mini · chat</span>
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden px-2.5 py-2">
-                    <div className="max-w-[86%] shrink-0 self-start rounded-2xl rounded-bl-md bg-white px-2.5 py-1.5 text-[10px] leading-3.5 text-stone-600 shadow-sm dark:bg-stone-800 dark:text-stone-300">
+                    <div className="max-w-[86%] shrink-0 self-start rounded-2xl rounded-bl-md bg-white px-2.5 py-1.5 text-[10px] leading-3.5 text-muted-foreground shadow-sm dark:bg-muted dark:text-muted-foreground">
                         Warm up this launch intro?
                     </div>
                     <div className="max-w-[90%] shrink-0 self-end rounded-2xl rounded-br-md bg-[#7C5CFC] px-2.5 py-1.5 text-[10px] leading-3.5 text-white shadow-sm">
                         “Meet the model that ships ideas faster.”
                     </div>
-                    <div className="max-w-[72%] shrink-0 self-start rounded-2xl rounded-bl-md bg-white px-2.5 py-1.5 text-[10px] leading-3.5 text-stone-600 shadow-sm dark:bg-stone-800 dark:text-stone-300">
+                    <div className="max-w-[72%] shrink-0 self-start rounded-2xl rounded-bl-md bg-white px-2.5 py-1.5 text-[10px] leading-3.5 text-muted-foreground shadow-sm dark:bg-muted dark:text-muted-foreground">
                         Perfect — ship it.
                     </div>
-                    <div className="mt-auto flex shrink-0 items-center gap-1.5 rounded-full border border-stone-200/90 bg-white px-2.5 py-1 dark:border-white/10 dark:bg-stone-900">
-                        <span className="flex-1 truncate text-[10px] text-stone-400">Message Mini…</span>
+                    <div className="mt-auto flex shrink-0 items-center gap-1.5 rounded-full border border-border/90 bg-white px-2.5 py-1 dark:border-white/10 dark:bg-muted">
+                        <span className="flex-1 truncate text-[10px] text-muted-foreground">Message Mini…</span>
                         <span className="size-4 shrink-0 rounded-full bg-[#7C5CFC]" />
                     </div>
                 </div>
@@ -453,9 +453,9 @@ function ModelPreview({
                 node: (
                     <>
                         <span className="text-sky-300">fetch</span>
-                        <span className="text-stone-400">(</span>
+                        <span className="text-muted-foreground">(</span>
                         <span className="text-emerald-300">&quot;/v1/chat/completions&quot;</span>
-                        <span className="text-stone-400">, {"{"}</span>
+                        <span className="text-muted-foreground">, {"{"}</span>
                     </>
                 ),
             },
@@ -463,9 +463,9 @@ function ModelPreview({
                 n: "02",
                 node: (
                     <>
-                        <span className="text-stone-300"> method: </span>
+                        <span className="text-muted-foreground"> method: </span>
                         <span className="text-emerald-300">&quot;POST&quot;</span>
-                        <span className="text-stone-500">,</span>
+                        <span className="text-muted-foreground">,</span>
                     </>
                 ),
             },
@@ -473,9 +473,9 @@ function ModelPreview({
                 n: "03",
                 node: (
                     <>
-                        <span className="text-stone-300"> body: {"{"} model: </span>
+                        <span className="text-muted-foreground"> body: {"{"} model: </span>
                         <span className="text-emerald-300">&quot;tennda-reason&quot;</span>
-                        <span className="text-stone-300">,</span>
+                        <span className="text-muted-foreground">,</span>
                     </>
                 ),
             },
@@ -483,9 +483,9 @@ function ModelPreview({
                 n: "04",
                 node: (
                     <>
-                        <span className="text-stone-300"> tools: [</span>
+                        <span className="text-muted-foreground"> tools: [</span>
                         <span className="text-amber-200">plan_brief</span>
-                        <span className="text-stone-300">] {"}"}{"}"})</span>
+                        <span className="text-muted-foreground">] {"}"}{"}"})</span>
                     </>
                 ),
             },
@@ -503,7 +503,7 @@ function ModelPreview({
                     <>
                         <span className="text-violet-300">await</span>
                         <span className="text-sky-300"> stream</span>
-                        <span className="text-stone-400">()</span>
+                        <span className="text-muted-foreground">()</span>
                         <span className="ml-0.5 inline-block h-2.5 w-1 translate-y-px bg-[#C4B5FD] [.model-card:hover_&]:animate-pulse" />
                     </>
                 ),
@@ -517,15 +517,15 @@ function ModelPreview({
                         <span className="size-1.5 rounded-full bg-[#ff5f57]" />
                         <span className="size-1.5 rounded-full bg-[#febc2e]" />
                         <span className="size-1.5 rounded-full bg-[#28c840]" />
-                        <span className="ml-1 truncate font-mono text-[10px] text-stone-400">call.ts · tennda-reason</span>
+                        <span className="ml-1 truncate font-mono text-[10px] text-muted-foreground">call.ts · tennda-reason</span>
                     </div>
                     <span className="shrink-0 font-mono text-[9px] text-emerald-400/90">200 · 1.2s</span>
                 </div>
                 <div className="min-h-0 flex-1 overflow-hidden px-2 py-1.5 font-mono text-[10px] leading-[1.5]">
                     {lines.map((line) => (
                         <div key={line.n} className="flex gap-2">
-                            <span className="w-4 shrink-0 select-none text-right text-stone-600">{line.n}</span>
-                            <span className="min-w-0 truncate text-stone-300">{line.node}</span>
+                            <span className="w-4 shrink-0 select-none text-right text-muted-foreground">{line.n}</span>
+                            <span className="min-w-0 truncate text-muted-foreground">{line.node}</span>
                         </div>
                     ))}
                 </div>
@@ -535,18 +535,18 @@ function ModelPreview({
 
     if (preview.kind === "report") {
         return (
-            <div className={cn(shell, "flex flex-col bg-gradient-to-br from-[#eef4fb] to-white dark:from-stone-900 dark:to-stone-950")} aria-hidden>
-                <div className="flex items-center justify-between border-b border-stone-200/70 px-3 py-2 dark:border-white/10">
+            <div className={cn(shell, "flex flex-col bg-gradient-to-br from-[#F3F0FF] to-white dark:from-muted dark:to-card")} aria-hidden>
+                <div className="flex items-center justify-between border-b border-border/70 px-3 py-2 dark:border-white/10">
                     <span className="text-[10px] font-medium tracking-[0.14em] text-[#7C5CFC] uppercase">Creative brief</span>
-                    <span className="text-[10px] text-stone-400">v0.3</span>
+                    <span className="text-[10px] text-muted-foreground">v0.3</span>
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col justify-center gap-2 px-3 py-2.5">
-                    <p className="text-[11px] leading-4 text-stone-600 dark:text-stone-300">
+                    <p className="text-[11px] leading-4 text-muted-foreground dark:text-muted-foreground">
                         Open with the product win, keep the tone warm, end on one clear CTA.
                     </p>
                     <div className="flex flex-wrap gap-1">
                         {["Goal", "Tone", "CTA"].map((label) => (
-                            <span key={label} className="rounded-md bg-white/90 px-1.5 py-0.5 text-[9px] text-stone-500 shadow-sm dark:bg-stone-800 dark:text-stone-400">
+                            <span key={label} className="rounded-md bg-white/90 px-1.5 py-0.5 text-[9px] text-muted-foreground shadow-sm dark:bg-muted dark:text-muted-foreground">
                                 {label}
                             </span>
                         ))}
@@ -560,20 +560,20 @@ function ModelPreview({
     const waveBars = [18, 28, 42, 58, 72, 86, 96, 78, 64, 88, 100, 82, 68, 90, 74, 56, 44, 32, 22];
 
     return (
-        <div className={cn(shell, "flex flex-col bg-gradient-to-br from-stone-950 via-stone-900 to-[#0b1a2e]")} aria-hidden>
+        <div className={cn(shell, "flex flex-col bg-gradient-to-br from-[#16141F] via-[#221F33] to-[#1a1230]")} aria-hidden>
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-white/10 px-2.5 py-1.5">
                 <div className="flex min-w-0 items-center gap-1.5">
                     <span className="size-1.5 rounded-full bg-[#ff5f57]" />
                     <span className="size-1.5 rounded-full bg-[#febc2e]" />
                     <span className="size-1.5 rounded-full bg-[#28c840]" />
-                    <span className="ml-1 truncate text-[10px] font-medium tracking-[0.12em] text-stone-400 uppercase">Waves · TTS</span>
+                    <span className="ml-1 truncate text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">Waves · TTS</span>
                 </div>
                 <span className="shrink-0 font-mono text-[9px] text-[#C4B5FD]/90">text → speech</span>
             </div>
             <div className="flex min-h-0 flex-1 flex-col justify-center gap-2.5 px-3 py-3">
                 <div className="rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2 backdrop-blur-sm">
-                    <div className="text-[9px] font-medium tracking-[0.14em] text-stone-500 uppercase">Input text</div>
-                    <p className="mt-1 text-[11px] leading-4 text-stone-200">&quot;Welcome to Illucent AI — hear your script come alive.&quot;</p>
+                    <div className="text-[9px] font-medium tracking-[0.14em] text-muted-foreground uppercase">Input text</div>
+                    <p className="mt-1 text-[11px] leading-4 text-muted-foreground">&quot;Welcome to Illucent AI — hear your script come alive.&quot;</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-[#C4B5FD]/25 bg-[#7C5CFC]/20 text-[#C4B5FD]">

@@ -4,6 +4,9 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] Illucent：去掉顶栏/主站壳层本地 Agent 静默 autoConnect；登录副文案走 i18n；同步 AGENTS / pending-test。
++ [调整][Jackie] Illucent 顶栏隐藏 Codex 状态灯与本地 Agent（Bot）入口按钮。
++ [优化][Jackie] Illucent 全站 UI：统一语义色与紫选中态，工作台/库页圆角壳层与页头索引，登录与 404 品牌化。
 + [调整][Jackie] 分支 `illucent-dev`：对外品牌 Illucent AI；占位 SVG Logo；紫白主题（主色 `#7C5CFC`，SiliconFlow 风格），功能与 `tennda-dev-one` 一致。
 + [调整][Jackie] Developer 文档 Base URL / 示例改为正式域名 `https://ai.tennda.com/gw`。
 + [新增][Jackie] Tennda 模型网关：浏览器只发 `tennda-*` api id，本地 `gateway/` 与 Vercel `middleware` 映射为上游模型后再转发 `/gw`；生产不单独部署网关进程；去掉旁路映射的 `/gw` rewrite，保留 `/prod-api` rewrite 作登录兜底。

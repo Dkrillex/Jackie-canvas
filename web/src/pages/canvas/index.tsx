@@ -67,15 +67,15 @@ export default function CanvasPage() {
         enterProject(mode === "new" ? createProject(`Illucent AI ${projects.length + 1}`) : projects[0]?.id || createProject(`Illucent AI ${projects.length + 1}`));
     }, [createProject, hydrated, mode, projects]);
 
-    if (hydrated && (mode === "new" || mode === "recent")) return <main className="flex h-full items-center justify-center bg-background text-sm text-stone-500">{t("canvas.loading")}</main>;
+    if (hydrated && (mode === "new" || mode === "recent")) return <main className="flex h-full items-center justify-center bg-background text-sm text-muted-foreground">{t("canvas.loading")}</main>;
 
     return (
-        <main data-app-page-scroll className="h-full overflow-auto bg-background text-stone-950 dark:text-stone-100">
+        <main data-app-page-scroll className="tennda-page-bg h-full overflow-auto text-foreground">
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
-                <header className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-6 dark:border-stone-800">
+                <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border/80 pb-7">
                     <div>
-                        <p className="text-xs text-stone-500">{t("canvas.library")}</p>
-                        <h1 className="mt-3 text-3xl font-semibold">Illucent AI</h1>
+                        <p className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{t("canvas.library")}</p>
+                        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Illucent AI</h1>
                     </div>
                     <div className="flex items-center gap-2">
                         {selectedIds.length ? (
@@ -103,7 +103,7 @@ export default function CanvasPage() {
                 </header>
 
                 {!hydrated ? (
-                    <section className="flex min-h-[360px] items-center justify-center border-y border-stone-200 text-sm text-stone-500 dark:border-stone-800">{t("canvas.loading")}</section>
+                    <section className="flex min-h-[360px] items-center justify-center border-y border-border text-sm text-muted-foreground dark:border-border">{t("canvas.loading")}</section>
                 ) : projects.length ? (
                     <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
                         {projects.map((project) => (
@@ -111,9 +111,9 @@ export default function CanvasPage() {
                         ))}
                     </div>
                 ) : (
-                    <section className="flex min-h-[360px] flex-col items-center justify-center border-y border-stone-200 text-center dark:border-stone-800">
-                        <h2 className="text-xl font-medium">{t("canvas.emptyTitle")}</h2>
-                        <p className="mt-3 text-sm text-stone-500">{t("canvas.emptyDesc")}</p>
+                    <section className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-primary/25 bg-card/60 px-6 text-center backdrop-blur-sm">
+                        <h2 className="text-xl font-medium tracking-tight">{t("canvas.emptyTitle")}</h2>
+                        <p className="mt-3 max-w-sm text-sm text-muted-foreground">{t("canvas.emptyDesc")}</p>
                         <Button type="primary" className="mt-6" icon={<Plus className="size-4" />} onClick={createAndEnter}>
                             {t("canvas.new")}
                         </Button>

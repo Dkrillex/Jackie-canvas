@@ -14,7 +14,7 @@ export function ModelPreviewThumb({
     showFocus?: boolean;
 }) {
     const preview = model.preview;
-    const shell = cn("relative h-28 w-full overflow-hidden bg-slate-900", className);
+    const shell = cn("relative h-28 w-full overflow-hidden bg-[#16141F]", className);
 
     if (preview.kind === "image" || preview.kind === "video") {
         return (
@@ -44,15 +44,15 @@ export function ModelPreviewThumb({
 
     if (preview.kind === "chat") {
         return (
-            <div className={cn(shell, "flex flex-col bg-[#e8edf3] dark:bg-slate-950")} aria-hidden>
-                <div className="flex shrink-0 items-center gap-1 border-b border-slate-200/80 bg-[#f3f6f9] px-2 py-1 dark:border-white/10 dark:bg-slate-900">
+            <div className={cn(shell, "flex flex-col bg-[#F3F0FF] dark:bg-[#16141F]")} aria-hidden>
+                <div className="flex shrink-0 items-center gap-1 border-b border-border/80 bg-[#F8F6FF] px-2 py-1 dark:border-white/10 dark:bg-[#16141F]">
                     <span className="size-1 rounded-full bg-[#ff5f57]" />
                     <span className="size-1 rounded-full bg-[#febc2e]" />
                     <span className="size-1 rounded-full bg-[#28c840]" />
-                    <span className="ml-1 text-[9px] tracking-[0.12em] text-slate-600 uppercase">Chat</span>
+                    <span className="ml-1 text-[9px] tracking-[0.12em] text-muted-foreground uppercase">Chat</span>
                 </div>
                 <div className="flex flex-1 flex-col justify-end gap-1 px-2 py-1.5">
-                    <div className="max-w-[88%] self-start rounded-lg rounded-bl-sm bg-white px-2 py-1 text-[9px] leading-3 text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200">
+                    <div className="max-w-[88%] self-start rounded-lg rounded-bl-sm bg-white px-2 py-1 text-[9px] leading-3 text-foreground/80 shadow-sm dark:bg-[#221F33] dark:text-muted-foreground">
                         Warm up this intro?
                     </div>
                     <div className="max-w-[90%] self-end rounded-lg rounded-br-sm bg-[#7C5CFC] px-2 py-1 text-[9px] leading-3 text-white">
@@ -67,15 +67,15 @@ export function ModelPreviewThumb({
         return (
             <div className={cn(shell, "flex flex-col bg-[#0b1220] font-mono text-[9px] leading-[1.45]")} aria-hidden>
                 <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-2 py-1">
-                    <span className="text-slate-500">call.ts</span>
+                    <span className="text-muted-foreground">call.ts</span>
                     <span className="text-emerald-400/90">200</span>
                 </div>
-                <div className="flex-1 space-y-0.5 overflow-hidden px-2 py-1.5 text-slate-300">
+                <div className="flex-1 space-y-0.5 overflow-hidden px-2 py-1.5 text-muted-foreground">
                     <div>
                         <span className="text-sky-300">fetch</span>
-                        <span className="text-slate-500">(</span>
+                        <span className="text-muted-foreground">(</span>
                         <span className="text-emerald-300">&quot;/v1/chat/completions&quot;</span>
-                        <span className="text-slate-500">)</span>
+                        <span className="text-muted-foreground">)</span>
                     </div>
                     <div className="text-[#C4B5FD]">→ tool_call plan_brief</div>
                     <div className="text-emerald-400">← steps ready</div>
@@ -86,22 +86,22 @@ export function ModelPreviewThumb({
 
     if (preview.kind === "report") {
         return (
-            <div className={cn(shell, "flex flex-col bg-[#e8f0fa] px-2.5 py-2 dark:bg-slate-900")} aria-hidden>
+            <div className={cn(shell, "flex flex-col bg-[#F3F0FF] px-2.5 py-2 dark:bg-[#16141F]")} aria-hidden>
                 <div className="text-[9px] font-medium tracking-[0.14em] text-[#7C5CFC] uppercase">Brief</div>
-                <p className="mt-1.5 text-[10px] leading-3.5 text-slate-700 dark:text-slate-300">Warm tone · clear CTA</p>
+                <p className="mt-1.5 text-[10px] leading-3.5 text-foreground/80 dark:text-muted-foreground">Warm tone · clear CTA</p>
             </div>
         );
     }
 
     const waveBars = [28, 48, 62, 86, 70, 94, 58, 78, 44, 66, 38, 72];
     return (
-        <div className={cn(shell, "flex flex-col bg-gradient-to-br from-slate-950 to-[#0b1a2e]")} aria-hidden>
+        <div className={cn(shell, "flex flex-col bg-gradient-to-br from-[#16141F] to-[#1a1230]")} aria-hidden>
             <div className="flex items-center justify-between border-b border-white/10 px-2 py-1">
-                <span className="text-[9px] tracking-[0.12em] text-slate-400 uppercase">TTS</span>
+                <span className="text-[9px] tracking-[0.12em] text-muted-foreground uppercase">TTS</span>
                 <span className="font-mono text-[9px] text-[#C4B5FD]/90">text → speech</span>
             </div>
             <div className="flex flex-1 items-center gap-1.5 px-2 py-2">
-                <span className="line-clamp-2 min-w-0 flex-1 text-[9px] leading-3 text-slate-300">&quot;Welcome to Illucent AI.&quot;</span>
+                <span className="line-clamp-2 min-w-0 flex-1 text-[9px] leading-3 text-muted-foreground">&quot;Welcome to Illucent AI.&quot;</span>
                 <ArrowRight className="size-3 shrink-0 text-[#C4B5FD]" />
                 <div className="tts-wave-stage flex h-8 w-[42%] items-center justify-center gap-[2px] px-1.5">
                     {waveBars.map((h, index) => (

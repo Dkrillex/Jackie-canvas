@@ -86,13 +86,14 @@ export default function PromptsPage() {
     const visibleCount = activeTab === "library" ? totalPrompts : filteredPersonalPrompts.length;
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-background text-stone-800 dark:text-stone-100">
-            <main data-app-page-scroll className="tennda-page-bg min-h-0 flex-1 overflow-y-auto px-6 py-8" onScroll={handleListScroll}>
+        <div className="flex h-full flex-col overflow-hidden tennda-page-bg text-foreground">
+            <main data-app-page-scroll className="min-h-0 flex-1 overflow-y-auto px-6 py-8" onScroll={handleListScroll}>
                 <div className="mx-auto max-w-7xl pb-8">
                     <div className="flex flex-wrap items-end justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl font-semibold text-stone-950 dark:text-stone-100">{t("page.promptsTitle")}</h1>
-                            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{t("prompts.count", { n: visibleCount })}</p>
+                            <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">Library · Prompts</div>
+                            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">{t("page.promptsTitle")}</h1>
+                            <p className="mt-2 text-sm text-muted-foreground">{t("prompts.count", { n: visibleCount })}</p>
                         </div>
                         {activeTab === "personal" ? (
                             <Button type="primary" icon={<Plus className="size-4" />} onClick={openNewPrompt}>
@@ -110,13 +111,13 @@ export default function PromptsPage() {
                         ]}
                     />
                     <div className="mx-auto mt-2 w-full max-w-2xl">
-                        <Input size="large" prefix={<Search className="size-4 text-stone-400" />} value={titleKeyword} placeholder={t("prompts.searchPh")} onChange={(event) => setTitleKeyword(event.target.value)} />
+                        <Input size="large" prefix={<Search className="size-4 text-muted-foreground" />} value={titleKeyword} placeholder={t("prompts.searchPh")} onChange={(event) => setTitleKeyword(event.target.value)} />
                     </div>
                     {activeTab === "library" && isAdmin ? (
                         <div className="mx-auto mt-6 grid max-w-6xl gap-3 text-left">
                             <PromptFilter label={t("prompts.category")} options={promptCategoryOptions} selected={selectedCategory} onChange={setSelectedCategory} allLabel={t("common.all")} />
                             <div className="grid gap-2 sm:grid-cols-[56px_minmax(0,1fr)] sm:items-start">
-                                <div className="pt-2 text-xs font-medium text-stone-500 dark:text-stone-400">{t("prompts.tags")}</div>
+                                <div className="pt-2 text-xs font-medium text-muted-foreground dark:text-muted-foreground">{t("prompts.tags")}</div>
                                 <div className="flex flex-wrap gap-2">
                                     {promptTags.map((tag) => {
                                         const active = tag === ALL_PROMPTS_OPTION ? selectedTags.length === 0 : selectedTags.includes(tag);
@@ -179,7 +180,7 @@ export default function PromptsPage() {
                     />
                 ) : null}
                 {activeTab === "library" ? (
-                    <div className="mx-auto mt-6 max-w-7xl text-center text-xs text-stone-500 dark:text-stone-400">
+                    <div className="mx-auto mt-6 max-w-7xl text-center text-xs text-muted-foreground dark:text-muted-foreground">
                         {query.isFetchingNextPage ? t("common.loading") : query.hasNextPage ? t("prompts.loadMore") : promptItems.length > 0 ? t("prompts.end") : null}
                     </div>
                 ) : null}
@@ -194,7 +195,7 @@ export default function PromptsPage() {
 function PromptFilter({ label, options, selected, onChange, allLabel }: { label: string; options: string[]; selected: string; onChange: (value: string) => void; allLabel: string }) {
     return (
         <div className="grid gap-2 sm:grid-cols-[56px_minmax(0,1fr)] sm:items-start">
-            <div className="pt-2 text-xs font-medium text-stone-500 dark:text-stone-400">{label}</div>
+            <div className="pt-2 text-xs font-medium text-muted-foreground dark:text-muted-foreground">{label}</div>
             <div className="flex flex-wrap gap-2">
                 {options.map((option) => (
                     <Tag.CheckableTag key={option} checked={selected === option} className={cn("prompt-filter-tag", selected === option && "is-active")} onChange={() => onChange(option)}>

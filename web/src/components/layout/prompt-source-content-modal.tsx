@@ -52,7 +52,7 @@ export function PromptSourceContentModal({ source, onClose }: { source: PromptSo
                     <div className="flex flex-wrap items-center justify-between gap-2 pr-6">
                         <div>
                             <div className="text-base font-semibold">{source?.name || ""} · Prompt content</div>
-                            <div className="mt-0.5 text-xs font-normal text-stone-500">{items.length} items</div>
+                            <div className="mt-0.5 text-xs font-normal text-muted-foreground">{items.length} items</div>
                         </div>
                         <Button size="small" icon={<RefreshCw className="size-3.5" />} loading={loading} onClick={() => void load(true)}>
                             Refresh now
@@ -73,7 +73,7 @@ export function PromptSourceContentModal({ source, onClose }: { source: PromptSo
                             title: "Cover",
                             dataIndex: "coverUrl",
                             width: 72,
-                            render: (coverUrl: string) => (coverUrl ? <img src={coverUrl} alt="" className="size-12 rounded object-cover" /> : <div className="size-12 rounded bg-stone-100 dark:bg-stone-800" />),
+                            render: (coverUrl: string) => (coverUrl ? <img src={coverUrl} alt="" className="size-12 rounded object-cover" /> : <div className="size-12 rounded bg-muted dark:bg-muted" />),
                         },
                         {
                             title: "Title",
@@ -81,7 +81,7 @@ export function PromptSourceContentModal({ source, onClose }: { source: PromptSo
                             render: (title: string, item) => (
                                 <div className="min-w-0">
                                     <div className="truncate font-medium">{title}</div>
-                                    <div className="mt-0.5 line-clamp-2 text-xs text-stone-500">{item.prompt}</div>
+                                    <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.prompt}</div>
                                 </div>
                             ),
                         },

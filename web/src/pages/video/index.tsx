@@ -473,15 +473,15 @@ export default function VideoPage() {
     const historyNarrow = !logsReady || !logs.length;
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
+        <div className="flex h-full flex-col overflow-hidden tennda-page-bg text-foreground">
             <main
                 data-app-page-scroll
-                className={`grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:overflow-hidden ${
+                className={`grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-3 sm:p-4 lg:overflow-hidden ${
                     historyNarrow ? "lg:grid-cols-[220px_minmax(0,1fr)]" : "lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]"
                 }`}
             >
                 <aside
-                    className={`thin-scrollbar hidden min-h-0 overflow-y-auto rounded-lg border border-border bg-card shadow-sm dark:border-white/10 lg:block ${
+                    className={`thin-scrollbar hidden min-h-0 overflow-y-auto rounded-2xl border border-border/80 bg-card/90 shadow-[0_12px_40px_-28px_rgba(124,92,252,0.35)] backdrop-blur-sm dark:border-white/10 lg:block ${
                         historyNarrow ? "p-3" : "p-4"
                     }`}
                 >
@@ -497,10 +497,13 @@ export default function VideoPage() {
                     />
                 </aside>
 
-                <section className="grid gap-3 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[minmax(480px,540px)_minmax(0,1fr)]">
-                    <div className="thin-scrollbar flex flex-col rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto">
+                <section className="grid gap-4 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[minmax(480px,540px)_minmax(0,1fr)]">
+                    <div className="thin-scrollbar flex flex-col rounded-2xl border border-border/80 bg-card/90 p-4 shadow-[0_12px_40px_-28px_rgba(124,92,252,0.28)] backdrop-blur-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto">
                         <div className="flex items-start justify-between gap-3">
-                            <h1 className="text-2xl font-semibold text-stone-950 dark:text-stone-100">{t("page.videoTitle")}</h1>
+                            <div className="min-w-0">
+                                <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">Playground · Video</div>
+                                <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{t("page.videoTitle")}</h1>
+                            </div>
                             <div className="flex shrink-0 gap-2 lg:hidden">
                                 <Button icon={<History className="size-4" />} onClick={() => setLogsOpen(true)}>
                                     {t("wb.logs")}
@@ -540,7 +543,7 @@ export default function VideoPage() {
                                     </div>
                                 </div>
                                 <div
-                                    className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700"
+                                    className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-border p-2 pb-3 overscroll-x-contain dark:border-border"
                                     onWheel={scrollStripOnWheel}
                                 >
                                     {references.map((item, index) => (
@@ -553,7 +556,7 @@ export default function VideoPage() {
                                             </button>
                                         </div>
                                     ))}
-                                    {!references.length ? <div className="flex min-w-full items-center justify-center text-sm text-stone-500">{t("wb.noRefImagesMax")}</div> : null}
+                                    {!references.length ? <div className="flex min-w-full items-center justify-center text-sm text-muted-foreground">{t("wb.noRefImagesMax")}</div> : null}
                                 </div>
                             </div>
 
@@ -567,7 +570,7 @@ export default function VideoPage() {
                                     <span className="min-w-0">
                                         <span className="block text-base font-semibold">{t("wb.moreReferences")}</span>
                                         {!mediaRefsOpen ? (
-                                            <span className="mt-0.5 block truncate text-xs text-stone-500 dark:text-stone-400">
+                                            <span className="mt-0.5 block truncate text-xs text-muted-foreground dark:text-muted-foreground">
                                                 {[
                                                     videoReferences.length ? t("wb.refVideoCount", { n: videoReferences.length }) : null,
                                                     audioReferences.length ? t("wb.refAudioCount", { n: audioReferences.length }) : null,
@@ -577,7 +580,7 @@ export default function VideoPage() {
                                             </span>
                                         ) : null}
                                     </span>
-                                    <ChevronDown className={cn("size-4 shrink-0 text-stone-500 transition-transform dark:text-stone-400", mediaRefsOpen && "rotate-180")} />
+                                    <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform dark:text-muted-foreground", mediaRefsOpen && "rotate-180")} />
                                 </button>
                                 {mediaRefsOpen ? (
                                     <div className="space-y-5">
@@ -594,7 +597,7 @@ export default function VideoPage() {
                                                 </div>
                                             </div>
                                             <div
-                                                className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700"
+                                                className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-border p-2 pb-3 overscroll-x-contain dark:border-border"
                                                 onWheel={scrollStripOnWheel}
                                             >
                                                 {videoReferences.map((item, index) => (
@@ -607,7 +610,7 @@ export default function VideoPage() {
                                                         </button>
                                                     </div>
                                                 ))}
-                                                {!videoReferences.length ? <div className="flex min-w-full items-center justify-center text-sm text-stone-500">{t("wb.noRefVideos")}</div> : null}
+                                                {!videoReferences.length ? <div className="flex min-w-full items-center justify-center text-sm text-muted-foreground">{t("wb.noRefVideos")}</div> : null}
                                             </div>
                                         </div>
 
@@ -624,14 +627,14 @@ export default function VideoPage() {
                                                 </div>
                                             </div>
                                             <div
-                                                className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700"
+                                                className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-border p-2 pb-3 overscroll-x-contain dark:border-border"
                                                 onWheel={scrollStripOnWheel}
                                             >
                                                 {audioReferences.map((item, index) => (
-                                                    <div key={item.id} className="group relative flex h-20 w-48 shrink-0 flex-col justify-center gap-2 rounded-md border border-border bg-stone-50 px-2 dark:border-white/10 dark:bg-stone-900">
-                                                        <div className="flex min-w-0 items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+                                                    <div key={item.id} className="group relative flex h-20 w-48 shrink-0 flex-col justify-center gap-2 rounded-md border border-border bg-muted/70 px-2 dark:border-white/10 dark:bg-muted">
+                                                        <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground dark:text-muted-foreground">
                                                             <Music2 className="size-4 shrink-0" />
-                                                            <span className="shrink-0 rounded bg-stone-200 px-1 text-[10px] text-stone-700 dark:bg-stone-800 dark:text-stone-200">{seedanceReferenceLabel("audio", index)}</span>
+                                                            <span className="shrink-0 rounded bg-secondary px-1 text-[10px] text-foreground/80 dark:bg-muted dark:text-muted-foreground">{seedanceReferenceLabel("audio", index)}</span>
                                                             <span className="truncate">{item.name}</span>
                                                         </div>
                                                         <audio src={item.url} controls className="h-8 w-full" preload="metadata" />
@@ -641,15 +644,15 @@ export default function VideoPage() {
                                                         </button>
                                                     </div>
                                                 ))}
-                                                {!audioReferences.length ? <div className="flex min-w-full items-center justify-center text-center text-sm text-stone-500">{t("wb.noRefAudios")}</div> : null}
+                                                {!audioReferences.length ? <div className="flex min-w-full items-center justify-center text-center text-sm text-muted-foreground">{t("wb.noRefAudios")}</div> : null}
                                             </div>
                                         </div>
                                     </div>
                                 ) : null}
                             </div>
 
-                            <div className="flex items-center justify-between rounded-lg border border-border bg-stone-50 px-3 py-2 text-sm dark:border-white/10 dark:bg-stone-900 sm:hidden">
-                                <span className="truncate text-stone-500 dark:text-stone-400">
+                            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/70 px-3 py-2 text-sm dark:border-white/10 dark:bg-muted sm:hidden">
+                                <span className="truncate text-muted-foreground dark:text-muted-foreground">
                                     {modelOptionLabel(effectiveConfig, model)} · {normalizeResolution(effectiveConfig.vquality)}p · {videoSizeLabel(effectiveConfig.size)} · {normalizeVideoSeconds(effectiveConfig.videoSeconds)}s
                                 </span>
                                 <Button size="small" type="text" icon={<SlidersHorizontal className="size-4" />} onClick={() => setSettingsOpen(true)}>
@@ -678,7 +681,7 @@ export default function VideoPage() {
                         </div>
                     </div>
 
-                    <div className="thin-scrollbar rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto lg:p-5">
+                    <div className="thin-scrollbar rounded-2xl border border-border/80 bg-card/90 p-4 shadow-[0_12px_40px_-28px_rgba(124,92,252,0.28)] backdrop-blur-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto lg:p-5">
                         <div className="mb-4 flex items-center justify-between gap-3">
                             <h2 className="text-xl font-semibold">{t("wb.results")}</h2>
                             {running ? <Tag className="m-0 px-2 py-1">{t("wb.waiting", { time: formatDuration(elapsedMs) })}</Tag> : null}
@@ -744,7 +747,7 @@ export default function VideoPage() {
             >
                 <div className="space-y-2 pt-2">
                     <Input
-                        prefix={<Link2 className="mr-1 size-4 text-stone-400" />}
+                        prefix={<Link2 className="mr-1 size-4 text-muted-foreground" />}
                         value={remoteMediaUrl}
                         onChange={(event) => setRemoteMediaUrl(event.target.value)}
                         onPressEnter={confirmRemoteMediaUrl}
@@ -785,18 +788,18 @@ function ExampleCasesPanel({ onPick }: { onPick: (prompt: string) => void }) {
     return (
         <div className="flex min-h-[280px] flex-col rounded-lg bg-secondary/40 px-2.5 py-4 dark:bg-white/[0.03] lg:min-h-0 lg:px-3 lg:py-5">
             <div className="mx-auto flex w-full max-w-md flex-col">
-                <div className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-200">{t("wb.examplesTitle")}</div>
-                <p className="mb-2.5 text-xs text-stone-500 dark:text-stone-400">{t("wb.examplesDesc")}</p>
+                <div className="mb-1 text-sm font-medium text-foreground/80 dark:text-muted-foreground">{t("wb.examplesTitle")}</div>
+                <p className="mb-2.5 text-xs text-muted-foreground dark:text-muted-foreground">{t("wb.examplesDesc")}</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                     {VIDEO_EXAMPLES.map((item) => (
                         <button
                             key={item.id}
                             type="button"
                             onClick={() => onPick(item.prompt)}
-                            className="rounded-lg border border-border/80 bg-card px-2.5 py-2.5 text-left transition hover:border-stone-400 hover:bg-secondary/50 dark:border-white/10 dark:hover:border-white/25 dark:hover:bg-white/5"
+                            className="rounded-lg border border-border/80 bg-card px-2.5 py-2.5 text-left transition hover:border-primary/35 hover:bg-secondary/50 dark:border-white/10 dark:hover:border-white/25 dark:hover:bg-white/5"
                         >
-                            <div className="text-xs font-semibold text-stone-900 dark:text-stone-100">{t(item.titleKey)}</div>
-                            <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-stone-500 dark:text-stone-400">{item.prompt}</div>
+                            <div className="text-xs font-semibold text-foreground dark:text-foreground">{t(item.titleKey)}</div>
+                            <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-muted-foreground dark:text-muted-foreground">{item.prompt}</div>
                         </button>
                     ))}
                 </div>
@@ -811,7 +814,7 @@ function ResultVideoCard({ video, onDownload, onSaveAsset }: { video: GeneratedV
         <div className="overflow-hidden rounded-lg border border-border bg-background dark:border-white/10">
             <video src={video.url} controls className="aspect-video w-full bg-black object-contain" />
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-border px-3 py-2.5 dark:border-white/10">
-                <div className="flex min-w-0 flex-wrap gap-x-2 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
+                <div className="flex min-w-0 flex-wrap gap-x-2 gap-y-1 text-xs text-muted-foreground dark:text-muted-foreground">
                     <span>
                         {video.width}x{video.height}
                     </span>
@@ -834,8 +837,8 @@ function ResultVideoCard({ video, onDownload, onSaveAsset }: { video: GeneratedV
 function PendingVideoCard() {
     const { t } = useI18n();
     return (
-        <div className="relative aspect-video overflow-hidden rounded-lg border border-dashed border-stone-300 bg-stone-50 dark:border-stone-700 dark:bg-stone-900">
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+        <div className="relative aspect-video overflow-hidden rounded-lg border border-dashed border-border bg-muted/70 dark:border-border dark:bg-muted">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground">
                 <LoaderCircle className="size-6 animate-spin" />
                 <span>{t("wb.generating")}</span>
             </div>
@@ -912,7 +915,7 @@ function LogPanel({
                 ))}
                 {!logs.length ? (
                     <div
-                        className={`flex items-center justify-center rounded-md bg-secondary/50 text-center text-stone-500 dark:bg-white/[0.04] dark:text-stone-400 ${
+                        className={`flex items-center justify-center rounded-md bg-secondary/50 text-center text-muted-foreground dark:bg-white/[0.04] dark:text-muted-foreground ${
                             compact ? "min-h-24 px-2 text-xs leading-5" : "min-h-48 text-sm"
                         }`}
                     >
@@ -927,7 +930,7 @@ function LogPanel({
 function LogCard({ log, selected, active, onSelectedChange, onClick }: { log: GenerationLog; selected: boolean; active: boolean; onSelectedChange: (checked: boolean) => void; onClick: () => void }) {
     const { t } = useI18n();
     return (
-        <button type="button" className={`block w-full rounded-lg border p-2 text-left transition ${active ? "border-stone-900 bg-blue-50 dark:border-stone-100 dark:bg-blue-950/20" : "border-border bg-background hover:bg-stone-50 dark:border-white/10 dark:hover:bg-stone-900"}`} onClick={onClick}>
+        <button type="button" className={`block w-full rounded-lg border p-2 text-left transition ${active ? "border-primary bg-primary/10 dark:border-primary dark:bg-primary/15" : "border-border bg-background hover:bg-muted/70 dark:border-white/10 dark:hover:bg-muted"}`} onClick={onClick}>
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-2">
                 <Checkbox className="mt-0.5" checked={selected} onClick={(event) => event.stopPropagation()} onChange={(event) => onSelectedChange(event.target.checked)} />
                 <div className="min-w-0">

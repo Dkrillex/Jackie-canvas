@@ -157,6 +157,7 @@ export const en = {
     "action.search": "Search",
     "action.copied": "Copied",
     "login.title": "Sign in to Illucent AI",
+    "login.subtitle": "Sign in to continue with Illucent models",
     "login.username": "Username",
     "login.password": "Password",
     "login.usernamePlaceholder": "Enter username",

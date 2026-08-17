@@ -63,7 +63,7 @@ export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDraw
                         const models = TENNDA_MODEL_CATALOG.filter((model) => model.capability === capability);
                         return (
                             <div key={capability} className="mb-2 last:mb-0">
-                                <div className="px-3 py-1.5 text-xs font-medium tracking-[0.04em] text-stone-500 uppercase dark:text-stone-400">
+                                <div className="px-3 py-1.5 text-xs font-medium tracking-[0.04em] text-muted-foreground uppercase dark:text-muted-foreground">
                                     {t(MODEL_CAPABILITY_LABEL[capability])}
                                 </div>
                                 <div className="space-y-0.5">
@@ -72,7 +72,7 @@ export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDraw
                                         return (
                                             <Link key={model.slug} to={tenndaModelDetailPath(model.slug)} onClick={onClose} className={linkClass(active)}>
                                                 <span className="truncate">{model.displayName}</span>
-                                                <span className={cn("ml-auto text-[11px]", active ? "text-primary" : "text-stone-400")}>{model.focus}</span>
+                                                <span className={cn("ml-auto text-[11px]", active ? "text-primary" : "text-muted-foreground")}>{model.focus}</span>
                                             </Link>
                                         );
                                     })}
@@ -114,7 +114,7 @@ export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDraw
 function NavGroup({ title, children }: { title: string; children: ReactNode }) {
     return (
         <div>
-            <div className="mb-1.5 px-3 font-mono text-[10px] tracking-[0.18em] text-stone-400 uppercase dark:text-stone-500">{title}</div>
+            <div className="mb-1.5 px-3 font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase dark:text-muted-foreground">{title}</div>
             <div className="space-y-0.5">{children}</div>
         </div>
     );
@@ -124,7 +124,7 @@ function linkClass(active: boolean) {
     return cn(
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-base transition",
         active
-            ? "bg-stone-100 font-medium text-stone-950 dark:bg-stone-800 dark:text-stone-100"
-            : "text-stone-600 hover:bg-stone-100 hover:text-stone-950 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100",
+            ? "bg-primary/10 font-medium text-primary dark:bg-primary/15 dark:text-primary"
+            : "text-muted-foreground hover:bg-secondary hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground",
     );
 }

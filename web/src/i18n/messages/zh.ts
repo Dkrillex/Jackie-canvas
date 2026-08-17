@@ -159,6 +159,7 @@ export const zh: Messages = {
     "action.search": "搜索",
     "action.copied": "已复制",
     "login.title": "登录 Illucent AI",
+    "login.subtitle": "登录后即可继续使用 Illucent 模型",
     "login.username": "用户名",
     "login.password": "密码",
     "login.usernamePlaceholder": "请输入用户名",

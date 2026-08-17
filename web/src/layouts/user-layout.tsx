@@ -25,10 +25,10 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                     {children}
                 </div>
             </div>
-            {/* Desktop only: local Codex / canvas-agent stays available beside the main column. */}
+            {/* Desktop: local Agent panel mounts for canvas; no silent auto-connect without shell UI. */}
             {!isMobile ? (
                 <>
-                    {!panelMounted ? <CanvasLocalAgentPanel headless autoConnect /> : null}
+                    {!panelMounted ? <CanvasLocalAgentPanel headless /> : null}
                     <AgentPanel />
                 </>
             ) : null}

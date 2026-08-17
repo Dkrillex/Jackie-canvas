@@ -51,32 +51,32 @@ export default function DeveloperDocsPage() {
 
     return (
         <main data-app-page-scroll className="tennda-page-bg h-full overflow-y-auto">
-            <div className="mx-auto max-w-3xl px-4 py-10 md:px-6 md:py-12">
-                <div className="font-mono text-[11px] tracking-[0.22em] text-stone-400 uppercase dark:text-stone-500">Developer · API</div>
+            <div className="mx-auto max-w-4xl px-4 py-10 md:px-6 md:py-12">
+                <div className="font-mono text-[11px] tracking-[0.22em] text-primary/80 uppercase">Developer · API</div>
                 <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">{t("developer.docs.title")}</h1>
-                <p className="mt-3 text-base leading-7 text-stone-500 dark:text-stone-400">{t("developer.docs.desc")}</p>
+                <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">{t("developer.docs.desc")}</p>
 
-                <section className="home-tech-panel home-tech-corners mt-10 border border-border bg-white/80 p-5 md:p-6 dark:border-white/10 dark:bg-card/80">
+                <section className="home-tech-panel home-tech-corners mt-10 border border-border/80 bg-card/90 p-5 shadow-[0_16px_48px_-32px_rgba(124,92,252,0.4)] backdrop-blur-sm md:p-6 dark:border-white/10">
                     <div className="relative z-[2] space-y-3">
-                        <h2 className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{t("developer.docs.baseUrl")}</h2>
-                        <code className="block border border-border bg-stone-50 px-4 py-3 font-mono text-sm dark:border-stone-700 dark:bg-stone-900">
+                        <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{t("developer.docs.baseUrl")}</h2>
+                        <code className="block rounded-xl border border-border bg-secondary/70 px-4 py-3 font-mono text-sm text-foreground">
                             https://ai.tennda.com/gw
                         </code>
-                        <p className="text-sm leading-6 text-stone-500 dark:text-stone-400">{t("developer.docs.note")}</p>
+                        <p className="text-sm leading-6 text-muted-foreground">{t("developer.docs.note")}</p>
                     </div>
                 </section>
 
-                <section className="mt-6 space-y-3 border border-border bg-white/75 p-5 md:p-6 dark:border-white/10 dark:bg-card/65">
-                    <h2 className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{t("developer.docs.auth")}</h2>
-                    <p className="text-sm leading-6 text-stone-600 dark:text-stone-300">{t("developer.docs.authBody")}</p>
+                <section className="mt-6 space-y-3 rounded-2xl border border-border/80 bg-card/90 p-5 backdrop-blur-sm md:p-6 dark:border-white/10">
+                    <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{t("developer.docs.auth")}</h2>
+                    <p className="text-sm leading-6 text-muted-foreground">{t("developer.docs.authBody")}</p>
                 </section>
 
-                <section className="home-tech-panel home-tech-corners mt-6 border border-border bg-white/80 p-5 md:p-6 dark:border-white/10 dark:bg-card/80">
+                <section className="home-tech-panel home-tech-corners mt-6 border border-border/80 bg-card/90 p-5 shadow-[0_16px_48px_-32px_rgba(124,92,252,0.35)] backdrop-blur-sm md:p-6 dark:border-white/10">
                     <div className="relative z-[2]">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                <h2 className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{t("developer.docs.examplesTitle")}</h2>
-                                <p className="mt-1.5 text-sm text-stone-500 dark:text-stone-400">{t("developer.docs.examplesDesc")}</p>
+                                <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{t("developer.docs.examplesTitle")}</h2>
+                                <p className="mt-1.5 text-sm text-muted-foreground">{t("developer.docs.examplesDesc")}</p>
                             </div>
                             <Button size="small" onClick={() => copyText(code, t("models.python.copied"))}>
                                 {t("models.python.copy")}
@@ -119,19 +119,19 @@ export default function DeveloperDocsPage() {
                                     </button>
                                 ))}
                             </div>
-                            <span className="font-mono text-[11px] text-stone-500">
+                            <span className="font-mono text-[11px] text-muted-foreground">
                                 {t("developer.docs.exampleModel")}:{" "}
-                                <Link to={tenndaModelDetailPath(sample.slug)} className="text-stone-800 underline-offset-2 hover:underline dark:text-stone-200">
+                                <Link to={tenndaModelDetailPath(sample.slug)} className="text-foreground/90 underline-offset-2 hover:underline dark:text-muted-foreground">
                                     {apiId}
                                 </Link>{" "}
                                 ({sample.displayName})
                             </span>
                         </div>
 
-                        <pre className="mt-4 overflow-x-auto border border-border bg-stone-50 p-4 font-mono text-[12px] leading-5 text-stone-800 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200">
+                        <pre className="mt-4 overflow-x-auto border border-border bg-muted/70 p-4 font-mono text-[12px] leading-5 text-foreground/90 dark:border-border dark:bg-muted dark:text-muted-foreground">
                             {code}
                         </pre>
-                        <p className="mt-3 text-[11px] leading-5 text-stone-400 dark:text-stone-500">{t("developer.docs.examplesNote")}</p>
+                        <p className="mt-3 text-[11px] leading-5 text-muted-foreground dark:text-muted-foreground">{t("developer.docs.examplesNote")}</p>
 
                         <div className="mt-5 grid gap-3 sm:grid-cols-3">
                             <MetaCell label={t("developer.docs.meta.method")} value={contract.method} />
@@ -156,11 +156,11 @@ export default function DeveloperDocsPage() {
                         </div>
 
                         <div className="mt-6">
-                            <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{t("developer.docs.paramsTitle")}</div>
-                            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t("developer.docs.paramsDesc")}</p>
-                            <div className="mt-3 overflow-x-auto border border-border dark:border-stone-700">
+                            <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{t("developer.docs.paramsTitle")}</div>
+                            <p className="mt-1 text-sm text-muted-foreground dark:text-muted-foreground">{t("developer.docs.paramsDesc")}</p>
+                            <div className="mt-3 overflow-x-auto border border-border dark:border-border">
                                 <table className="w-full min-w-[40rem] text-left text-sm">
-                                    <thead className="bg-stone-50 font-mono text-[10px] tracking-[0.12em] text-stone-400 uppercase dark:bg-stone-900">
+                                    <thead className="bg-muted/70 font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase dark:bg-muted">
                                         <tr>
                                             <th className="px-3 py-2.5">{t("developer.docs.params.name")}</th>
                                             <th className="px-3 py-2.5">{t("developer.docs.params.type")}</th>
@@ -207,12 +207,12 @@ export default function DeveloperDocsPage() {
 
                 <section className="home-tech-corners mt-10 border border-border bg-white/80 dark:border-white/10 dark:bg-card/80">
                     <div className="border-b border-border px-5 py-4 md:px-6 dark:border-white/10">
-                        <h2 className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{t("developer.docs.modelsTitle")}</h2>
-                        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t("developer.docs.modelsDesc")}</p>
+                        <h2 className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{t("developer.docs.modelsTitle")}</h2>
+                        <p className="mt-1 text-sm text-muted-foreground dark:text-muted-foreground">{t("developer.docs.modelsDesc")}</p>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full min-w-[36rem] text-left text-sm">
-                            <thead className="font-mono text-[10px] tracking-[0.14em] text-stone-400 uppercase">
+                            <thead className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
                                 <tr className="border-b border-border dark:border-white/10">
                                     <th className="px-5 py-3 md:px-6">{t("developer.docs.col.model")}</th>
                                     <th className="px-3 py-3">{t("developer.docs.col.apiId")}</th>
@@ -224,13 +224,13 @@ export default function DeveloperDocsPage() {
                                 {TENNDA_MODEL_CATALOG.map((model) => (
                                     <tr key={model.slug} className="border-t border-border/80">
                                         <td className="px-5 py-3 md:px-6">
-                                            <Link to={tenndaModelDetailPath(model.slug)} className="font-medium text-stone-900 underline-offset-2 hover:underline dark:text-stone-100">
+                                            <Link to={tenndaModelDetailPath(model.slug)} className="font-medium text-foreground underline-offset-2 hover:underline dark:text-foreground">
                                                 {model.displayName}
                                             </Link>
                                         </td>
-                                        <td className="px-3 py-3 font-mono text-xs text-stone-600 dark:text-stone-300">{tenndaApiModelId(model.slug)}</td>
-                                        <td className="px-3 py-3 capitalize text-stone-500">{model.capability}</td>
-                                        <td className="px-3 py-3 font-mono text-xs text-stone-500 md:pr-6">{model.specs.context}</td>
+                                        <td className="px-3 py-3 font-mono text-xs text-muted-foreground dark:text-muted-foreground">{tenndaApiModelId(model.slug)}</td>
+                                        <td className="px-3 py-3 capitalize text-muted-foreground">{model.capability}</td>
+                                        <td className="px-3 py-3 font-mono text-xs text-muted-foreground md:pr-6">{model.specs.context}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -244,9 +244,9 @@ export default function DeveloperDocsPage() {
 
 function MetaCell({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
     return (
-        <div className="border border-border bg-stone-50 px-3 py-2.5 dark:border-stone-700 dark:bg-stone-900">
-            <div className="font-mono text-[10px] tracking-[0.14em] text-stone-400 uppercase">{label}</div>
-            <div className={cn("mt-1 text-sm text-stone-800 dark:text-stone-100", mono && "font-mono text-xs")}>{value}</div>
+        <div className="border border-border bg-muted/70 px-3 py-2.5 dark:border-border dark:bg-muted">
+            <div className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">{label}</div>
+            <div className={cn("mt-1 text-sm text-foreground/90 dark:text-foreground", mono && "font-mono text-xs")}>{value}</div>
         </div>
     );
 }
@@ -265,40 +265,40 @@ function BodyPanel({
     copyLabel: string;
 }) {
     return (
-        <div className="min-w-0 border border-border dark:border-stone-700">
-            <div className="flex items-center justify-between gap-2 border-b border-border bg-stone-50 px-3 py-2 dark:border-stone-700 dark:bg-stone-900">
-                <div className="font-mono text-[10px] tracking-[0.14em] text-stone-500 uppercase">{title}</div>
-                <button type="button" onClick={onCopy} className="font-mono text-[10px] tracking-[0.1em] text-stone-500 uppercase transition hover:text-stone-900 dark:hover:text-stone-100">
+        <div className="min-w-0 border border-border dark:border-border">
+            <div className="flex items-center justify-between gap-2 border-b border-border bg-muted/70 px-3 py-2 dark:border-border dark:bg-muted">
+                <div className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">{title}</div>
+                <button type="button" onClick={onCopy} className="font-mono text-[10px] tracking-[0.1em] text-muted-foreground uppercase transition hover:text-foreground dark:hover:text-foreground">
                     {copyLabel}
                 </button>
             </div>
             <pre className="max-h-72 overflow-auto bg-card p-3 font-mono text-[11px] leading-5 text-muted-foreground">{body}</pre>
-            {note ? <p className="border-t border-border px-3 py-2 text-[11px] leading-5 text-stone-400 dark:border-stone-700 dark:text-stone-500">{note}</p> : null}
+            {note ? <p className="border-t border-border px-3 py-2 text-[11px] leading-5 text-muted-foreground dark:border-border dark:text-muted-foreground">{note}</p> : null}
         </div>
     );
 }
 
 function ParamRow({ param, requiredLabel, optionalLabel }: { param: TenndaApiParam; requiredLabel: string; optionalLabel: string }) {
     return (
-        <tr className="border-t border-stone-100 align-top dark:border-white/10">
-            <td className="px-3 py-3 font-mono text-xs font-medium text-stone-800 dark:text-stone-100">{param.name}</td>
-            <td className="px-3 py-3 font-mono text-[11px] text-stone-500">{param.type}</td>
-            <td className="px-3 py-3 text-xs text-stone-500">{param.required ? requiredLabel : optionalLabel}</td>
+        <tr className="border-t border-border align-top dark:border-white/10">
+            <td className="px-3 py-3 font-mono text-xs font-medium text-foreground/90 dark:text-foreground">{param.name}</td>
+            <td className="px-3 py-3 font-mono text-[11px] text-muted-foreground">{param.type}</td>
+            <td className="px-3 py-3 text-xs text-muted-foreground">{param.required ? requiredLabel : optionalLabel}</td>
             <td className="px-3 py-3">
                 {param.options?.length ? (
                     <div className="flex flex-wrap gap-1">
                         {param.options.map((option) => (
-                            <code key={option} className="border border-border bg-stone-50 px-1.5 py-0.5 font-mono text-[10px] text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-300">
+                            <code key={option} className="border border-border bg-muted/70 px-1.5 py-0.5 font-mono text-[10px] text-foreground/80 dark:border-border dark:bg-muted dark:text-muted-foreground">
                                 {option}
                             </code>
                         ))}
                     </div>
                 ) : (
-                    <span className="text-xs text-stone-400">—</span>
+                    <span className="text-xs text-muted-foreground">—</span>
                 )}
-                {param.defaultValue ? <div className="mt-1 font-mono text-[10px] text-stone-400">default: {param.defaultValue}</div> : null}
+                {param.defaultValue ? <div className="mt-1 font-mono text-[10px] text-muted-foreground">default: {param.defaultValue}</div> : null}
             </td>
-            <td className="px-3 py-3 text-xs leading-5 text-stone-600 dark:text-stone-300">{param.description}</td>
+            <td className="px-3 py-3 text-xs leading-5 text-muted-foreground dark:text-muted-foreground">{param.description}</td>
         </tr>
     );
 }
@@ -306,12 +306,12 @@ function ParamRow({ param, requiredLabel, optionalLabel }: { param: TenndaApiPar
 function OptionCatalog({ title, items }: { title: string; items: { value: string; hint: string }[] }) {
     return (
         <div className="mt-5">
-            <div className="font-mono text-[11px] tracking-[0.18em] text-stone-400 uppercase">{title}</div>
+            <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">{title}</div>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {items.map((item) => (
-                    <div key={item.value} className="flex items-start justify-between gap-3 border border-border bg-stone-50/80 px-3 py-2 dark:border-stone-700 dark:bg-stone-900/60">
-                        <code className="shrink-0 font-mono text-[11px] text-stone-800 dark:text-stone-100">{item.value}</code>
-                        <span className="text-right text-[11px] leading-4 text-stone-500 dark:text-stone-400">{item.hint}</span>
+                    <div key={item.value} className="flex items-start justify-between gap-3 border border-border bg-muted/70/80 px-3 py-2 dark:border-border dark:bg-muted/60">
+                        <code className="shrink-0 font-mono text-[11px] text-foreground/90 dark:text-foreground">{item.value}</code>
+                        <span className="text-right text-[11px] leading-4 text-muted-foreground dark:text-muted-foreground">{item.hint}</span>
                     </div>
                 ))}
             </div>

@@ -8,7 +8,8 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 手机壳层（宽 <768）：导航/抽屉无画布；直开 `/canvas` 回首页；无 Codex 状态灯与 Bot 本地 Agent 按钮；顶栏无用户图标，账户/登录在汉堡菜单 Account 分组；不出现右侧本地 Agent 面板；配置弹窗宽度贴屏，无 Generation/WebDAV/Agent（Codex）Tab；Agent Studio 用扳手打开 Tools/MCP/Artifacts 抽屉；生图/视频参考图删除按钮无需悬停即可见。
 - 视频工作台 `/video`：对齐生图——History 无记录约 220px、有记录 320/340（等加载后再判定）；中间设置更宽；清晰度/分辨率常显，尺寸/时长/输出默认收在 Advanced，折叠态可见摘要；Reference videos/audio 默认收在 More references，折叠态显示数量摘要，从无到有时自动展开；Results 空态为 4 个可点击案例（填入 prompt）；图/视频/音频参考条可用纵向滚轮横向滚动；生成按钮更大更醒目（设置抽屉底部也有）；滚动设置面板时顶栏不应收成胶囊。
 - 生图工作台 `/image`：History 先按窄栏渲染，加载完成后再按有/无记录定宽（无约 220、有约 320/340），主区不应整页空白等待；中间设置更宽；Quality 常显，Size/Aspect/Count/透明底默认收在 Advanced，折叠态可见 `比例 · 张数` 摘要；移动端参数抽屉高度约 82vh；Results 空态上方展示 2–4 条提示词库封面+文案（DavidWu GPT Image 2，只拉 4 条），下方 Try an example 为 title+prompt 文本案例，内容区更窄（约 max-w-md）；滚动左侧设置面板时顶栏不应收成胶囊；首页/模型/画布列表等整页滚动仍可收成胶囊；生成按钮更大更醒目（设置抽屉底部也有）。
-- 视觉主题：浅色背景应为紫白 `#FAFAFC`，主按钮/链接为品牌紫 `#7C5CFC`；首页/模型/Developer 有淡紫顶光 + 紫点阵；滚动后顶栏胶囊为白底淡紫描边；深色模式底为 `#16141F`、卡片 `#221F33`。
+- 视觉主题：浅色背景应为紫白 `#FAFAFC`，主按钮/链接为品牌紫 `#7C5CFC`；筛选标签选中为紫底白字（非黑底）；History 选中为紫描边/`primary/10`（非蓝）；首页/模型/Developer/工作台有淡紫顶光或点阵；滚动后顶栏胶囊为白底淡紫描边；深色模式底为 `#16141F`、卡片 `#221F33`。
+- 页头排版：Prompts / Assets / Canvas / Config / Agent / Image / Video 均有 mono 索引行 + 左对齐标题；Assets 不再居中超大标题。
 - 顶栏 IA：桌面一级为 Models / Playground / Developer / Hugging Face；Models 下拉进 `/models/:slug`；Playground 下拉含 Agent/Image/Video/Prompts/Assets（登录可见 Settings，admin 桌面可见 My canvases）；Developer 进 `/developer/docs`；HF 外链。移动端抽屉按同样四组但无画布。
 - 模型详情：打开 `/models/illusion` 顶部为 Image/Video/Text/Audio（无白底壳，选中紫底白字）+ 带预览的模型切换（选中主色描边，封面顶边无露白）；仅 Text 详情显示「Illucent LLM」eyebrow；API id 为 CTA 下主色高亮标签、Specs 为白底圆角卡片、用途为 `·` 分隔；Overview / Highlights / Python 间距更紧；「Open in Playground」跳对应工作台；无效 slug 落到第一个模型。
 - Developer 文档：`/developer/docs` 展示 Base URL `https://ai.tennda.com/gw`、Bearer 鉴权；可切换 Text/Image/Video/Audio 与 Python/curl；示例下方有 Method/Path、Request/Response body、参数表与可选值目录（image size/n/quality、video seconds/size、audio voice/speed 等 Illucent 自研口径）；不应出现 gpt-/gemini-/veo-/seedream 或 OpenAI 音色名。
@@ -19,7 +20,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 品牌 Logo：浏览器标签页与顶栏应为 `/logo.svg`（紫底光核占位标）；标题/文案为 Illucent AI；首页 hero 上方不放 Logo。
 - 全站英文：登录失败/会话失效 Toast、生图透明背景开关、视频生成错误、配置弹窗 WebDAV 进度、模型选择弹窗、画布侧栏/工具栏/导出、Agent 活动文案等应为英文；不应再弹出中文硬编码提示。本地 Agent 若返回中文「Codex 正在运行」，面板展示仍为英文。
 - 提示词库筛选与来源：`admin` 在 `/prompts` 库 Tab 与提示词选择弹窗可见 Category / Tags；非 `admin`（含未登录）不显示这两行筛选，列表与选择弹窗仅 DavidWu GPT Image 2，仍可用搜索。
-- Codex 状态按钮（仅桌面）：`admin` 点击打开配置 Agent Tab；非 `admin` 点击应打开右侧 Agent 面板，不应落到 Account；手机不显示该按钮。
+- 桌面顶栏：无 Codex 状态灯、无 Bot「Open Agent」按钮；主站壳层不静默 autoConnect 本地 Agent。本地 Agent 仅画布内打开面板时连接；配置 → Agent（仅 admin）仍可填 Local URL / token。
 - 模型选择器：`admin` 应看到「Illucent Illusion: gpt-image-2」这类「展示名: 实际上游模型名」，并显示厂商图标；非 `admin` 仅见 Illucent 展示名 + 默认 Cpu 图标；Network 请求 body 的 `model` 应为 `tennda-illusion` 等 api id，不应再直接出现上游 id。
 - 首页模型分组：标题为 Image / Video / Text / Audio；每类一大卡主推（Illusion / Cinema / Reason / Waves）+ 小卡收紧；Image/Video 卡有封面图，Text 有对话/报告预览，Audio 有波形；卡片默认无四角文档风装饰，悬停再高亮。
 - 提示词库全英：`/prompts` Tab/按钮/弹窗应为英文；卡片标题应为英文（如 Celebrity in real life / title_en），不应再出现「实物+手绘…」等中文 registry 标题；Banana Quicker 默认关闭。
@@ -30,7 +31,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - Illucent 模型网关：本地需先 `node gateway/server.js`（8787），再开前端；Network 里 `/gw` 请求 body 仅见 `tennda-*`；生图/视频/文本/TTS 与 Agent 云端回退均可正常出结果；改映射时同步 `gateway/model-map.js` 与 catalog。
 - Illucent AI 故事版：品牌显示为 Illucent AI；首页 hero 副文案为 Purpose-built models for text, image, video and audio — connected through one unified agentic platform；模型下拉仅见 Illucent 显示名，Network 请求 body 仍为 `tennda-*` api id（如 `tennda-illusion`）；首页为英文自研模型介绍网格；无语言切换按钮且刷新后仍为英文。
 - 首页：模型 lineup 下方不再展示 Prompt library 区块；hero 主按钮滚到模型区，次按钮打开 Hugging Face；导航仍可进入 `/prompts`。
-- 首页 hero：CTA 下方显示 Inference network online 与 Singapore | Tokyo | Frankfurt；顶栏 Codex 状态图标为 Cpu 芯片而非 OpenAI。
+- 首页 hero：CTA 下方显示 Inference network online 与 Singapore | Tokyo | Frankfurt；顶栏无 Codex/Bot 入口。
 - 首页模型 lineup：应按 Image/Video/Text/Audio 分组；顶部有数量统计格；卡片含 focus 标签与 uses chips；底部可进 Image/Video studio。
 - 配置 Tab 权限：非 `admin` 登录后打开配置，应只见 Account；`admin` 可见 Generation preferences / WebDAV / Agent。
 - Agent Log 权限：非 `admin` 的 Agent 面板不应出现 Log Tab；`admin` 可见 Log。
@@ -41,7 +42,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 默认模型列表：新环境/刷新后默认渠道应包含生图 `tennda-illusion` / `tennda-flash` / `tennda-dream`；视频 `tennda-motion-lite` / `tennda-motion-fast` / `tennda-cinema`；文本 `tennda-mini` / `tennda-reason`；音频 `tennda-waves`；默认文本模型为 Reason；默认生图张数为 1；`admin` 模型详情仍可看到上游 wire name 提示。
 - 首页模型 lineup：卡片应与当前 `TENNDA_MODEL_CATALOG` 一致（Illusion/Flash/Dream、Motion Lite/Fast、Cinema、Mini/Reason、Waves），不应再出现 Canvas/Pixel/Chat/Wan；副文案为 image/video/text，不再提 canvas。
 - Gemini Nano Banana 生图：默认 `/gw`（OpenAI 兼容）渠道下选择 `tennda-flash`（及同类 Gemini 图模型）应走 `/v1beta/models/{upstream}:generateContent` 并成功出图，Network 请求体/路径对外为 `tennda-*`，不再报 `not supported model for image generation`。
-- 全站 Agent 面板：顶栏 Bot 按钮与画布右上角 Agent 可打开右侧面板；配置 → Codex 可填 Local URL / token 并连接；面板收起后 SSE 仍保持（方便外部 MCP 操作画布）。
+- 全站 Agent 面板：顶栏无 Bot 按钮；画布右上角 Agent 可打开右侧面板；配置 → Agent（admin）可填 Local URL / token 并连接；面板收起后 SSE 仍保持（方便外部 MCP 操作画布）。主站进入时不应静默连本地 Agent。
 - 对象存储 OSS：配置页「对象存储」填写阿里云 AccessKey 后可测试上传；Bucket `super-jackie`、前缀 `canvas/`、Region `oss-cn-guangzhou`；需确认 `canvas/` 公共可读且 CORS 允许浏览器 PUT。
 - Seedance 参考视频/音频：配置 OSS 后，视频创作台本地上传应自动得到 `https://super-jackie.oss-cn-guangzhou.aliyuncs.com/canvas/...` 公网链接并可生成；也可继续用「链接」粘贴公网 https / `asset://`。
 - Seedance 参考视频：未配置 OSS 时，本地上传应在生成前提示需公网链接或填写 AccessKey；配置后不再因 data URL 报 `reference_video must be provided as a web url`。

@@ -410,15 +410,15 @@ export default function ImagePage() {
     const historyNarrow = !logsReady || !logs.length;
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
+        <div className="flex h-full flex-col overflow-hidden tennda-page-bg text-foreground">
             <main
                 data-app-page-scroll
-                className={`grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 lg:overflow-hidden ${
+                className={`grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-3 sm:p-4 lg:overflow-hidden ${
                     historyNarrow ? "lg:grid-cols-[220px_minmax(0,1fr)]" : "lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)]"
                 }`}
             >
                 <aside
-                    className={`thin-scrollbar hidden min-h-0 overflow-y-auto rounded-lg border border-border bg-card shadow-sm dark:border-white/10 lg:block ${
+                    className={`thin-scrollbar hidden min-h-0 overflow-y-auto rounded-2xl border border-border/80 bg-card/90 shadow-[0_12px_40px_-28px_rgba(124,92,252,0.35)] backdrop-blur-sm dark:border-white/10 lg:block ${
                         historyNarrow ? "p-3" : "p-4"
                     }`}
                 >
@@ -434,12 +434,13 @@ export default function ImagePage() {
                     />
                 </aside>
 
-                <section className="grid gap-3 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[minmax(480px,540px)_minmax(0,1fr)]">
-                    <div className="thin-scrollbar flex flex-col rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto">
+                <section className="grid gap-4 lg:min-h-0 lg:overflow-hidden xl:grid-cols-[minmax(480px,540px)_minmax(0,1fr)]">
+                    <div className="thin-scrollbar flex flex-col rounded-2xl border border-border/80 bg-card/90 p-4 shadow-[0_12px_40px_-28px_rgba(124,92,252,0.28)] backdrop-blur-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto">
                         <div>
                             <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                    <h1 className="text-2xl font-semibold text-stone-950 dark:text-stone-100">{t("page.imageTitle")}</h1>
+                                    <div className="font-mono text-[11px] tracking-[0.18em] text-muted-foreground uppercase">Playground · Image</div>
+                                    <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{t("page.imageTitle")}</h1>
                                 </div>
                                 <div className="flex shrink-0 gap-2 lg:hidden">
                                     <Button icon={<History className="size-4" />} onClick={() => setLogsOpen(true)}>
@@ -481,7 +482,7 @@ export default function ImagePage() {
                                     </div>
                                 </div>
                                 <div
-                                    className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-stone-300 p-2 pb-3 overscroll-x-contain dark:border-stone-700"
+                                    className="hover-scrollbar hover-scrollbar-hint flex min-h-24 w-full min-w-0 max-w-full gap-2 overflow-x-scroll overflow-y-hidden rounded-lg border border-dashed border-border p-2 pb-3 overscroll-x-contain dark:border-border"
                                     onWheel={(event) => {
                                         if (event.currentTarget.scrollWidth <= event.currentTarget.clientWidth) return;
                                         event.preventDefault();
@@ -503,12 +504,12 @@ export default function ImagePage() {
                                             </button>
                                         </div>
                                     ))}
-                                    {!references.length ? <div className="flex min-w-full items-center justify-center text-sm text-stone-500">{t("wb.noReferences")}</div> : null}
+                                    {!references.length ? <div className="flex min-w-full items-center justify-center text-sm text-muted-foreground">{t("wb.noReferences")}</div> : null}
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between rounded-lg border border-border bg-stone-50 px-3 py-2 text-sm dark:border-white/10 dark:bg-stone-900 sm:hidden">
-                                <span className="truncate text-stone-500 dark:text-stone-400">
+                            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/70 px-3 py-2 text-sm dark:border-white/10 dark:bg-muted sm:hidden">
+                                <span className="truncate text-muted-foreground dark:text-muted-foreground">
                                     {modelOptionLabel(effectiveConfig, model)} · {effectiveConfig.size} · {effectiveConfig.quality}
                                 </span>
                                 <Button size="small" type="text" icon={<SlidersHorizontal className="size-4" />} onClick={() => setSettingsOpen(true)}>
@@ -537,7 +538,7 @@ export default function ImagePage() {
                         </div>
                     </div>
 
-                    <div className="thin-scrollbar rounded-lg border border-border bg-card p-4 shadow-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto lg:p-5">
+                    <div className="thin-scrollbar rounded-2xl border border-border/80 bg-card/90 p-4 shadow-[0_12px_40px_-28px_rgba(124,92,252,0.28)] backdrop-blur-sm dark:border-white/10 lg:min-h-0 lg:overflow-y-auto lg:p-5">
                         <div className="mb-4 flex items-center justify-between gap-3">
                             <div>
                                 <h2 className="text-xl font-semibold">{t("wb.results")}</h2>
@@ -653,26 +654,26 @@ function ExampleCasesPanel({ onPick }: { onPick: (prompt: string) => void }) {
             <div className="mx-auto flex w-full max-w-md flex-col gap-5">
                 {libraryItems.length ? (
                     <section>
-                        <div className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-200">{t("wb.libraryTitle")}</div>
-                        <p className="mb-2.5 text-xs text-stone-500 dark:text-stone-400">{t("wb.libraryDesc")}</p>
+                        <div className="mb-1 text-sm font-medium text-foreground/80 dark:text-muted-foreground">{t("wb.libraryTitle")}</div>
+                        <p className="mb-2.5 text-xs text-muted-foreground dark:text-muted-foreground">{t("wb.libraryDesc")}</p>
                         <div className="grid grid-cols-2 gap-2">
                             {libraryItems.map((item) => (
                                 <button
                                     key={item.id}
                                     type="button"
                                     onClick={() => onPick(item.prompt)}
-                                    className="overflow-hidden rounded-lg border border-border/80 bg-card text-left transition hover:border-stone-400 hover:bg-secondary/50 dark:border-white/10 dark:hover:border-white/25 dark:hover:bg-white/5"
+                                    className="overflow-hidden rounded-lg border border-border/80 bg-card text-left transition hover:border-primary/35 hover:bg-secondary/50 dark:border-white/10 dark:hover:border-white/25 dark:hover:bg-white/5"
                                 >
                                     {item.coverUrl ? (
                                         <img src={item.coverUrl} alt={item.title} className="aspect-[3/2] w-full object-cover" loading="lazy" />
                                     ) : (
-                                        <span className="grid aspect-[3/2] w-full place-items-center bg-stone-100 text-stone-400 dark:bg-stone-900 dark:text-stone-600">
+                                        <span className="grid aspect-[3/2] w-full place-items-center bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground">
                                             <FileText className="size-6" />
                                         </span>
                                     )}
                                     <div className="px-2 py-1.5">
-                                        <div className="line-clamp-1 text-[11px] font-semibold text-stone-900 dark:text-stone-100">{item.title}</div>
-                                        <div className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-stone-500 dark:text-stone-400">{item.description || item.prompt}</div>
+                                        <div className="line-clamp-1 text-[11px] font-semibold text-foreground dark:text-foreground">{item.title}</div>
+                                        <div className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-muted-foreground dark:text-muted-foreground">{item.description || item.prompt}</div>
                                     </div>
                                 </button>
                             ))}
@@ -681,18 +682,18 @@ function ExampleCasesPanel({ onPick }: { onPick: (prompt: string) => void }) {
                 ) : null}
 
                 <section>
-                    <div className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-200">{t("wb.examplesTitle")}</div>
-                    <p className="mb-2.5 text-xs text-stone-500 dark:text-stone-400">{t("wb.examplesDesc")}</p>
+                    <div className="mb-1 text-sm font-medium text-foreground/80 dark:text-muted-foreground">{t("wb.examplesTitle")}</div>
+                    <p className="mb-2.5 text-xs text-muted-foreground dark:text-muted-foreground">{t("wb.examplesDesc")}</p>
                     <div className="grid gap-2 sm:grid-cols-2">
                         {IMAGE_EXAMPLES.map((item) => (
                             <button
                                 key={item.id}
                                 type="button"
                                 onClick={() => onPick(item.prompt)}
-                                className="rounded-lg border border-border/80 bg-card px-2.5 py-2.5 text-left transition hover:border-stone-400 hover:bg-secondary/50 dark:border-white/10 dark:hover:border-white/25 dark:hover:bg-white/5"
+                                className="rounded-lg border border-border/80 bg-card px-2.5 py-2.5 text-left transition hover:border-primary/35 hover:bg-secondary/50 dark:border-white/10 dark:hover:border-white/25 dark:hover:bg-white/5"
                             >
-                                <div className="text-xs font-semibold text-stone-900 dark:text-stone-100">{t(item.titleKey)}</div>
-                                <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-stone-500 dark:text-stone-400">{item.prompt}</div>
+                                <div className="text-xs font-semibold text-foreground dark:text-foreground">{t(item.titleKey)}</div>
+                                <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-muted-foreground dark:text-muted-foreground">{item.prompt}</div>
                             </button>
                         ))}
                     </div>
@@ -720,7 +721,7 @@ function ResultImageCard({
         <div className="overflow-hidden rounded-lg border border-border bg-background dark:border-white/10">
             <Image src={image.dataUrl} alt={t("wb.resultAlt", { n: index + 1 })} className="aspect-square object-cover" />
             <div className="space-y-2 border-t border-border px-3 py-2.5 dark:border-white/10">
-                <div className="flex min-w-0 gap-x-2 gap-y-1 text-xs text-stone-500 dark:text-stone-400">
+                <div className="flex min-w-0 gap-x-2 gap-y-1 text-xs text-muted-foreground dark:text-muted-foreground">
                     <span>
                         {image.width}x{image.height}
                     </span>
@@ -752,7 +753,7 @@ function ResultImageCard({
 function PendingImageCard() {
     const { t } = useI18n();
     return (
-        <div className="relative aspect-square overflow-hidden rounded-lg border border-dashed border-stone-300 bg-stone-50 dark:border-stone-700 dark:bg-stone-900">
+        <div className="relative aspect-square overflow-hidden rounded-lg border border-dashed border-border bg-muted/70 dark:border-border dark:bg-muted">
             <div
                 className="absolute inset-0 opacity-60"
                 style={{
@@ -760,7 +761,7 @@ function PendingImageCard() {
                     backgroundSize: "16px 16px",
                 }}
             />
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-stone-500 dark:text-stone-400">
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground dark:text-muted-foreground">
                 <LoaderCircle className="size-6 animate-spin" />
                 <span>{t("wb.generating")}</span>
             </div>
@@ -848,7 +849,7 @@ function LogPanel({
                 ))}
                 {!logs.length ? (
                     <div
-                        className={`flex items-center justify-center rounded-md bg-secondary/50 text-center text-stone-500 dark:bg-white/[0.04] dark:text-stone-400 ${
+                        className={`flex items-center justify-center rounded-md bg-secondary/50 text-center text-muted-foreground dark:bg-white/[0.04] dark:text-muted-foreground ${
                             compact ? "min-h-24 px-2 text-xs leading-5" : "min-h-48 text-sm"
                         }`}
                     >
@@ -867,7 +868,7 @@ function LogCard({ log, selected, active, onSelectedChange, onClick }: { log: Ge
     return (
         <button
             type="button"
-            className={`block w-full rounded-lg border p-2 text-left transition ${active ? "border-stone-900 bg-blue-50 dark:border-stone-100 dark:bg-blue-950/20" : "border-border bg-background hover:bg-stone-50 dark:border-white/10 dark:hover:bg-stone-900"}`}
+            className={`block w-full rounded-lg border p-2 text-left transition ${active ? "border-primary bg-primary/10 dark:border-primary dark:bg-primary/15" : "border-border bg-background hover:bg-muted/70 dark:border-white/10 dark:hover:bg-muted"}`}
             onClick={onClick}
         >
             <div className="grid grid-cols-[minmax(128px,1fr)_auto] gap-2">
