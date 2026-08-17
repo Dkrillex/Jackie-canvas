@@ -29,7 +29,7 @@ type PipelineStep = "plan" | "tool" | "result" | "artifact";
 type PipelineStatus = "idle" | "active" | "done" | "failed";
 type ThemeTokens = (typeof canvasThemes)[keyof typeof canvasThemes];
 
-/** Tennda-facing tools shown in the sidebar; other builtins stay available to the agent. */
+/** Illucent-facing tools shown in the sidebar; other builtins stay available to the agent. */
 const FEATURED_BUILTIN_IDS = ["generate_image", "generate_video", "generate_speech"] as const;
 
 const FEATURED_TOOL_UI: Record<(typeof FEATURED_BUILTIN_IDS)[number], { icon: LucideIcon; blurbKey: MessageKey }> = {
@@ -379,9 +379,9 @@ export default function AgentStudioPage() {
 
     const panelStyle = {
         background: themeName === "dark" ? "rgba(42,46,60,0.92)" : "rgba(255,255,255,0.92)",
-        borderColor: themeName === "dark" ? "rgba(255,255,255,0.1)" : "rgba(1,117,218,0.12)",
+        borderColor: themeName === "dark" ? "rgba(255,255,255,0.1)" : "rgba(124, 92, 252,0.12)",
         color: themeName === "dark" ? "#ffffff" : "#1f2937",
-        boxShadow: themeName === "dark" ? "0 18px 40px -28px rgba(0,0,0,0.55)" : "0 18px 40px -28px rgba(1,117,218,0.22)",
+        boxShadow: themeName === "dark" ? "0 18px 40px -28px rgba(0,0,0,0.55)" : "0 18px 40px -28px rgba(124, 92, 252,0.22)",
     };
 
     const renderSidePanel = () => (
@@ -418,7 +418,7 @@ export default function AgentStudioPage() {
                                     >
                                         <span
                                             className="grid size-8 shrink-0 place-items-center rounded-lg"
-                                            style={{ background: enabled ? "rgba(1,117,218,0.1)" : `color-mix(in srgb, ${theme.node.text} 6%, transparent)`, color: enabled ? "#0175DA" : theme.node.muted }}
+                                            style={{ background: enabled ? "rgba(124, 92, 252,0.1)" : `color-mix(in srgb, ${theme.node.text} 6%, transparent)`, color: enabled ? "#7C5CFC" : theme.node.muted }}
                                         >
                                             <Icon className="size-3.5" />
                                         </span>
@@ -444,7 +444,7 @@ export default function AgentStudioPage() {
                                 type="button"
                                 onClick={() => setSideTab("mcp")}
                                 className="group flex w-full items-start gap-2.5 rounded-xl border px-2.5 py-2.5 text-left transition hover:border-primary/35"
-                                style={{ borderColor: theme.node.stroke, color: theme.node.text, background: "color-mix(in srgb, #0175DA 4%, transparent)" }}
+                                style={{ borderColor: theme.node.stroke, color: theme.node.text, background: "color-mix(in srgb, #7C5CFC 4%, transparent)" }}
                             >
                                 <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
                                     <Wifi className="size-3.5" />
@@ -662,10 +662,10 @@ export default function AgentStudioPage() {
 function PipelineRail({ theme, status }: { theme: ThemeTokens; status: Record<PipelineStep, PipelineStatus> }) {
     const { t } = useI18n();
     return (
-        <div className="flex shrink-0 items-center gap-1 border-b px-3 py-2 md:px-5" style={{ borderColor: theme.node.stroke, background: "color-mix(in srgb, #0175DA 4%, transparent)" }}>
+        <div className="flex shrink-0 items-center gap-1 border-b px-3 py-2 md:px-5" style={{ borderColor: theme.node.stroke, background: "color-mix(in srgb, #7C5CFC 4%, transparent)" }}>
             {PIPELINE_STEPS.map((step, index) => {
                 const state = status[step.id];
-                const color = state === "failed" ? "#dc2626" : state === "active" ? "#0175DA" : state === "done" ? "#16a34a" : theme.node.muted;
+                const color = state === "failed" ? "#dc2626" : state === "active" ? "#7C5CFC" : state === "done" ? "#16a34a" : theme.node.muted;
                 return (
                     <div key={step.id} className="flex min-w-0 flex-1 items-center gap-1">
                         <div className="flex min-w-0 items-center gap-1.5">
@@ -708,14 +708,14 @@ function EmptyChat({ theme, onPick }: { theme: ThemeTokens; onPick: (value: stri
                 <div
                     className="rounded-2xl px-3 py-3.5 sm:px-5"
                     style={{
-                        background: "color-mix(in srgb, #0175DA 5%, transparent)",
-                        boxShadow: `inset 0 0 0 1px color-mix(in srgb, #0175DA 14%, ${theme.node.stroke})`,
+                        background: "color-mix(in srgb, #7C5CFC 5%, transparent)",
+                        boxShadow: `inset 0 0 0 1px color-mix(in srgb, #7C5CFC 14%, ${theme.node.stroke})`,
                     }}
                 >
                     <div className="relative">
                         <div
                             className="pointer-events-none absolute top-3 right-[12.5%] left-[12.5%] h-px"
-                            style={{ background: "linear-gradient(90deg, transparent, color-mix(in srgb, #0175DA 34%, transparent) 12%, color-mix(in srgb, #0175DA 34%, transparent) 88%, transparent)" }}
+                            style={{ background: "linear-gradient(90deg, transparent, color-mix(in srgb, #7C5CFC 34%, transparent) 12%, color-mix(in srgb, #7C5CFC 34%, transparent) 88%, transparent)" }}
                             aria-hidden
                         />
                         <ol className="relative grid grid-cols-4 gap-1">
@@ -724,9 +724,9 @@ function EmptyChat({ theme, onPick }: { theme: ThemeTokens; onPick: (value: stri
                                     <span
                                         className="grid size-6 place-items-center rounded-full text-[10px] font-semibold text-primary"
                                         style={{
-                                            border: "1px solid color-mix(in srgb, #0175DA 40%, transparent)",
-                                            background: `color-mix(in srgb, #0175DA 14%, ${theme.toolbar.panel})`,
-                                            boxShadow: "0 0 0 3px color-mix(in srgb, #0175DA 5%, transparent)",
+                                            border: "1px solid color-mix(in srgb, #7C5CFC 40%, transparent)",
+                                            background: `color-mix(in srgb, #7C5CFC 14%, ${theme.toolbar.panel})`,
+                                            boxShadow: "0 0 0 3px color-mix(in srgb, #7C5CFC 5%, transparent)",
                                         }}
                                     >
                                         {index + 1}

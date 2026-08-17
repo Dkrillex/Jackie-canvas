@@ -1,6 +1,6 @@
 export type TenndaModelCapability = "image" | "video" | "text" | "audio";
 
-/** Specs shown on the model detail page (facade numbers for Tennda UI). */
+/** Specs shown on the model detail page (facade numbers for Illucent UI). */
 export type TenndaModelSpecs = {
     /** Context / prompt budget */
     context: string;
@@ -42,11 +42,11 @@ export type TenndaModelEntry = {
     specs: TenndaModelSpecs;
 };
 
-/** UI facade: Tennda display names map 1:1 to real upstream models. */
+/** UI facade: Illucent display names map 1:1 to real upstream models. */
 export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     {
         name: "gpt-image-2",
-        displayName: "Tennda Illusion",
+        displayName: "Illucent Illusion",
         slug: "illusion",
         capability: "image",
         tagline: "Flagship image generation for posters, product shots, and brand art with strong prompt adherence.",
@@ -56,7 +56,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         featured: true,
         preview: { kind: "image", cover: "/models/illusion-cover.jpg" },
         overview:
-            "Tennda Illusion is the flagship image model in the Tennda Vision family. It is tuned for brand-safe poster layouts, product photography, and marketing stills where prompt adherence and composition matter more than raw speed.\n\nUse it when you need a polished first frame for campaigns, packaging mockups, or hero creatives. Pair detailed scene instructions with optional reference images in Image Studio for consistent style across a batch.",
+            "Illucent Illusion is the flagship image model in the Illucent Vision family. It is tuned for brand-safe poster layouts, product photography, and marketing stills where prompt adherence and composition matter more than raw speed.\n\nUse it when you need a polished first frame for campaigns, packaging mockups, or hero creatives. Pair detailed scene instructions with optional reference images in Image Studio for consistent style across a batch.",
         highlights: ["Strong prompt adherence", "Brand & product framing", "Best for final-quality stills"],
         specs: {
             context: "8K tokens (prompt)",
@@ -72,7 +72,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "gemini-3.1-flash-lite-image",
-        displayName: "Tennda Flash",
+        displayName: "Illucent Flash",
         slug: "flash",
         capability: "image",
         tagline: "Ultra-fast drafts when you need rapid visual iteration and layout exploration.",
@@ -81,7 +81,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         href: "/image",
         preview: { kind: "image", cover: "/models/flash-cover.jpg" },
         overview:
-            "Tennda Flash prioritizes turnaround time for sketching ideas, testing layouts, and exploring visual directions before committing to a flagship render.\n\nIt fits early creative loops: mood boards, thumbnail grids, and prompt ablation. Move promising frames to Illusion or Dream when you are ready to polish.",
+            "Illucent Flash prioritizes turnaround time for sketching ideas, testing layouts, and exploring visual directions before committing to a flagship render.\n\nIt fits early creative loops: mood boards, thumbnail grids, and prompt ablation. Move promising frames to Illusion or Dream when you are ready to polish.",
         highlights: ["Lowest latency drafts", "Layout exploration", "Iterate before polish"],
         specs: {
             context: "4K tokens (prompt)",
@@ -97,7 +97,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "seedream-5-0-260128",
-        displayName: "Tennda Dream",
+        displayName: "Illucent Dream",
         slug: "dream",
         capability: "image",
         tagline: "High-fidelity stylized imagery for cinematic stills and mood-heavy frames.",
@@ -106,7 +106,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         href: "/image",
         preview: { kind: "image", cover: "/models/dream-cover.jpg" },
         overview:
-            "Tennda Dream leans into stylized, cinematic stills with rich atmosphere and mood. It is a strong choice for key art, storyboard frames, and concept images that need a distinctive look.\n\nPrompt for lighting, lens language, and palette. Dream responds well to cinematic direction and emotional tone.",
+            "Illucent Dream leans into stylized, cinematic stills with rich atmosphere and mood. It is a strong choice for key art, storyboard frames, and concept images that need a distinctive look.\n\nPrompt for lighting, lens language, and palette. Dream responds well to cinematic direction and emotional tone.",
         highlights: ["Cinematic mood", "Stylized fidelity", "Concept & key art"],
         specs: {
             context: "6K tokens (prompt)",
@@ -122,7 +122,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "veo-3.1-lite-generate-001",
-        displayName: "Tennda Motion Lite",
+        displayName: "Illucent Motion Lite",
         slug: "motion-lite",
         capability: "video",
         tagline: "Lightweight video generation for quick motion previews and early direction checks.",
@@ -131,7 +131,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         href: "/video",
         preview: { kind: "video", cover: "/models/motion-lite-cover.jpg" },
         overview:
-            "Tennda Motion Lite is the lightweight entry in the Tennda Motion family for short previews and early motion direction.\n\nUse it to validate camera moves, pacing, and scene beats before spending a longer render on Motion Fast or Cinema.",
+            "Illucent Motion Lite is the lightweight entry in the Illucent Motion family for short previews and early motion direction.\n\nUse it to validate camera moves, pacing, and scene beats before spending a longer render on Motion Fast or Cinema.",
         highlights: ["Quick motion previews", "Pitch-friendly clips", "Low-friction iteration"],
         specs: {
             context: "2K tokens (prompt)",
@@ -147,7 +147,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "veo-3.1-fast-generate-001",
-        displayName: "Tennda Motion Fast",
+        displayName: "Illucent Motion Fast",
         slug: "motion-fast",
         capability: "video",
         tagline: "Speed-first video for short clips, storyboard tests, and rapid cut experiments.",
@@ -156,7 +156,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         href: "/video",
         preview: { kind: "video", cover: "/models/motion-fast-cover.jpg" },
         overview:
-            "Tennda Motion Fast balances speed and quality for short clips, storyboard tests, and cut experiments.\n\nIt is the workhorse for production loops where you need many variants quickly—then promote a select few to Cinema for richer reference-driven shots.",
+            "Illucent Motion Fast balances speed and quality for short clips, storyboard tests, and cut experiments.\n\nIt is the workhorse for production loops where you need many variants quickly—then promote a select few to Cinema for richer reference-driven shots.",
         highlights: ["Speed-first clips", "Storyboard tests", "Variant batches"],
         specs: {
             context: "2K tokens (prompt)",
@@ -172,7 +172,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "seedance-2-0-NSFW",
-        displayName: "Tennda Cinema",
+        displayName: "Illucent Cinema",
         slug: "cinema",
         capability: "video",
         tagline: "Cinematic video with rich reference-driven direction for longer creative shots.",
@@ -182,7 +182,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         featured: true,
         preview: { kind: "video", cover: "/models/cinema-cover.jpg" },
         overview:
-            "Tennda Cinema targets richer, reference-driven video for longer creative shots and story sequences.\n\nBring clear shot language and optional references in Video Studio when you need cinematic continuity beyond a quick preview.",
+            "Illucent Cinema targets richer, reference-driven video for longer creative shots and story sequences.\n\nBring clear shot language and optional references in Video Studio when you need cinematic continuity beyond a quick preview.",
         highlights: ["Reference-driven shots", "Longer creative clips", "Story-ready motion"],
         specs: {
             context: "4K tokens (prompt + refs)",
@@ -198,7 +198,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "gpt-5.4-nano",
-        displayName: "Tennda Mini",
+        displayName: "Illucent Mini",
         slug: "mini",
         capability: "text",
         tagline: "Fast lightweight chat for quick Q&A, rewriting, and lightweight drafting.",
@@ -207,7 +207,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         href: "/agent",
         preview: { kind: "chat" },
         overview:
-            "Tennda Mini is the lightweight text model in the TENNDA AI family—optimized for snappy chat, rewriting, and short drafts.\n\nIt is the default for Agent cloud fallback and everyday prompting when you want speed over deep multi-step reasoning.",
+            "Illucent Mini is the lightweight text model in the Illucent AI family—optimized for snappy chat, rewriting, and short drafts.\n\nIt is the default for Agent cloud fallback and everyday prompting when you want speed over deep multi-step reasoning.",
         highlights: ["Low latency chat", "Rewrite & polish", "Everyday drafting"],
         specs: {
             context: "128K tokens",
@@ -223,7 +223,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "gpt-5.6-sol",
-        displayName: "Tennda Reason",
+        displayName: "Illucent Reason",
         slug: "reason",
         capability: "text",
         tagline: "Deeper reasoning for plans, creative briefs, and structured prompt engineering.",
@@ -233,7 +233,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         featured: true,
         preview: { kind: "code" },
         overview:
-            "Tennda Reason is built for deeper planning, creative briefs, and structured prompt engineering.\n\nReach for it when Agent Studio or text workflows need multi-step thinking, clearer outlines, or higher-quality system-style instructions.",
+            "Illucent Reason is built for deeper planning, creative briefs, and structured prompt engineering.\n\nReach for it when Agent Studio or text workflows need multi-step thinking, clearer outlines, or higher-quality system-style instructions.",
         highlights: ["Deeper planning", "Creative briefs", "Structured prompts"],
         specs: {
             context: "256K tokens",
@@ -249,7 +249,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
     },
     {
         name: "gpt-4o-mini-tts",
-        displayName: "Tennda Waves",
+        displayName: "Illucent Waves",
         slug: "waves",
         capability: "audio",
         tagline: "Natural speech synthesis for narrations, product demos, and spoken walkthroughs.",
@@ -259,7 +259,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
         featured: true,
         preview: { kind: "audio" },
         overview:
-            "Tennda Waves is the speech model in the Tennda Voice family for natural narration, product demos, and spoken walkthroughs.\n\nGenerate voiceovers from Agent Studio tools or audio-capable workflows when you need clean TTS for demos and explainers.",
+            "Illucent Waves is the speech model in the Illucent Voice family for natural narration, product demos, and spoken walkthroughs.\n\nGenerate voiceovers from Agent Studio tools or audio-capable workflows when you need clean TTS for demos and explainers.",
         highlights: ["Natural narration", "Product demos", "Walkthrough VO"],
         specs: {
             context: "2K characters / request",
@@ -277,7 +277,7 @@ export const TENNDA_MODEL_CATALOG: TenndaModelEntry[] = [
 
 export const TENNDA_CAPABILITY_ORDER: TenndaModelCapability[] = ["image", "video", "text", "audio"];
 
-/** Public API model id shown in Developer docs / request body (Tennda-branded). */
+/** Public API model id shown in Developer docs / request body (Illucent-branded). */
 export function tenndaApiModelId(slug: string) {
     return `tennda-${slug}`;
 }

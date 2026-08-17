@@ -58,7 +58,7 @@ export const usePromptSourceStore = create<PromptSourceStore>()(
                 const enabledById = new Map(savedSources.map((source) => [source.id, source.enabled]));
                 const builtIn = DEFAULT_PROMPT_SOURCES.map((source) => ({
                     ...source,
-                    // Tennda English demo: Banana Quicker registry has Chinese-only titles.
+                    // Illucent English demo: Banana Quicker registry has Chinese-only titles.
                     enabled: source.id === "banana-prompt-quicker" ? false : (enabledById.get(source.id) ?? source.enabled),
                 }));
                 const custom = savedSources.filter((source) => !source.builtIn).map((source) => createPromptSource(source));

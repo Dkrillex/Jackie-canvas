@@ -19,7 +19,7 @@ export const BUILTIN_TOOL_DEFS: StudioToolDef[] = [
         builtin: true,
         enabled: true,
         name: "generate_image",
-        description: "Generate an image with Tennda image models. Optional reference image as data URL or https URL.",
+        description: "Generate an image with Illucent image models. Optional reference image as data URL or https URL.",
         parameters: {
             type: "object",
             properties: {
@@ -35,7 +35,7 @@ export const BUILTIN_TOOL_DEFS: StudioToolDef[] = [
         builtin: true,
         enabled: true,
         name: "generate_video",
-        description: "Generate a short video with Tennda video models from a text prompt.",
+        description: "Generate a short video with Illucent video models from a text prompt.",
         parameters: {
             type: "object",
             properties: {
@@ -50,7 +50,7 @@ export const BUILTIN_TOOL_DEFS: StudioToolDef[] = [
         builtin: true,
         enabled: true,
         name: "generate_speech",
-        description: "Synthesize speech audio with Tennda Waves (TTS).",
+        description: "Synthesize speech audio with Illucent Waves (TTS).",
         parameters: {
             type: "object",
             properties: {

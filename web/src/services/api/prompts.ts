@@ -58,7 +58,7 @@ function enabledSources() {
 }
 
 function cacheKey(sourceId: string) {
-    /** Bump prefix so Tennda English fetches are not served from old Chinese registry cache. */
+    /** Bump prefix so Illucent English fetches are not served from old Chinese registry cache. */
     return `prompt-source-en:${sourceId}`;
 }
 

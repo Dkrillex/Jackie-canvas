@@ -1,30 +1,31 @@
 import type { ThemeConfig } from "antd";
 import { theme as antdTheme } from "antd";
 
+/** Illucent AI — purple + white, SiliconFlow-inspired. */
 const brand = {
     light: {
-        primary: "#0175DA",
-        primaryHover: "#015AD1",
+        primary: "#7C5CFC",
+        primaryHover: "#6B4AE8",
         primaryText: "#ffffff",
-        menuBg: "#f1f4ff",
-        menuText: "#015AD1",
-        selectActiveBg: "#f1f4ff",
-        selectSelectedBg: "#e8eefc",
+        menuBg: "#F3F0FF",
+        menuText: "#5B41D9",
+        selectActiveBg: "#F3F0FF",
+        selectSelectedBg: "#E9E3FF",
         selectText: "#1F2937",
-        tableSelectedBg: "rgba(1, 117, 218, 0.06)",
-        tableSelectedHoverBg: "rgba(1, 117, 218, 0.1)",
+        tableSelectedBg: "rgba(124, 92, 252, 0.06)",
+        tableSelectedHoverBg: "rgba(124, 92, 252, 0.1)",
     },
     dark: {
-        primary: "#0190E4",
-        primaryHover: "#66fff9",
+        primary: "#9B87FF",
+        primaryHover: "#C4B5FD",
         primaryText: "#ffffff",
-        menuBg: "#2a2e3c",
-        menuText: "#66fff9",
-        selectActiveBg: "#2a2e3c",
-        selectSelectedBg: "#343849",
+        menuBg: "#2A2540",
+        menuText: "#C4B5FD",
+        selectActiveBg: "#2A2540",
+        selectSelectedBg: "#35304A",
         selectText: "#ffffff",
-        tableSelectedBg: "rgba(1, 144, 228, 0.14)",
-        tableSelectedHoverBg: "rgba(102, 255, 249, 0.12)",
+        tableSelectedBg: "rgba(155, 135, 255, 0.14)",
+        tableSelectedHoverBg: "rgba(196, 181, 253, 0.12)",
     },
 };
 
@@ -43,9 +44,9 @@ export function getAntThemeConfig(dark: boolean): ThemeConfig {
             colorLinkHover: color.primaryHover,
             colorLinkActive: color.primary,
             colorTextLightSolid: color.primaryText,
-            colorBgBase: dark ? "#1c1f2b" : "#f5f7fa",
-            colorBgContainer: dark ? "#2a2e3c" : "#ffffff",
-            colorBorder: dark ? "rgba(255,255,255,0.12)" : "#e4e7ec",
+            colorBgBase: dark ? "#16141F" : "#FAFAFC",
+            colorBgContainer: dark ? "#221F33" : "#ffffff",
+            colorBorder: dark ? "rgba(255,255,255,0.12)" : "#E8E4F2",
             borderRadius: 10,
         },
         components: {

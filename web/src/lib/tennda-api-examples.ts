@@ -3,8 +3,8 @@ import type { TenndaModelCapability } from "@/constant/tennda-models";
 const PYTHON_HEADER = `import os
 import requests
 
-BASE_URL = os.environ.get("TENNDA_BASE_URL", "https://ai.tennda.com/gw")
-API_KEY = os.environ["TENNDA_API_KEY"]
+BASE_URL = os.environ.get("ILLUCENT_BASE_URL", "https://ai.tennda.com/gw")
+API_KEY = os.environ["ILLUCENT_API_KEY"]
 
 headers = {
     "Authorization": f"Bearer {API_KEY}",
@@ -30,7 +30,7 @@ export type TenndaApiContract = {
     parameters: TenndaApiParam[];
 };
 
-/** Tennda Waves voice catalog (public API ids). */
+/** Illucent Waves voice catalog (public API ids). */
 export const TENNDA_VOICE_OPTIONS = [
     { value: "aurora", label: "Aurora", tone: "Bright · clear narration" },
     { value: "ember", label: "Ember", tone: "Warm · product demos" },
@@ -77,7 +77,7 @@ export const TENNDA_VIDEO_SECONDS_OPTIONS = ["4", "6", "8", "10", "12", "16", "2
 
 function imageParameters(apiId: string): TenndaApiParam[] {
     return [
-        { name: "model", type: "string", required: true, defaultValue: apiId, options: [apiId], description: "Tennda image model api id." },
+        { name: "model", type: "string", required: true, defaultValue: apiId, options: [apiId], description: "Illucent image model api id." },
         { name: "prompt", type: "string", required: true, description: "Text description of the image to generate. Supports English scene, lighting, and style direction." },
         {
             name: "n",
@@ -116,7 +116,7 @@ function imageParameters(apiId: string): TenndaApiParam[] {
 
 function videoParameters(apiId: string): TenndaApiParam[] {
     return [
-        { name: "model", type: "string", required: true, defaultValue: apiId, options: [apiId], description: "Tennda video model api id." },
+        { name: "model", type: "string", required: true, defaultValue: apiId, options: [apiId], description: "Illucent video model api id." },
         { name: "prompt", type: "string", required: true, description: "Shot description: subject, camera move, lighting, and pacing." },
         {
             name: "seconds",
@@ -147,7 +147,7 @@ function videoParameters(apiId: string): TenndaApiParam[] {
 
 function audioParameters(apiId: string): TenndaApiParam[] {
     return [
-        { name: "model", type: "string", required: true, defaultValue: apiId, options: [apiId], description: "Tennda speech model api id (tennda-waves)." },
+        { name: "model", type: "string", required: true, defaultValue: apiId, options: [apiId], description: "Illucent speech model api id (tennda-waves)." },
         { name: "input", type: "string", required: true, description: "Text to synthesize. Keep under the model context budget for best quality." },
         {
             name: "voice",
@@ -155,7 +155,7 @@ function audioParameters(apiId: string): TenndaApiParam[] {
             required: false,
             defaultValue: "aurora",
             options: TENNDA_VOICE_OPTIONS.map((item) => item.value),
-            description: "Tennda Waves studio voice. See voice catalog below for tone guidance.",
+            description: "Illucent Waves studio voice. See voice catalog below for tone guidance.",
         },
         {
             name: "speed",
@@ -178,7 +178,7 @@ function audioParameters(apiId: string): TenndaApiParam[] {
 
 function textParameters(apiId: string): TenndaApiParam[] {
     return [
-        { name: "model", type: "string", required: true, defaultValue: apiId, options: [apiId], description: "Tennda text model api id." },
+        { name: "model", type: "string", required: true, defaultValue: apiId, options: [apiId], description: "Illucent text model api id." },
         { name: "input", type: "string", required: true, description: "User prompt or instruction for the model." },
         {
             name: "max_output_tokens",
@@ -199,7 +199,7 @@ function textParameters(apiId: string): TenndaApiParam[] {
     ];
 }
 
-/** Documented request / response bodies for the public Tennda API surface. */
+/** Documented request / response bodies for the public Illucent API surface. */
 export function tenndaApiContract(capability: TenndaModelCapability, apiId: string): TenndaApiContract {
     if (capability === "image") {
         return {
@@ -276,7 +276,7 @@ export function tenndaApiContract(capability: TenndaModelCapability, apiId: stri
             requestBody: JSON.stringify(
                 {
                     model: apiId,
-                    input: "Welcome to Tennda.",
+                    input: "Welcome to Illucent.",
                     voice: "aurora",
                     speed: 1.0,
                     response_format: "mp3",
@@ -335,7 +335,7 @@ export function tenndaApiContract(capability: TenndaModelCapability, apiId: stri
     };
 }
 
-/** Python requests snippet for a Tennda public api id. */
+/** Python requests snippet for an Illucent public api id. */
 export function tenndaPythonSnippet(capability: TenndaModelCapability, apiId: string) {
     if (capability === "image") {
         return `${PYTHON_HEADER}
@@ -386,7 +386,7 @@ resp = requests.post(
     headers=headers,
     json={
         "model": "${apiId}",
-        "input": "Welcome to Tennda.",
+        "input": "Welcome to Illucent.",
         "voice": "aurora",
         "speed": 1.0,
         "response_format": "mp3",
@@ -450,7 +450,7 @@ export function tenndaCurlSnippet(capability: TenndaModelCapability, apiId: stri
   -H "Content-Type: application/json" \\
   -d '{
     "model": "${apiId}",
-    "input": "Welcome to Tennda.",
+    "input": "Welcome to Illucent.",
     "voice": "aurora",
     "speed": 1.0,
     "response_format": "mp3"
@@ -463,7 +463,7 @@ export function tenndaCurlSnippet(capability: TenndaModelCapability, apiId: stri
   -H "Content-Type: application/json" \\
   -d '{
     "model": "${apiId}",
-    "input": "Hello from Tennda",
+    "input": "Hello from Illucent",
     "max_output_tokens": 2048,
     "temperature": 0.7
   }'`;

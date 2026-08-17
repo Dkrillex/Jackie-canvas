@@ -91,7 +91,7 @@ export default function IndexPage() {
                 <div className="relative flex min-h-[min(560px,calc(100dvh-7rem))] flex-col items-center justify-center overflow-visible pt-8 text-center sm:min-h-[640px] sm:pt-10">
                     <TokenStream />
                     <div className="relative z-10 flex flex-col items-center">
-                        <h1 className="ai-title-aurora font-heading max-w-5xl text-balance text-4xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">TENNDA AI</h1>
+                        <h1 className="ai-title-aurora font-heading max-w-5xl text-balance text-4xl font-semibold tracking-tight sm:text-7xl lg:text-8xl">Illucent AI</h1>
                         <p className="mt-5 max-w-3xl text-balance text-base leading-7 text-stone-500 sm:mt-8 sm:text-lg sm:leading-8 dark:text-stone-400">{t("home.hero.description")}</p>
                         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10">
                             <Button type="primary" size="large" onClick={exploreModels} icon={<ArrowRight className="size-4" />} iconPlacement="end">
@@ -309,7 +309,7 @@ function ModelCard({
             className={cn(
                 "model-card flex h-full cursor-pointer overflow-hidden rounded-2xl border border-stone-200/80 bg-white/85 text-left outline-none transition-[border-color,box-shadow,background-color] duration-300",
                 split ? "flex-col sm:flex-row" : "flex-col",
-                "hover:border-primary/40 hover:bg-white hover:shadow-[0_16px_36px_-28px_rgba(1,117,218,0.4)]",
+                "hover:border-primary/40 hover:bg-white hover:shadow-[0_16px_36px_-28px_rgba(124, 92, 252,0.4)]",
                 "focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/20",
                 "dark:border-white/10 dark:bg-card/65 dark:hover:border-primary/45 dark:hover:bg-card/90",
             )}
@@ -431,7 +431,7 @@ function ModelPreview({
                     <div className="max-w-[86%] shrink-0 self-start rounded-2xl rounded-bl-md bg-white px-2.5 py-1.5 text-[10px] leading-3.5 text-stone-600 shadow-sm dark:bg-stone-800 dark:text-stone-300">
                         Warm up this launch intro?
                     </div>
-                    <div className="max-w-[90%] shrink-0 self-end rounded-2xl rounded-br-md bg-[#0175DA] px-2.5 py-1.5 text-[10px] leading-3.5 text-white shadow-sm">
+                    <div className="max-w-[90%] shrink-0 self-end rounded-2xl rounded-br-md bg-[#7C5CFC] px-2.5 py-1.5 text-[10px] leading-3.5 text-white shadow-sm">
                         “Meet the model that ships ideas faster.”
                     </div>
                     <div className="max-w-[72%] shrink-0 self-start rounded-2xl rounded-bl-md bg-white px-2.5 py-1.5 text-[10px] leading-3.5 text-stone-600 shadow-sm dark:bg-stone-800 dark:text-stone-300">
@@ -439,7 +439,7 @@ function ModelPreview({
                     </div>
                     <div className="mt-auto flex shrink-0 items-center gap-1.5 rounded-full border border-stone-200/90 bg-white px-2.5 py-1 dark:border-white/10 dark:bg-stone-900">
                         <span className="flex-1 truncate text-[10px] text-stone-400">Message Mini…</span>
-                        <span className="size-4 shrink-0 rounded-full bg-[#0175DA]" />
+                        <span className="size-4 shrink-0 rounded-full bg-[#7C5CFC]" />
                     </div>
                 </div>
             </div>
@@ -491,7 +491,7 @@ function ModelPreview({
             },
             {
                 n: "05",
-                node: <span className="text-[#66fff9]">// → tool_call plan_brief({"{"}goal:&quot;launch&quot;{"}"})</span>,
+                node: <span className="text-[#C4B5FD]">// → tool_call plan_brief({"{"}goal:&quot;launch&quot;{"}"})</span>,
             },
             {
                 n: "06",
@@ -504,7 +504,7 @@ function ModelPreview({
                         <span className="text-violet-300">await</span>
                         <span className="text-sky-300"> stream</span>
                         <span className="text-stone-400">()</span>
-                        <span className="ml-0.5 inline-block h-2.5 w-1 translate-y-px bg-[#66fff9] [.model-card:hover_&]:animate-pulse" />
+                        <span className="ml-0.5 inline-block h-2.5 w-1 translate-y-px bg-[#C4B5FD] [.model-card:hover_&]:animate-pulse" />
                     </>
                 ),
             },
@@ -537,7 +537,7 @@ function ModelPreview({
         return (
             <div className={cn(shell, "flex flex-col bg-gradient-to-br from-[#eef4fb] to-white dark:from-stone-900 dark:to-stone-950")} aria-hidden>
                 <div className="flex items-center justify-between border-b border-stone-200/70 px-3 py-2 dark:border-white/10">
-                    <span className="text-[10px] font-medium tracking-[0.14em] text-[#0175DA] uppercase">Creative brief</span>
+                    <span className="text-[10px] font-medium tracking-[0.14em] text-[#7C5CFC] uppercase">Creative brief</span>
                     <span className="text-[10px] text-stone-400">v0.3</span>
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col justify-center gap-2 px-3 py-2.5">
@@ -568,15 +568,15 @@ function ModelPreview({
                     <span className="size-1.5 rounded-full bg-[#28c840]" />
                     <span className="ml-1 truncate text-[10px] font-medium tracking-[0.12em] text-stone-400 uppercase">Waves · TTS</span>
                 </div>
-                <span className="shrink-0 font-mono text-[9px] text-[#66fff9]/90">text → speech</span>
+                <span className="shrink-0 font-mono text-[9px] text-[#C4B5FD]/90">text → speech</span>
             </div>
             <div className="flex min-h-0 flex-1 flex-col justify-center gap-2.5 px-3 py-3">
                 <div className="rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-2 backdrop-blur-sm">
                     <div className="text-[9px] font-medium tracking-[0.14em] text-stone-500 uppercase">Input text</div>
-                    <p className="mt-1 text-[11px] leading-4 text-stone-200">&quot;Welcome to TENNDA AI — hear your script come alive.&quot;</p>
+                    <p className="mt-1 text-[11px] leading-4 text-stone-200">&quot;Welcome to Illucent AI — hear your script come alive.&quot;</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-[#66fff9]/25 bg-[#0175DA]/20 text-[#66fff9]">
+                    <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-[#C4B5FD]/25 bg-[#7C5CFC]/20 text-[#C4B5FD]">
                         <ArrowRight className="size-3" />
                     </span>
                     <div className="tts-wave-stage flex h-14 min-w-0 flex-1 items-center justify-center gap-[3px] px-3">

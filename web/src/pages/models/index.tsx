@@ -27,7 +27,7 @@ const CAP_LABEL: Record<TenndaModelCapability, MessageKey> = {
 };
 
 function shortModelName(displayName: string) {
-    return displayName.replace(/^Tennda\s+/, "");
+    return displayName.replace(/^Illucent\s+/, "");
 }
 
 export default function ModelDetailPage() {
@@ -137,7 +137,7 @@ function ModelDetailView({ model }: { model: TenndaModelEntry }) {
                     <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-6">
                         <div className="min-w-0">
                             {model.capability === "text" ? (
-                                <div className="text-[11px] font-semibold tracking-[0.06em] text-primary">Tennda LLM</div>
+                                <div className="text-[11px] font-semibold tracking-[0.06em] text-primary">Illucent LLM</div>
                             ) : null}
                             <h1 className="text-[1.75rem] font-semibold tracking-tight text-slate-950 sm:text-[2rem] sm:leading-tight dark:text-white">{model.displayName}</h1>
                             <p className="mt-1.5 max-w-2xl text-[14px] leading-6 text-slate-800 dark:text-slate-200">{model.tagline}</p>

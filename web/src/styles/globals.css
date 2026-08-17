@@ -50,78 +50,78 @@
 }
 
 :root {
-    /* Tennda brand surface — aligned with tennda.com */
+    /* Illucent AI — purple + white (SiliconFlow-inspired) */
     --font-primary: "Outfit", ui-sans-serif, system-ui, sans-serif;
     --radius: 0.75rem;
-    --border: #e4e7ec;
-    --ring: #0175da;
-    --background: #f5f7fa;
+    --border: #E8E4F2;
+    --ring: #7C5CFC;
+    --background: #FAFAFC;
     --foreground: #1f2937;
     --card: #ffffff;
     --card-foreground: #1f2937;
     --popover: #ffffff;
     --popover-foreground: #1f2937;
-    --primary: #0175da;
+    --primary: #7C5CFC;
     --primary-foreground: #ffffff;
-    --secondary: #f1f4ff;
-    --secondary-foreground: #015ad1;
-    --muted: #eef2f8;
-    --muted-foreground: #8891a5;
-    --accent: #f1f4ff;
-    --accent-foreground: #015ad1;
+    --secondary: #F3F0FF;
+    --secondary-foreground: #5B41D9;
+    --muted: #F0EDF7;
+    --muted-foreground: #8B849C;
+    --accent: #F3F0FF;
+    --accent-foreground: #5B41D9;
     --destructive: #ff4d4f;
-    --input: #e4e7ec;
-    --chart-1: #0175da;
-    --chart-2: #156fdb;
-    --chart-3: #66fff9;
+    --input: #E8E4F2;
+    --chart-1: #7C5CFC;
+    --chart-2: #5B41D9;
+    --chart-3: #C4B5FD;
     --chart-4: #fc7232;
-    --chart-5: #8891a5;
+    --chart-5: #8B849C;
     --sidebar: #ffffff;
     --sidebar-foreground: #1f2937;
-    --sidebar-primary: #0175da;
+    --sidebar-primary: #7C5CFC;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #f1f4ff;
-    --sidebar-accent-foreground: #015ad1;
-    --sidebar-border: #e4e7ec;
-    --sidebar-ring: #0175da;
-    --tennda-dot: rgba(1, 117, 218, 0.14);
-    --tennda-header-glow: linear-gradient(180deg, rgba(241, 244, 255, 0.9) 0%, rgba(245, 247, 250, 0.55) 55%, rgba(245, 247, 250, 0) 100%);
+    --sidebar-accent: #F3F0FF;
+    --sidebar-accent-foreground: #5B41D9;
+    --sidebar-border: #E8E4F2;
+    --sidebar-ring: #7C5CFC;
+    --tennda-dot: rgba(124, 92, 252, 0.14);
+    --tennda-header-glow: linear-gradient(180deg, rgba(243, 240, 255, 0.92) 0%, rgba(250, 250, 252, 0.55) 55%, rgba(250, 250, 252, 0) 100%);
 }
 
 .dark {
-    --background: #1c1f2b;
+    --background: #16141F;
     --foreground: #ffffff;
     --border: rgba(255, 255, 255, 0.1);
-    --ring: #66fff9;
-    --card: #2a2e3c;
+    --ring: #C4B5FD;
+    --card: #221F33;
     --card-foreground: #ffffff;
-    --popover: #2a2e3c;
+    --popover: #221F33;
     --popover-foreground: #ffffff;
-    --primary: #0190e4;
+    --primary: #9B87FF;
     --primary-foreground: #ffffff;
-    --secondary: #2a2e3c;
-    --secondary-foreground: #66fff9;
-    --muted: #2a2e3c;
+    --secondary: #221F33;
+    --secondary-foreground: #C4B5FD;
+    --muted: #221F33;
     --muted-foreground: #9aa2b0;
-    --accent: #2a2e3c;
-    --accent-foreground: #66fff9;
+    --accent: #221F33;
+    --accent-foreground: #C4B5FD;
     --destructive: #ff7875;
     --input: rgba(255, 255, 255, 0.12);
-    --chart-1: #0190e4;
-    --chart-2: #66fff9;
-    --chart-3: #156fdb;
+    --chart-1: #9B87FF;
+    --chart-2: #C4B5FD;
+    --chart-3: #5B41D9;
     --chart-4: #fc7232;
-    --chart-5: #8891a5;
-    --sidebar: #1c1f2b;
+    --chart-5: #8B849C;
+    --sidebar: #16141F;
     --sidebar-foreground: #ffffff;
-    --sidebar-primary: #0190e4;
+    --sidebar-primary: #9B87FF;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #2a2e3c;
-    --sidebar-accent-foreground: #66fff9;
+    --sidebar-accent: #221F33;
+    --sidebar-accent-foreground: #C4B5FD;
     --sidebar-border: rgba(255, 255, 255, 0.1);
-    --sidebar-ring: #66fff9;
-    --tennda-dot: rgba(102, 255, 249, 0.14);
-    --tennda-header-glow: linear-gradient(180deg, rgba(42, 46, 60, 0.95) 0%, rgba(28, 31, 43, 0.4) 60%, rgba(28, 31, 43, 0) 100%);
+    --sidebar-ring: #C4B5FD;
+    --tennda-dot: rgba(196, 181, 253, 0.14);
+    --tennda-header-glow: linear-gradient(180deg, rgba(42, 37, 64, 0.95) 0%, rgba(22, 20, 31, 0.4) 60%, rgba(22, 20, 31, 0) 100%);
 }
 
 @layer base {
@@ -160,7 +160,7 @@
     }
 
     .ai-title-aurora {
-        background: linear-gradient(90deg, #1f2937 0%, #1f2937 34%, #0175da 52%, #1f2937 70%, #1f2937 100%);
+        background: linear-gradient(90deg, #1f2937 0%, #1f2937 34%, #7C5CFC 52%, #1f2937 70%, #1f2937 100%);
         background-size: 220% 100%;
         -webkit-background-clip: text;
         background-clip: text;
@@ -169,7 +169,7 @@
     }
 
     .dark .ai-title-aurora {
-        background: linear-gradient(90deg, #ffffff 0%, #ffffff 34%, #66fff9 52%, #ffffff 70%, #ffffff 100%);
+        background: linear-gradient(90deg, #ffffff 0%, #ffffff 34%, #C4B5FD 52%, #ffffff 70%, #ffffff 100%);
         background-size: 220% 100%;
         -webkit-background-clip: text;
         background-clip: text;
@@ -183,7 +183,7 @@
         }
         50% {
             background-position: 100% 50%;
-            filter: drop-shadow(0 12px 28px rgba(1, 117, 218, 0.12));
+            filter: drop-shadow(0 12px 28px rgba(124, 92, 252, 0.12));
         }
     }
 
@@ -244,8 +244,8 @@
         opacity: 0.04;
         background: repeating-linear-gradient(
             to bottom,
-            rgba(1, 117, 218, 0.55) 0,
-            rgba(1, 117, 218, 0.55) 1px,
+            rgba(124, 92, 252, 0.55) 0,
+            rgba(124, 92, 252, 0.55) 1px,
             transparent 1px,
             transparent 3px
         );
@@ -255,8 +255,8 @@
         opacity: 0.05;
         background: repeating-linear-gradient(
             to bottom,
-            rgba(102, 255, 249, 0.45) 0,
-            rgba(102, 255, 249, 0.45) 1px,
+            rgba(196, 181, 253, 0.45) 0,
+            rgba(196, 181, 253, 0.45) 1px,
             transparent 1px,
             transparent 3px
         );
@@ -299,12 +299,12 @@
     /* Only the element that owns home-tech-corners, not nested cards inside a .group */
     .home-tech-corners:hover::before,
     .home-tech-corners:hover::after {
-        border-color: #0175da;
+        border-color: #7C5CFC;
     }
 
     .dark .home-tech-corners:hover::before,
     .dark .home-tech-corners:hover::after {
-        border-color: #66fff9;
+        border-color: #C4B5FD;
     }
 
     @keyframes tts-wave {
@@ -323,9 +323,9 @@
         position: relative;
         overflow: hidden;
         border-radius: 14px;
-        border: 1px solid rgba(102, 255, 249, 0.14);
+        border: 1px solid rgba(196, 181, 253, 0.14);
         background:
-            radial-gradient(120% 80% at 50% 50%, rgba(1, 117, 218, 0.22), transparent 70%),
+            radial-gradient(120% 80% at 50% 50%, rgba(124, 92, 252, 0.22), transparent 70%),
             linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.95));
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
@@ -336,7 +336,7 @@
         position: absolute;
         inset: 35% 12%;
         border-radius: 999px;
-        background: radial-gradient(closest-side, rgba(102, 255, 249, 0.22), transparent 75%);
+        background: radial-gradient(closest-side, rgba(196, 181, 253, 0.22), transparent 75%);
         filter: blur(10px);
     }
 
@@ -346,15 +346,15 @@
         flex: 0 0 auto;
         border-radius: 999px;
         transform-origin: center;
-        background: linear-gradient(180deg, #9afcff 0%, #66fff9 35%, #0175da 100%);
-        box-shadow: 0 0 10px rgba(102, 255, 249, 0.35);
+        background: linear-gradient(180deg, #E9E3FF 0%, #C4B5FD 35%, #7C5CFC 100%);
+        box-shadow: 0 0 10px rgba(196, 181, 253, 0.35);
         animation: tts-wave 1.25s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
         will-change: transform, opacity;
     }
 
     .model-card:hover .tts-wave-bar {
         animation-duration: 0.85s;
-        box-shadow: 0 0 14px rgba(102, 255, 249, 0.55);
+        box-shadow: 0 0 14px rgba(196, 181, 253, 0.55);
     }
 
     .hide-scrollbar {

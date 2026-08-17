@@ -99,7 +99,7 @@ export const defaultConfig: AiConfig = {
     channels: [
         {
             id: "default",
-            name: "Tennda",
+            name: "Illucent",
             baseUrl: OPENAI_BASE_URL,
             apiKey: "",
             apiFormat: "openai",
@@ -290,7 +290,7 @@ export const useConfigStore = create<ConfigStore>()(
                 // 默认渠道模型列表随代码更新（项目未上线，不保留旧默认模型）
                 const channels = normalizeChannels(config).map((channel) =>
                     channel.id === "default"
-                        ? { ...channel, name: "Tennda", models: defaultConfig.channels[0].models.map((model) => ({ ...model })) }
+                        ? { ...channel, name: "Illucent", models: defaultConfig.channels[0].models.map((model) => ({ ...model })) }
                         : channel,
                 );
                 const models = modelOptionsFromChannels(channels);
@@ -367,7 +367,7 @@ export function createModelChannel(channel?: Partial<ModelChannel>): ModelChanne
             : normalizeOpenAiBaseUrl(rawBaseUrl?.trim() || defaultBaseUrlForApiFormat(apiFormat));
     return {
         id: channel?.id?.trim() || nanoid(),
-        name: channel?.name?.trim() || "Tennda",
+        name: channel?.name?.trim() || "Illucent",
         baseUrl,
         apiKey: channel?.apiKey || "",
         apiFormat,
@@ -443,7 +443,7 @@ export function resolveModelChannel(config: AiConfig, value: string) {
     const decoded = decodeChannelModel(value);
     const model = decoded?.model || value;
     const matched = decoded ? config.channels.find((channel) => channel.id === decoded.channelId) : config.channels.find((channel) => channel.models.some((item) => item.name === model));
-    return matched || config.channels[0] || createModelChannel({ id: "default", name: "Tennda", baseUrl: config.baseUrl, apiKey: config.apiKey, apiFormat: config.apiFormat, models: config.models.map(modelOptionName).map((name) => ({ name, capability: guessCapability(name), displayName: TENNDA_DISPLAY_NAME_BY_MODEL[name] })) });
+    return matched || config.channels[0] || createModelChannel({ id: "default", name: "Illucent", baseUrl: config.baseUrl, apiKey: config.apiKey, apiFormat: config.apiFormat, models: config.models.map(modelOptionName).map((name) => ({ name, capability: guessCapability(name), displayName: TENNDA_DISPLAY_NAME_BY_MODEL[name] })) });
 }
 
 export function resolveModelRequestConfig(config: AiConfig, value: string) {
@@ -463,7 +463,7 @@ function normalizeChannels(config: AiConfig) {
         createModelChannel({
             ...channel,
             id: channel.id || (index === 0 ? "default" : `channel-${index + 1}`),
-            name: channel.id === "default" || index === 0 ? "Tennda" : channel.name || `Channel ${index + 1}`,
+            name: channel.id === "default" || index === 0 ? "Illucent" : channel.name || `Channel ${index + 1}`,
             models: normalizeChannelModels(channel.models),
         }),
     );
@@ -471,7 +471,7 @@ function normalizeChannels(config: AiConfig) {
         channels.push(
             createModelChannel({
                 id: "default",
-                name: "Tennda",
+                name: "Illucent",
                 baseUrl: config.baseUrl || defaultConfig.baseUrl,
                 apiKey: config.apiKey || "",
                 apiFormat: config.apiFormat || defaultConfig.apiFormat,

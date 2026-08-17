@@ -55,7 +55,7 @@ export function ModelPreviewThumb({
                     <div className="max-w-[88%] self-start rounded-lg rounded-bl-sm bg-white px-2 py-1 text-[9px] leading-3 text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200">
                         Warm up this intro?
                     </div>
-                    <div className="max-w-[90%] self-end rounded-lg rounded-br-sm bg-[#0175DA] px-2 py-1 text-[9px] leading-3 text-white">
+                    <div className="max-w-[90%] self-end rounded-lg rounded-br-sm bg-[#7C5CFC] px-2 py-1 text-[9px] leading-3 text-white">
                         “Ships ideas faster.”
                     </div>
                 </div>
@@ -77,7 +77,7 @@ export function ModelPreviewThumb({
                         <span className="text-emerald-300">&quot;/v1/chat/completions&quot;</span>
                         <span className="text-slate-500">)</span>
                     </div>
-                    <div className="text-[#66fff9]">→ tool_call plan_brief</div>
+                    <div className="text-[#C4B5FD]">→ tool_call plan_brief</div>
                     <div className="text-emerald-400">← steps ready</div>
                 </div>
             </div>
@@ -87,7 +87,7 @@ export function ModelPreviewThumb({
     if (preview.kind === "report") {
         return (
             <div className={cn(shell, "flex flex-col bg-[#e8f0fa] px-2.5 py-2 dark:bg-slate-900")} aria-hidden>
-                <div className="text-[9px] font-medium tracking-[0.14em] text-[#0175DA] uppercase">Brief</div>
+                <div className="text-[9px] font-medium tracking-[0.14em] text-[#7C5CFC] uppercase">Brief</div>
                 <p className="mt-1.5 text-[10px] leading-3.5 text-slate-700 dark:text-slate-300">Warm tone · clear CTA</p>
             </div>
         );
@@ -98,11 +98,11 @@ export function ModelPreviewThumb({
         <div className={cn(shell, "flex flex-col bg-gradient-to-br from-slate-950 to-[#0b1a2e]")} aria-hidden>
             <div className="flex items-center justify-between border-b border-white/10 px-2 py-1">
                 <span className="text-[9px] tracking-[0.12em] text-slate-400 uppercase">TTS</span>
-                <span className="font-mono text-[9px] text-[#66fff9]/90">text → speech</span>
+                <span className="font-mono text-[9px] text-[#C4B5FD]/90">text → speech</span>
             </div>
             <div className="flex flex-1 items-center gap-1.5 px-2 py-2">
-                <span className="line-clamp-2 min-w-0 flex-1 text-[9px] leading-3 text-slate-300">&quot;Welcome to TENNDA AI.&quot;</span>
-                <ArrowRight className="size-3 shrink-0 text-[#66fff9]" />
+                <span className="line-clamp-2 min-w-0 flex-1 text-[9px] leading-3 text-slate-300">&quot;Welcome to Illucent AI.&quot;</span>
+                <ArrowRight className="size-3 shrink-0 text-[#C4B5FD]" />
                 <div className="tts-wave-stage flex h-8 w-[42%] items-center justify-center gap-[2px] px-1.5">
                     {waveBars.map((h, index) => (
                         <span

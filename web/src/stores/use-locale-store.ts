@@ -10,7 +10,7 @@ type LocaleStore = {
     t: (key: MessageKey, vars?: TranslateVars) => string;
 };
 
-/** Tennda demo: force English only; ignore zh switches from old localStorage. */
+/** Illucent demo: force English only; ignore zh switches from old localStorage. */
 export const useLocaleStore = create<LocaleStore>()(
     persist(
         (set) => ({

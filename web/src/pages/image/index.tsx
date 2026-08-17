@@ -756,7 +756,7 @@ function PendingImageCard() {
             <div
                 className="absolute inset-0 opacity-60"
                 style={{
-                    backgroundImage: "radial-gradient(circle, rgba(1,117,218,0.22) 1.4px, transparent 1.6px)",
+                    backgroundImage: "radial-gradient(circle, rgba(124, 92, 252,0.22) 1.4px, transparent 1.6px)",
                     backgroundSize: "16px 16px",
                 }}
             />

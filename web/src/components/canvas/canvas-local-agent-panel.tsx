@@ -351,7 +351,7 @@ export function CanvasLocalAgentPanel({ embedded, headless, autoConnect }: { emb
             ...buildGenerationConfig(effectiveConfig, undefined, "text"),
             model: CLOUD_CHAT_MODEL,
             textModel: CLOUD_CHAT_MODEL,
-            // Identity is injected via messages; clear channel systemPrompt to avoid overriding Tennda persona.
+            // Identity is injected via messages; clear channel systemPrompt to avoid overriding Illucent persona.
             systemPrompt: "",
         };
         if (!isAiConfigReady(chatConfig, chatConfig.model)) {

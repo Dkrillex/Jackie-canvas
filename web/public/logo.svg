@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Illucent AI">
+  <defs>
+    <linearGradient id="g" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9B87FF"/>
+      <stop offset="0.5" stop-color="#7C5CFC"/>
+      <stop offset="1" stop-color="#5B41D9"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#g)"/>
+  <!-- light rays -->
+  <path d="M32 10v8M32 46v8M14 32h8M42 32h8M18.5 18.5l5.5 5.5M40 40l5.5 5.5M45.5 18.5l-5.5 5.5M24 40l-5.5 5.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity="0.85"/>
+  <circle cx="32" cy="32" r="9" fill="#fff"/>
+  <circle cx="32" cy="32" r="4" fill="#7C5CFC"/>
+</svg>

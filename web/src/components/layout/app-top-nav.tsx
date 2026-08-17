@@ -150,21 +150,21 @@ export function AppTopNav() {
                 <header
                     className={cn(
                         "sticky top-0 z-20 shrink-0 transition-[padding,background-color] duration-300",
-                        scrolled ? "pointer-events-none bg-transparent px-3 pt-3 pb-1 md:px-6" : "h-14 bg-[linear-gradient(180deg,rgba(241,244,255,0.92)_0%,rgba(245,247,250,0.88)_100%)] backdrop-blur-xl dark:bg-[linear-gradient(180deg,rgba(42,46,60,0.92)_0%,rgba(28,31,43,0.88)_100%)]",
+                        scrolled ? "pointer-events-none bg-transparent px-3 pt-3 pb-1 md:px-6" : "h-14 bg-[linear-gradient(180deg,rgba(243,240,255,0.92)_0%,rgba(250,250,252,0.88)_100%)] backdrop-blur-xl dark:bg-[linear-gradient(180deg,rgba(42,37,64,0.92)_0%,rgba(22,20,31,0.88)_100%)]",
                     )}
                 >
                     <div
                         className={cn(
                             "mx-auto grid items-stretch transition-all duration-300 pointer-events-auto",
                             scrolled
-                                ? "h-12 max-w-5xl grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-full border border-[#d0d5dd]/90 bg-white/92 px-4 shadow-[0_8px_30px_rgba(1,90,209,0.1)] backdrop-blur-xl md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-6 md:px-6 dark:border-white/10 dark:bg-[#2a2e3c]/92 dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
+                                ? "h-12 max-w-5xl grid-cols-[minmax(0,1fr)_auto] gap-3 rounded-full border border-[#E0D9F2]/90 bg-white/92 px-4 shadow-[0_8px_30px_rgba(124,92,252,0.12)] backdrop-blur-xl md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-6 md:px-6 dark:border-white/10 dark:bg-[#221F33]/92 dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
                                 : "h-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] gap-3 px-4 sm:px-6 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-8",
                         )}
                     >
                         <div className="flex min-w-0 items-center justify-self-start">
                             <Link to="/" className="flex h-full shrink-0 items-center gap-2.5 text-sm font-semibold leading-none tracking-tight text-stone-950 transition hover:opacity-80 dark:text-stone-100">
-                                <img src="/logo.png" alt="TENNDA AI" className={cn("w-auto rounded-sm transition-all", scrolled ? "h-6" : "h-7")} />
-                                <span className={cn("font-medium", scrolled ? "text-sm" : "text-base")}>TENNDA AI</span>
+                                <img src="/logo.svg" alt="Illucent AI" className={cn("w-auto rounded-sm transition-all", scrolled ? "h-6" : "h-7")} />
+                                <span className={cn("font-medium", scrolled ? "text-sm" : "text-base")}>Illucent AI</span>
                             </Link>
                         </div>
 
