@@ -1,5 +1,5 @@
-import { Bot, Check, ChevronDown, Cpu, Menu } from "lucide-react";
-import { Button, Dropdown, Tooltip } from "antd";
+import { Check, ChevronDown, Menu } from "lucide-react";
+import { Dropdown } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
@@ -19,7 +19,6 @@ import { useIsMobileNav } from "@/hooks/use-media-query";
 import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useAgentStore } from "@/stores/use-agent-store";
-import { useConfigStore } from "@/stores/use-config-store";
 import { useI18n } from "@/stores/use-locale-store";
 import { useUserStore } from "@/stores/use-user-store";
 
@@ -44,8 +43,6 @@ export function AppTopNav() {
     const agentEnabled = useAgentStore((state) => state.enabled);
     const agentConnected = useAgentStore((state) => state.connected);
     const connectAgent = useAgentStore((state) => state.connectAgent);
-    const togglePanel = useAgentStore((state) => state.togglePanel);
-    const panelOpen = useAgentStore((state) => state.panelOpen);
     const hideHeader = /^\/canvas\/[^/]+/.test(pathname);
     const slug = pathname.split("/").filter(Boolean)[0];
     const isAdmin = (user?.username || "").trim().toLowerCase() === "admin";
@@ -216,10 +213,6 @@ export function AppTopNav() {
                                 <Menu className="size-5" />
                             </button>
                             <div className="hidden items-center gap-1.5 md:flex md:gap-2">
-                                <CodexStatusButton />
-                                <Tooltip title={panelOpen ? t("agent.collapsePanel") : t("agent.openPanel")}>
-                                    <Button type="text" shape="circle" className="!h-8 !w-8 !min-w-8" icon={<Bot className="size-4" />} onClick={togglePanel} aria-label={t("agent.openPanel")} />
-                                </Tooltip>
                                 <UserStatusActions />
                             </div>
                         </div>
@@ -243,29 +236,3 @@ function navTriggerClass(active: boolean, scrolled: boolean) {
     );
 }
 
-function CodexStatusButton() {
-    const { t } = useI18n();
-    const isAdmin = (useUserStore((state) => state.user)?.username || "").trim().toLowerCase() === "admin";
-    const connected = useAgentStore((state) => state.connected);
-    const enabled = useAgentStore((state) => state.enabled);
-    const activity = useAgentStore((state) => state.activity);
-    const connectError = useAgentStore((state) => state.connectError);
-    const openPanel = useAgentStore((state) => state.openPanel);
-    const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
-    const color = connectError ? "#dc2626" : connected ? "#16a34a" : enabled ? "#d97706" : "currentColor";
-    const title = connectError || (connected ? activity || t("config.codexConnected") : enabled ? t("config.codexConnecting") : t("config.codexDisconnected"));
-    return (
-        <Tooltip title={title}>
-            <Button
-                type="text"
-                shape="circle"
-                className="relative !h-8 !w-8 !min-w-8"
-                onClick={() => (isAdmin ? openConfigDialog(false, "codex") : openPanel())}
-                aria-label={isAdmin ? t("config.codex") : t("agent.openPanel")}
-            >
-                <Cpu className="size-4" style={{ color }} />
-                <span className="absolute right-1 top-1 size-2 rounded-full border border-background" style={{ background: color }} />
-            </Button>
-        </Tooltip>
-    );
-}

@@ -294,7 +294,7 @@ export const TENNDA_DISPLAY_NAME_BY_MODEL = Object.fromEntries(
 ) as Record<string, string>;
 
 /** Hugging Face profile / models page opened from top nav. */
-export const TENNDA_HUGGINGFACE_URL = "https://huggingface.co/ChenXiangXi/Test-SMALL-Model";
+export const TENNDA_HUGGINGFACE_URL = "https://huggingface.co/MLA299/Tennda-Nano";
 
 /** Resolve public api id or upstream wire name → upstream wire name (for client heuristics). */
 export function resolveUpstreamModelName(model: string) {
