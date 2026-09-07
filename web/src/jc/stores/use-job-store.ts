@@ -1,8 +1,8 @@
 import { create } from "zustand";
 
-import * as api from "@/services/api/jobs";
-import { useWalletStore } from "@/stores/use-wallet-store";
-import type { Job, JobScope } from "@/lib/jobs/types";
+import * as api from "@/jc/services/jobs";
+import { useWalletStore } from "@/jc/stores/use-wallet-store";
+import type { Job, JobScope } from "@/jc/lib/job-types";
 
 /**
  * 接单中心。工单和积分都在服务端，这里只缓存当前视图的列表。

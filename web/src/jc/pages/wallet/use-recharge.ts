@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { createRechargeOrder, getRechargePackages, getRechargeOrder, type RechargeOrder, type RechargePackage } from "@/services/api/wallet";
+import { createRechargeOrder, getRechargePackages, getRechargeOrder, type RechargeOrder, type RechargePackage } from "@/jc/services/wallet";
 
 /** 付款在支付宝那边完成，页面只能靠轮询知道结果。2 秒一次，服务端会压住真正打给支付宝的频次。 */
 const POLL_INTERVAL_MS = 2000;

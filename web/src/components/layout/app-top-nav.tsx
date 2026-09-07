@@ -3,7 +3,8 @@ import { Button, Tooltip } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { navigationTools, type NavigationToolSlug } from "@/constant/navigation-tools";
+import { type NavigationToolSlug } from "@/constant/navigation-tools";
+import { visibleNavTools } from "@/jc/nav";
 import { AppConfigModal } from "@/components/layout/app-config-modal";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { UserStatusActions } from "@/components/layout/user-status-actions";
@@ -26,7 +27,7 @@ export function AppTopNav() {
     const panelOpen = useAgentStore((state) => state.panelOpen);
     const hideHeader = /^\/canvas\/[^/]+/.test(pathname);
     const slug = pathname.split("/").filter(Boolean)[0];
-    const visibleTools = navigationTools.filter((tool) => !tool.loginOnly || user);
+    const visibleTools = visibleNavTools(Boolean(user));
     const activeToolSlug = visibleTools.some((tool) => tool.slug === slug) ? (slug as NavigationToolSlug) : undefined;
 
     useEffect(() => {

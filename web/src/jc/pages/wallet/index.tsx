@@ -4,9 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useRequireLogin } from "@/hooks/use-require-login";
-import { listRechargeOrders, listWalletLedger, type LedgerEntry, type RechargeRecord } from "@/services/api/wallet";
+import { listRechargeOrders, listWalletLedger, type LedgerEntry, type RechargeRecord } from "@/jc/services/wallet";
 import { useUserStore } from "@/stores/use-user-store";
-import { useWalletStore } from "@/stores/use-wallet-store";
+import { useWalletStore } from "@/jc/stores/use-wallet-store";
 import { useRecharge } from "./use-recharge";
 
 const statusColor: Record<string, string> = { created: "gold", paid: "success", closed: "default" };

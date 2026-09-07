@@ -4,9 +4,9 @@
  * 金额在服务端一律是 DECIMAL、传回来是字符串；这里在边界上转成 number 供页面展示。
  * **只用于显示** —— 冻结、扣款、抽成的实际计算全在服务端做，前端算出来的数字不作数。
  */
-import { PAY_API_BASE } from "@/constant/env";
+import { PAY_API_BASE } from "@/jc/config";
 import { AUTH_TOKEN_KEY } from "@/constant/auth";
-import type { Job, JobQuote, JobScope } from "@/lib/jobs/types";
+import type { Job, JobQuote, JobScope } from "@/jc/lib/job-types";
 
 export type { Job, JobScope };
 

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { getWallet, type WalletView } from "@/services/api/wallet";
+import { getWallet, type WalletView } from "@/jc/services/wallet";
 
 type WalletStore = WalletView & {
     loading: boolean;

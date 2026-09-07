@@ -3,9 +3,9 @@ import { App, Button, Input, Segmented, Spin } from "antd";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { toJobImageRef } from "@/lib/jobs/brief-markdown";
+import { toJobImageRef } from "@/jc/lib/brief-markdown";
 import { uploadImage } from "@/services/image-storage";
-import { JobBriefView } from "./job-brief-view";
+import { JobBriefView } from "./brief-view";
 
 type JobBriefEditorProps = {
     value?: string;
@@ -63,18 +63,10 @@ export function JobBriefEditor({ value = "", onChange }: JobBriefEditorProps) {
             </div>
             {mode === "write" ? (
                 <Spin spinning={uploading}>
-                    <Input.TextArea
-                        value={value}
-                        onChange={(event) => onChange?.(event.target.value)}
-                        rows={10}
-                        placeholder={t("jobs.briefPlaceholder")}
-                        className="font-mono text-sm"
-                    />
+                    <Input.TextArea value={value} onChange={(event) => onChange?.(event.target.value)} rows={10} placeholder={t("jobs.briefPlaceholder")} className="font-mono text-sm" />
                 </Spin>
             ) : (
-                <div className="min-h-48 rounded-lg border border-stone-200 px-3 py-2 dark:border-stone-800">
-                    {value.trim() ? <JobBriefView markdown={value} /> : <span className="text-sm text-stone-400">{t("jobs.briefEmptyPreview")}</span>}
-                </div>
+                <div className="min-h-48 rounded-lg border border-stone-200 px-3 py-2 dark:border-stone-800">{value.trim() ? <JobBriefView markdown={value} /> : <span className="text-sm text-stone-400">{t("jobs.briefEmptyPreview")}</span>}</div>
             )}
             <div className="text-xs text-stone-500">{t("jobs.briefHint")}</div>
         </div>

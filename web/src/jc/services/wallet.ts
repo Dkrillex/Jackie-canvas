@@ -6,7 +6,7 @@
  * `getRechargePackages()`，也就是服务端那份，不会和结算价对不上。
  */
 import { AUTH_TOKEN_KEY } from "@/constant/auth";
-import { PAY_API_BASE } from "@/constant/env";
+import { PAY_API_BASE } from "@/jc/config";
 
 export type RechargePackage = {
     id: string;

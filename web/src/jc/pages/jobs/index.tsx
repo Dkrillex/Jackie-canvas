@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { formatCredits } from "@/lib/jobs/settlement";
-import type { Job, JobScope, JobStatus } from "@/lib/jobs/types";
+import { formatCredits } from "@/jc/lib/settlement";
+import type { Job, JobScope, JobStatus } from "@/jc/lib/job-types";
 import { useRequireLogin } from "@/hooks/use-require-login";
-import { useJobStore } from "@/stores/use-job-store";
+import { useJobStore } from "@/jc/stores/use-job-store";
 import { useUserStore } from "@/stores/use-user-store";
-import { useWalletStore } from "@/stores/use-wallet-store";
-import { JobBriefEditor } from "./job-brief-editor";
+import { useWalletStore } from "@/jc/stores/use-wallet-store";
+import { JobBriefEditor } from "./brief-editor";
 
 const statusColor: Record<JobStatus, string> = {
     open: "blue",

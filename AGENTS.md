@@ -23,7 +23,7 @@
 
 - 前端使用 Vite、React、React Router、TypeScript、Ant Design、Tailwind、Zustand。
 - 编写 Ant Design 相关代码时，参考 https://ant.design/llms-full.txt 理解组件 API、示例和设计规范，并优先结合项目当前 antd 版本与既有写法。
-- 外部服务请求统一放在 `web/src/services/api/`，由浏览器前端直连，不假设存在项目后端。唯一例外是 `server/`（积分充值），它必须有服务端，见「充值与钱包规范」。
+- 外部服务请求统一放在 `web/src/services/api/`，由浏览器前端直连，不假设存在项目后端。唯一例外是 `server/`（积分充值与接单中心），它必须有服务端，见「充值与钱包规范」。
 - 全局或跨页面状态优先放在 `web/src/stores/`。
 - 已经放在全局 store 或全局 hook 中的状态/动作，组件需要时直接使用对应 store/hook，不要为了“纯组件”层层透传 props；避免一个组件传递过多参数。
 - 全局组件、全局常量、全局配置等全局性质的内容不要作为 props 或参数层层传递；哪里需要就在哪里直接从对应全局入口获取。
@@ -56,6 +56,14 @@
 - 图片节点尺寸逻辑要尊重原始比例，除非功能明确要求自由变形。
 - 批量生成、多图展示、助手面板等画布交互要尽量简洁，不要占用过多画布空间。
 
+## 二次开发分区（jc/）
+
+- 本分支相对上游 `basketikun/infinite-canvas` 的自研前端功能，一律放在 `web/src/jc/`。上游不会碰这个目录，合并 upstream/main 时恒不冲突。
+- 隔离靠的是**目录**不是文件名：Git 冲突按文件按 hunk 算，只有你改、上游不改的文件永远不冲突。不要为了区分去给文件加前缀，那不减少冲突。
+- 不得不动的上游文件**只留一行注册**，且必须是上游几乎不会改的行。目前只有四处接缝：`src/router.tsx`（`...jcRoutes`）、`src/i18n/index.ts`（`mergeJcLocale`）、`src/components/layout/app-top-nav.tsx` 与 `mobile-nav-drawer.tsx`（`visibleNavTools`）。新增功能优先接到这四处已有的出口上，不要再去上游文件里开新口子。
+- 二开文案写在 `web/src/jc/i18n/`，只写新增的和要覆盖上游的键；`mergeJcLocale` 对顶层键做一层浅合并，未列出的键继续沿用上游。不要再往 `src/i18n/locales/*.ts` 里加二开文案。
+- 详见 `web/src/jc/README.md`。
+
 ## 充值与钱包规范
 
 - 充值服务在 `server/`（Node + TypeScript + Hono + mysql2 + alipay-sdk），前端走同源 `/pay-api`。不要把支付宝私钥、验签或订单状态判断挪到浏览器里。
@@ -65,7 +73,8 @@
 - 入账必须幂等且和订单状态在同一个事务里：`SELECT ... FOR UPDATE` + `UPDATE ... WHERE status <> 'paid'` + 流水表 `UNIQUE KEY (kind, ref_no)`。改这段代码前先想清楚支付宝会重发通知。
 - 钱一律用 `DECIMAL` 存、字符串读，不要在 JS 里用浮点数做加减；余额的加法交给数据库 `balance = balance + ?`，不要读出来算完再写回去。
 - 新增前缀（如 `/pay-api`）时，Vite 代理、`middleware.js`、`vercel.json` 的 SPA fallback 排除项三处都要一起改，漏一处就会返回一页 HTML 而不是接口响应。
-- `/jobs` 接单中心的钱包仍是本地 mock，和真实积分钱包是两套东西；没有实现服务端托管冻结与结算之前，不要把 mock 的冻结/结算逻辑接到真实余额上。
+- 接单中心的冻结与结算是真实托管：接受报价冻结雇主积分（压可用额、不动余额），验收时在一个事务里扣款、解冻、给创作者打款。任何动余额的地方都要先 `SELECT ... FOR UPDATE` 锁钱包行，并把状态流转写进 `UPDATE ... WHERE status = ?`，不要先查后改。
+- 谁能做什么一律由服务端按登录 userId 判定（发单人才能接受报价/打回/验收/取消，接单人才能交付）。前端的筛选和按钮显隐只是界面，不算权限。
 
 ## 文档规范
 

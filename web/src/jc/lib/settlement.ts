@@ -1,4 +1,4 @@
-import { PLATFORM_FEE_RATE, type JobSettlement } from "./types";
+import { PLATFORM_FEE_RATE, type JobSettlement } from "./job-types";
 
 /** 展示用格式化。真正的金额计算在服务端，这里只负责把数字画到界面上。 */
 export function formatCredits(value: number) {
