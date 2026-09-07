@@ -19,6 +19,7 @@ Git 冲突是按文件按 hunk 算的：只有你改、上游不改的文件，�
 | `src/i18n/index.ts`                           | `mergeJcLocale(zhCN, jcZhCN)` —— 文案全在 `jc/i18n/` |
 | `src/components/layout/app-top-nav.tsx`       | 导航项与登录可见性来自 `jc/nav.ts`                   |
 | `src/components/layout/mobile-nav-drawer.tsx` | 同上                                                 |
+| `src/pages/home/index.tsx`                    | 挂 `<FlowBackdrop />`，字符环改指 `jc/components/ascii-ring` |
 
 仓库根部的 `server/`（充值与接单服务）、`vite.config.ts` 的 `/pay-api` 代理、
 `middleware.js`、`vercel.json`、`nginx.conf` 也属于二开范围，但它们要么是新增文件、
@@ -36,7 +37,14 @@ jc/
   services/       调 server/ 的 HTTP 客户端
   stores/         zustand 全局状态
   lib/            工单类型与展示用工具
+  styles/         组件私有 CSS（Vite 支持组件级 import，不进 globals.css）
 ```
+
+## 和上游 home 装饰的关系
+
+上游的 `components/home/ascii-ring.tsx` 是静态字符画（它引用的 `ascii-ring-shimmer`
+在 CSS 里根本没定义）。本分支的流动版放在 `jc/components/ascii-ring.tsx`，上游那份
+保持原样不动，首页改指过来即可。
 
 ## 和上游 jobs 的关系
 
