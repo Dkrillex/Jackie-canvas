@@ -18,7 +18,7 @@ import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/prom
 
 import { getPool, withTransaction } from "./db.js";
 
-/** 平台抽成。和前端 lib/jobs/types.ts 的 PLATFORM_FEE_RATE 保持一致，但以服务端为准。 */
+/** 平台抽成。和前端 web/src/jc/lib/job-types.ts 的 PLATFORM_FEE_RATE 保持一致，但以服务端为准。 */
 export const PLATFORM_FEE_RATE = 0.1;
 
 export type JobStatus = "open" | "quoted" | "active" | "submitted" | "completed" | "cancelled";
