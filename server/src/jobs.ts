@@ -293,7 +293,10 @@ export async function accept(userId: string, jobId: string, quoteId: string): Pr
                 amount: Math.abs(delta),
                 balanceAfter: Number(clientWallet.balance),
                 frozenAfter: clientFrozen,
-                refNo: depositId,
+                // 差额调整必须和「结束时全额解冻」用不同的 ref：两者都是 unfreeze，
+                // 同一次接单里都发生的话（换了个更便宜的接单人、之后又取消）
+                // 共用 depositId 会撞 UNIQUE(kind, ref_no)，把取消整个卡死。
+                refNo: delta > 0 ? depositId : `${depositId}:adj`,
                 jobId,
                 note: delta > 0 ? "接受报价冻结" : "换接单人后退回多冻的部分",
             });
@@ -392,7 +395,10 @@ export async function acceptDelivery(userId: string, jobId: string, costAmount: 
 
         // 接单人：收款 + 押金解冻
         const releasedDeposit = await releaseDeposit(conn, job, creatorWallet, "验收完成，押金退回");
-        const creatorBalance = round(Number(creatorWallet.balance) + creatorPayout);
+        // 自己接自己的单在 quote() 里已经被拦掉，但万一那道校验哪天被改坏，这里要按
+        // 「已经扣过款的余额」往上加，否则两条 UPDATE 各按各自的旧值覆盖，扣款会被抹掉。
+        const creatorBase = job.creator_id === job.client_id ? clientBalance : round(Number(creatorWallet.balance));
+        const creatorBalance = round(creatorBase + creatorPayout);
         await conn.execute("UPDATE user_wallets SET balance = ? WHERE user_id = ?", [money(creatorBalance), job.creator_id]);
         await pushLedger(conn, {
             userId: job.creator_id,
