@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 首次访问默认亮色主题，不再默认暗色。
 + [调整][Jackie] 首页与顶栏正文改用 Source Serif 4，产品名 Jackie Canvas 仍用 Instrument Serif 斜体。
 + [修复][Jackie] 积分充值页在顶栏外壳的 overflow-hidden 里没有自己滚动，内容超出一屏后滑不动。
 + [调整][Jackie] 在线充值单笔最多 200 元，500 / 1000 元档下线，更大额度改为联系商务。
