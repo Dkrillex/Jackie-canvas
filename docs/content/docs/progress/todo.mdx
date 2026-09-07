@@ -5,5 +5,8 @@ description: Planned follow-up work
 
 # TODO
 
+- Move job brief and delivery images to object storage. They are still written to the poster's own browser (`image:<key>` refs resolved from local IndexedDB), so anyone else opening the job sees broken images — `web/src/services/oss-upload.ts` already has the upload path.
+- Wire the `/gw` quota grant into credit conversion. `server/src/routes/exchange.ts` deducts the credits and files a `pending` row; once the gateway endpoint exists, call it after `create()` and settle with `markDone(id, ref)` or `markFailed(id, reason)` (which refunds).
+- Decide quote visibility. Every quote is currently visible to everyone who can open the job, so a later creator can undercut the earlier bids on purpose.
 - Replace the Claude Code CLI adapter with a Claude Agent SDK adapter and improve the tool queue, following the [Local Agent Integration Plan](/docs/progress/local-agent-integration-plan).
 - Add Skill installation from web search, Skill resource-file management, and controlled local-memory persistence.

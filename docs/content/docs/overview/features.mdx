@@ -59,6 +59,7 @@ Canvas plugins can contribute node types, rendering, inspectors, serialization, 
 
 ## Current limitations
 
-- The project is frontend-first and does not provide built-in cloud accounts or cloud storage.
+- Canvases, assets and generation history stay in browser storage; there is no cloud sync for them.
+- The optional `server/` service (Alipay top-up, credit wallet and the jobs marketplace) is the one part that requires a backend and a database. Without it the rest of the app runs unchanged.
 - API keys remain in browser storage and requests are sent directly to configured providers.
 - Production Docker static-resource paths still require broader deployment verification.

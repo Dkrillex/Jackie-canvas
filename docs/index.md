@@ -19,6 +19,11 @@
 - [Canvas Data Structure](/docs/development/canvas-data-structure)
 - [How the Local Codex Connection Works](/docs/development/local-codex-canvas)
 
+## Fork-specific（本分支二开）
+
+- [二次开发分区说明](/../web/src/jc/README.md) —— `web/src/jc/` 的边界与上游接缝
+- [充值与接单服务](/../server/README.md) —— 支付宝、积分钱包、工单托管与到期机制
+
 ## Business
 
 - [Open-source License](/docs/business/license)
