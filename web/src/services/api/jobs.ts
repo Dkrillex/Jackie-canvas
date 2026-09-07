@@ -1,59 +1,83 @@
 /**
- * 接单/积分 Mock API。当前全部走本地 store，后续接后端时只替换本文件实现。
- * 1 credit = 1 USD。
+ * 接单中心。数据落在服务端 MySQL，冻结与结算是真实的托管事务（见 server/src/jobs.ts）。
+ *
+ * 金额在服务端一律是 DECIMAL、传回来是字符串；这里在边界上转成 number 供页面展示。
+ * **只用于显示** —— 冻结、扣款、抽成的实际计算全在服务端做，前端算出来的数字不作数。
  */
-import { useJobStore } from "@/stores/use-job-store";
-import type { Job, JobRole, LedgerEntry, Wallet } from "@/lib/jobs/types";
+import { PAY_API_BASE } from "@/constant/env";
+import { AUTH_TOKEN_KEY } from "@/constant/auth";
+import type { Job, JobQuote, JobScope } from "@/lib/jobs/types";
 
-export type { Job, JobRole, LedgerEntry, Wallet };
+export type { Job, JobScope };
 
-export async function listJobs(): Promise<Job[]> {
-    return useJobStore.getState().jobs;
+/** 服务端返回的工单，金额都是字符串 */
+type JobPayload = Omit<Job, "budget" | "quotes" | "settlement"> & {
+    budget: string;
+    quotes: (Omit<JobQuote, "amount"> & { amount: string })[];
+    settlement?: Record<keyof NonNullable<Job["settlement"]>, string>;
+};
+
+async function jobRequest<T>(path: string, init?: RequestInit): Promise<T> {
+    const token = window.localStorage.getItem(AUTH_TOKEN_KEY) || "";
+    const response = await fetch(`${PAY_API_BASE}/api/jobs${path}`, {
+        ...init,
+        headers: {
+            ...(init?.body ? { "Content-Type": "application/json" } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...init?.headers,
+        },
+    });
+    if (!response.ok) {
+        // 服务端把拒绝原因写得很具体（状态不对、可用积分不足、不是你的单），直接透出去
+        const detail = await response.json().catch(() => null);
+        throw new Error((detail as { message?: string })?.message || `${response.status} ${response.statusText}`);
+    }
+    return response.json() as Promise<T>;
 }
 
-export async function getJob(id: string): Promise<Job | undefined> {
-    return useJobStore.getState().jobs.find((job) => job.id === id);
+function toJob(payload: JobPayload): Job {
+    return {
+        ...payload,
+        budget: Number(payload.budget),
+        quotes: payload.quotes.map((quote) => ({ ...quote, amount: Number(quote.amount) })),
+        settlement: payload.settlement
+            ? {
+                  quoteAmount: Number(payload.settlement.quoteAmount),
+                  costAmount: Number(payload.settlement.costAmount),
+                  platformFee: Number(payload.settlement.platformFee),
+                  creatorPayout: Number(payload.settlement.creatorPayout),
+                  profit: Number(payload.settlement.profit),
+                  settledAt: payload.settlement.settledAt,
+              }
+            : undefined,
+    };
 }
 
-export async function getWallet(role?: JobRole): Promise<Wallet> {
-    const state = useJobStore.getState();
-    return state.wallets[role || state.role];
+const post = (path: string, body?: unknown) => jobRequest<{ ok: true }>(path, { method: "POST", body: JSON.stringify(body ?? {}) });
+
+/** scope: hall=大厅可接的单，client=我发布的，creator=我报过价或已接的 */
+export async function listJobs(scope: JobScope) {
+    const data = await jobRequest<{ jobs: JobPayload[]; userId: string }>(`?scope=${scope}`);
+    return { jobs: data.jobs.map(toJob), userId: data.userId };
 }
 
-export async function listLedger(role?: JobRole): Promise<LedgerEntry[]> {
-    const state = useJobStore.getState();
-    const current = role || state.role;
-    return state.ledger.filter((entry) => entry.role === current);
+export async function getJob(id: string) {
+    const data = await jobRequest<{ job: JobPayload; userId: string }>(`/${encodeURIComponent(id)}`);
+    return { job: toJob(data.job), userId: data.userId };
 }
 
-export async function mockRecharge(amount: number, note?: string) {
-    useJobStore.getState().recharge(amount, note);
+export async function createJob(input: { title: string; brief: string; budget: number }) {
+    return jobRequest<{ id: string }>("", { method: "POST", body: JSON.stringify(input) });
 }
 
-export async function mockCreateJob(input: { title: string; brief: string; budget: number }) {
-    return useJobStore.getState().createJob(input);
-}
+export const submitQuote = (jobId: string, amount: number, note: string) => post(`/${encodeURIComponent(jobId)}/quotes`, { amount, note });
 
-export async function mockSubmitQuote(jobId: string, amount: number, note: string) {
-    useJobStore.getState().submitQuote(jobId, amount, note);
-}
+export const acceptQuote = (jobId: string, quoteId: string) => post(`/${encodeURIComponent(jobId)}/accept`, { quoteId });
 
-export async function mockAcceptQuote(jobId: string, quoteId: string) {
-    useJobStore.getState().acceptQuote(jobId, quoteId);
-}
+export const submitDelivery = (jobId: string, input: { content: string; link?: string; canvasId?: string }) => post(`/${encodeURIComponent(jobId)}/delivery`, input);
 
-export async function mockSubmitDelivery(jobId: string, input: { content: string; link?: string; canvasId?: string }) {
-    useJobStore.getState().submitDelivery(jobId, input);
-}
+export const rejectDelivery = (jobId: string, reason: string) => post(`/${encodeURIComponent(jobId)}/reject`, { reason });
 
-export async function mockRejectDelivery(jobId: string, reason: string) {
-    useJobStore.getState().rejectDelivery(jobId, reason);
-}
+export const acceptDelivery = (jobId: string, costAmount: number) => post(`/${encodeURIComponent(jobId)}/complete`, { costAmount });
 
-export async function mockAcceptDelivery(jobId: string, costAmount: number) {
-    useJobStore.getState().acceptDelivery(jobId, costAmount);
-}
-
-export async function mockCancelJob(jobId: string) {
-    useJobStore.getState().cancelJob(jobId);
-}
+export const cancelJob = (jobId: string) => post(`/${encodeURIComponent(jobId)}/cancel`);

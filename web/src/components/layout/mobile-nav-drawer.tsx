@@ -15,7 +15,7 @@ type MobileNavDrawerProps = {
 export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDrawerProps) {
     const { t } = useTranslation();
     const user = useUserStore((state) => state.user);
-    const visibleTools = navigationTools.filter((tool) => tool.slug !== "config" || user);
+    const visibleTools = navigationTools.filter((tool) => !tool.loginOnly || user);
 
     return (
         <Drawer title={t("topNav.navigation")} placement="left" size={280} open={open} onClose={onClose} className="md:hidden">

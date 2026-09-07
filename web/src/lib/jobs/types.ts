@@ -1,10 +1,9 @@
-/** 1 credit = 1 USD。金额用两位小数。 */
+/** 1 积分 = 1 美元。金额用两位小数。真正的加减在服务端做，这里的 number 只用于展示。 */
 
-export type JobRole = "client" | "creator";
+/** 列表筛选：大厅可接的单 / 我发布的 / 我报过价或已接的 */
+export type JobScope = "hall" | "client" | "creator";
 
 export type JobStatus = "open" | "quoted" | "active" | "submitted" | "completed" | "cancelled";
-
-export type LedgerKind = "recharge" | "freeze" | "unfreeze" | "charge" | "payout" | "fee" | "cost" | "adjust";
 
 export type JobQuote = {
     id: string;
@@ -47,23 +46,5 @@ export type Job = {
     updatedAt: string;
 };
 
-export type Wallet = {
-    balance: number;
-    frozen: number;
-};
-
-export type LedgerEntry = {
-    id: string;
-    role: JobRole;
-    kind: LedgerKind;
-    amount: number;
-    balanceAfter: number;
-    frozenAfter: number;
-    jobId?: string;
-    note: string;
-    createdAt: string;
-};
-
+/** 展示用。实际抽成以服务端 server/src/jobs.ts 的 PLATFORM_FEE_RATE 为准。 */
 export const PLATFORM_FEE_RATE = 0.1;
-export const CLIENT_ROLE: JobRole = "client";
-export const CREATOR_ROLE: JobRole = "creator";

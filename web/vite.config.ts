@@ -67,6 +67,12 @@ export default defineConfig({
                 changeOrigin: true,
                 secure: true,
             },
+            // 本机充值服务（server/）。没起服务时充值页会提示连不上，其余功能不受影响。
+            "/pay-api": {
+                target: process.env.VITE_PAY_API_TARGET || "http://127.0.0.1:8787",
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/pay-api/, ""),
+            },
         },
     },
 });

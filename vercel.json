@@ -13,7 +13,7 @@
       "destination": "https://maas.gravitex.ai/prod-api/:path*"
     },
     {
-      "source": "/((?!gw/|prod-api/).*)",
+      "source": "/((?!gw/|prod-api/|pay-api/).*)",
       "destination": "/index.html"
     }
   ]

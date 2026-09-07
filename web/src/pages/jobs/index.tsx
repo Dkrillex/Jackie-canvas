@@ -1,13 +1,15 @@
 import { BriefcaseBusiness, Plus, RefreshCw, Wallet } from "lucide-react";
-import { App, Button, Form, Input, InputNumber, Modal, Segmented, Space, Table, Tag, Typography } from "antd";
-import { useMemo, useState } from "react";
+import { Alert, App, Button, Form, Input, InputNumber, Modal, Segmented, Space, Table, Tag, Typography } from "antd";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { availableCredits, formatCredits } from "@/lib/jobs/settlement";
-import type { Job, JobRole, JobStatus } from "@/lib/jobs/types";
+import { formatCredits } from "@/lib/jobs/settlement";
+import type { Job, JobScope, JobStatus } from "@/lib/jobs/types";
 import { useRequireLogin } from "@/hooks/use-require-login";
 import { useJobStore } from "@/stores/use-job-store";
+import { useUserStore } from "@/stores/use-user-store";
+import { useWalletStore } from "@/stores/use-wallet-store";
 import { JobBriefEditor } from "./job-brief-editor";
 
 const statusColor: Record<JobStatus, string> = {
@@ -23,50 +25,47 @@ export default function JobsPage() {
     const { t } = useTranslation();
     const { message } = App.useApp();
     const requireLogin = useRequireLogin();
-    const [tab, setTab] = useState<"hall" | "mine" | "wallet">("hall");
+    const user = useUserStore((state) => state.user);
     const [createOpen, setCreateOpen] = useState(false);
-    const [rechargeOpen, setRechargeOpen] = useState(false);
+    const [creating, setCreating] = useState(false);
     const [createForm] = Form.useForm<{ title: string; brief: string; budget: number }>();
-    const [rechargeForm] = Form.useForm<{ amount: number }>();
 
-    const role = useJobStore((s) => s.role);
-    const setRole = useJobStore((s) => s.setRole);
+    const scope = useJobStore((s) => s.scope);
+    const setScope = useJobStore((s) => s.setScope);
     const jobs = useJobStore((s) => s.jobs);
-    const wallets = useJobStore((s) => s.wallets);
-    const ledger = useJobStore((s) => s.ledger);
+    const loading = useJobStore((s) => s.loading);
+    const error = useJobStore((s) => s.error);
+    const refresh = useJobStore((s) => s.refresh);
+    const clear = useJobStore((s) => s.clear);
     const createJob = useJobStore((s) => s.createJob);
-    const recharge = useJobStore((s) => s.recharge);
-    const resetDemo = useJobStore((s) => s.resetDemo);
-    const wallet = wallets[role];
 
-    const visibleJobs = useMemo(() => {
-        if (tab === "hall") return jobs.filter((job) => job.status === "open" || job.status === "quoted");
-        if (role === "client") return jobs.filter((job) => job.clientId === "client");
-        return jobs.filter((job) => job.creatorId === "creator" || job.quotes.some((q) => q.creatorId === "creator"));
-    }, [jobs, role, tab]);
+    const balance = useWalletStore((s) => s.balance);
+    const frozen = useWalletStore((s) => s.frozen);
+    const available = useWalletStore((s) => s.available);
+    const refreshWallet = useWalletStore((s) => s.refresh);
 
-    const roleLedger = useMemo(() => ledger.filter((entry) => entry.role === role), [ledger, role]);
+    useEffect(() => {
+        if (!user) {
+            clear();
+            return;
+        }
+        void refresh();
+        void refreshWallet();
+    }, [clear, refresh, refreshWallet, user]);
 
     const onCreate = async () => {
         if (!requireLogin()) return;
         const values = await createForm.validateFields();
-        const id = createJob(values);
-        setCreateOpen(false);
-        createForm.resetFields();
-        message.success(t("jobs.created"));
-        return id;
-    };
-
-    const onRecharge = async () => {
-        if (!requireLogin()) return;
-        const values = await rechargeForm.validateFields();
+        setCreating(true);
         try {
-            recharge(values.amount);
-            setRechargeOpen(false);
-            rechargeForm.resetFields();
-            message.success(t("jobs.recharged"));
-        } catch {
-            message.error(t("jobs.invalidAmount"));
+            await createJob(values);
+            setCreateOpen(false);
+            createForm.resetFields();
+            message.success(t("jobs.created"));
+        } catch (err) {
+            message.error(err instanceof Error ? err.message : t("jobs.actionFailed"));
+        } finally {
+            setCreating(false);
         }
     };
 
@@ -83,111 +82,85 @@ export default function JobsPage() {
                     </Typography.Paragraph>
                 </div>
                 <Space wrap>
-                    <Segmented
-                        value={role}
-                        onChange={(value) => setRole(value as JobRole)}
-                        options={[
-                            { label: t("jobs.roleClient"), value: "client" },
-                            { label: t("jobs.roleCreator"), value: "creator" },
-                        ]}
-                    />
-                    <Button icon={<RefreshCw className="size-4" />} onClick={() => { resetDemo(); message.success(t("jobs.resetDone")); }}>
-                        {t("jobs.resetDemo")}
+                    <Button icon={<RefreshCw className="size-4" />} loading={loading} onClick={() => void refresh()}>
+                        {t("jobs.refresh")}
+                    </Button>
+                    <Button
+                        type="primary"
+                        icon={<Plus className="size-4" />}
+                        onClick={() => {
+                            if (!requireLogin()) return;
+                            setCreateOpen(true);
+                        }}
+                    >
+                        {t("jobs.create")}
                     </Button>
                 </Space>
             </div>
+
+            {!user ? <Alert type="info" showIcon message={t("jobs.loginFirst")} /> : null}
+            {error ? <Alert type="warning" showIcon message={error} /> : null}
 
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 px-4 py-3 dark:border-stone-800">
                 <div className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
                     <Wallet className="size-4" />
-                    <span>
-                        {t("jobs.walletSummary", {
-                            balance: formatCredits(wallet.balance),
-                            frozen: formatCredits(wallet.frozen),
-                            available: formatCredits(availableCredits(wallet.balance, wallet.frozen)),
-                        })}
-                    </span>
+                    <span>{t("jobs.walletSummary", { balance, frozen, available })}</span>
                 </div>
-                <Space>
-                    <Button type="primary" onClick={() => { if (!requireLogin()) return; setRechargeOpen(true); }}>
-                        {t("jobs.mockRecharge")}
-                    </Button>
-                    {role === "client" ? (
-                        <Button icon={<Plus className="size-4" />} onClick={() => { if (!requireLogin()) return; setCreateOpen(true); }}>
-                            {t("jobs.create")}
-                        </Button>
-                    ) : null}
-                </Space>
+                {/* 充值是真实支付，统一走 /wallet 那条链路，这里只做入口 */}
+                <Link to="/wallet">
+                    <Button type="primary">{t("jobs.goRecharge")}</Button>
+                </Link>
             </div>
 
             <Segmented
-                value={tab}
-                onChange={(value) => setTab(value as typeof tab)}
+                value={scope}
+                onChange={(value) => setScope(value as JobScope)}
                 options={[
                     { label: t("jobs.tabHall"), value: "hall" },
-                    { label: t("jobs.tabMine"), value: "mine" },
-                    { label: t("jobs.tabWallet"), value: "wallet" },
+                    { label: t("jobs.tabPosted"), value: "client" },
+                    { label: t("jobs.tabTaken"), value: "creator" },
                 ]}
             />
 
-            {tab === "wallet" ? (
-                <Table
-                    rowKey="id"
-                    size="middle"
-                    pagination={{ pageSize: 8 }}
-                    dataSource={roleLedger}
-                    columns={[
-                        { title: t("jobs.ledgerTime"), dataIndex: "createdAt", render: (value: string) => new Date(value).toLocaleString() },
-                        { title: t("jobs.ledgerKind"), dataIndex: "kind", render: (value: string) => t(`jobs.ledgerKinds.${value}`, { defaultValue: value }) },
-                        {
-                            title: t("jobs.ledgerAmount"),
-                            dataIndex: "amount",
-                            render: (value: number) => `${value >= 0 ? "+" : ""}${formatCredits(value)}`,
-                        },
-                        { title: t("jobs.ledgerNote"), dataIndex: "note" },
-                    ]}
-                />
-            ) : (
-                <Table
-                    rowKey="id"
-                    size="middle"
-                    pagination={{ pageSize: 8 }}
-                    dataSource={visibleJobs}
-                    locale={{ emptyText: t("jobs.empty") }}
-                    columns={[
-                        {
-                            title: t("jobs.colTitle"),
-                            dataIndex: "title",
-                            render: (title: string, job: Job) => <Link to={`/jobs/${job.id}`}>{title}</Link>,
-                        },
-                        {
-                            title: t("jobs.colStatus"),
-                            dataIndex: "status",
-                            width: 120,
-                            render: (status: JobStatus) => <Tag color={statusColor[status]}>{t(`jobs.status.${status}`)}</Tag>,
-                        },
-                        {
-                            title: t("jobs.colBudget"),
-                            dataIndex: "budget",
-                            width: 120,
-                            render: (value: number) => formatCredits(value),
-                        },
-                        {
-                            title: t("jobs.colUpdated"),
-                            dataIndex: "updatedAt",
-                            width: 180,
-                            render: (value: string) => new Date(value).toLocaleString(),
-                        },
-                        {
-                            title: t("jobs.colAction"),
-                            width: 100,
-                            render: (_: unknown, job: Job) => <Link to={`/jobs/${job.id}`}>{t("jobs.open")}</Link>,
-                        },
-                    ]}
-                />
-            )}
+            <Table
+                rowKey="id"
+                size="middle"
+                loading={loading}
+                pagination={{ pageSize: 8 }}
+                dataSource={jobs}
+                locale={{ emptyText: t("jobs.empty") }}
+                columns={[
+                    {
+                        title: t("jobs.colTitle"),
+                        dataIndex: "title",
+                        render: (title: string, job: Job) => <Link to={`/jobs/${job.id}`}>{title}</Link>,
+                    },
+                    {
+                        title: t("jobs.colStatus"),
+                        dataIndex: "status",
+                        width: 120,
+                        render: (status: JobStatus) => <Tag color={statusColor[status]}>{t(`jobs.status.${status}`)}</Tag>,
+                    },
+                    {
+                        title: t("jobs.colBudget"),
+                        dataIndex: "budget",
+                        width: 120,
+                        render: (value: number) => formatCredits(value),
+                    },
+                    {
+                        title: t("jobs.colUpdated"),
+                        dataIndex: "updatedAt",
+                        width: 180,
+                    },
+                    {
+                        title: t("jobs.colAction"),
+                        width: 100,
+                        render: (_: unknown, job: Job) => <Link to={`/jobs/${job.id}`}>{t("jobs.open")}</Link>,
+                    },
+                ]}
+            />
 
-            <Modal title={t("jobs.create")} open={createOpen} onCancel={() => setCreateOpen(false)} onOk={onCreate} width={720} destroyOnHidden>
+            <Modal title={t("jobs.create")} open={createOpen} confirmLoading={creating} onCancel={() => setCreateOpen(false)} onOk={onCreate} width={720} destroyOnHidden>
                 <Form form={createForm} layout="vertical" initialValues={{ budget: 50, brief: "" }}>
                     <Form.Item name="title" label={t("jobs.fieldTitle")} rules={[{ required: true }]}>
                         <Input maxLength={80} />
@@ -198,17 +171,6 @@ export default function JobsPage() {
                     <Form.Item name="budget" label={t("jobs.fieldBudget")} rules={[{ required: true }]}>
                         <InputNumber min={1} step={1} className="w-full" addonAfter="credits" />
                     </Form.Item>
-                </Form>
-            </Modal>
-
-            <Modal title={t("jobs.mockRecharge")} open={rechargeOpen} onCancel={() => setRechargeOpen(false)} onOk={onRecharge} destroyOnHidden>
-                <Form form={rechargeForm} layout="vertical" initialValues={{ amount: 50 }}>
-                    <Form.Item name="amount" label={t("jobs.rechargeAmount")} rules={[{ required: true }]}>
-                        <InputNumber min={1} step={10} className="w-full" addonAfter="credits ($)" />
-                    </Form.Item>
-                    <Typography.Paragraph type="secondary" className="!mb-0">
-                        {t("jobs.creditHint")}
-                    </Typography.Paragraph>
                 </Form>
             </Modal>
         </div>

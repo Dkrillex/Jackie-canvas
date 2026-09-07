@@ -26,7 +26,7 @@ export function AppTopNav() {
     const panelOpen = useAgentStore((state) => state.panelOpen);
     const hideHeader = /^\/canvas\/[^/]+/.test(pathname);
     const slug = pathname.split("/").filter(Boolean)[0];
-    const visibleTools = navigationTools.filter((tool) => tool.slug !== "config" || user);
+    const visibleTools = navigationTools.filter((tool) => !tool.loginOnly || user);
     const activeToolSlug = visibleTools.some((tool) => tool.slug === slug) ? (slug as NavigationToolSlug) : undefined;
 
     useEffect(() => {

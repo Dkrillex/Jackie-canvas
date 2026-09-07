@@ -1,14 +1,16 @@
 import { ArrowLeft } from "lucide-react";
-import { App, Button, Descriptions, Form, Input, InputNumber, Modal, Space, Tag, Typography } from "antd";
-import { useMemo, useState } from "react";
+import { Alert, App, Button, Descriptions, Form, Input, InputNumber, Modal, Skeleton, Space, Tag, Typography } from "antd";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { computeSettlement, formatCredits } from "@/lib/jobs/settlement";
-import type { JobStatus } from "@/lib/jobs/types";
+import type { Job, JobStatus } from "@/lib/jobs/types";
 import { PLATFORM_FEE_RATE } from "@/lib/jobs/types";
 import { useRequireLogin } from "@/hooks/use-require-login";
-import { useJobStore } from "@/stores/use-job-store";
+import * as api from "@/services/api/jobs";
+import { useUserStore } from "@/stores/use-user-store";
+import { useWalletStore } from "@/stores/use-wallet-store";
 import { JobBriefView } from "./job-brief-view";
 
 const statusColor: Record<JobStatus, string> = {
@@ -25,6 +27,15 @@ export default function JobDetailPage() {
     const { t } = useTranslation();
     const { message } = App.useApp();
     const requireLogin = useRequireLogin();
+    const user = useUserStore((state) => state.user);
+    const refreshWallet = useWalletStore((state) => state.refresh);
+
+    const [job, setJob] = useState<Job | null>(null);
+    const [userId, setUserId] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [busy, setBusy] = useState(false);
+
     const [quoteOpen, setQuoteOpen] = useState(false);
     const [deliveryOpen, setDeliveryOpen] = useState(false);
     const [acceptOpen, setAcceptOpen] = useState(false);
@@ -34,18 +45,56 @@ export default function JobDetailPage() {
     const [acceptForm] = Form.useForm<{ costAmount: number }>();
     const [rejectForm] = Form.useForm<{ reason: string }>();
 
-    const role = useJobStore((s) => s.role);
-    const job = useJobStore((s) => s.jobs.find((item) => item.id === id));
-    const submitQuote = useJobStore((s) => s.submitQuote);
-    const acceptQuote = useJobStore((s) => s.acceptQuote);
-    const submitDelivery = useJobStore((s) => s.submitDelivery);
-    const rejectDelivery = useJobStore((s) => s.rejectDelivery);
-    const acceptDelivery = useJobStore((s) => s.acceptDelivery);
-    const cancelJob = useJobStore((s) => s.cancelJob);
+    const load = useCallback(async () => {
+        setLoading(true);
+        setError("");
+        try {
+            const data = await api.getJob(id);
+            setJob(data.job);
+            setUserId(data.userId);
+        } catch (err) {
+            setJob(null);
+            setError(err instanceof Error ? err.message : t("jobs.notFound"));
+        } finally {
+            setLoading(false);
+        }
+    }, [id, t]);
+
+    useEffect(() => {
+        if (user) void load();
+        else setLoading(false);
+    }, [load, user]);
 
     const acceptedQuote = useMemo(() => job?.quotes.find((quote) => quote.id === job.acceptedQuoteId), [job]);
     const previewCost = Form.useWatch("costAmount", acceptForm) ?? 0;
     const previewSettlement = acceptedQuote ? computeSettlement(acceptedQuote.amount, previewCost || 0) : null;
+
+    /**
+     * 跑一个动作，成功后重新拉工单和余额。
+     * 权限和状态都由服务端判定，这里把它的拒绝原因原样弹出来 —— 那句话比「操作失败」有用得多。
+     */
+    const run = async (fn: () => Promise<unknown>, successKey: string, onDone?: () => void) => {
+        if (!requireLogin()) return;
+        setBusy(true);
+        try {
+            await fn();
+            await Promise.all([load(), refreshWallet()]);
+            message.success(t(successKey));
+            onDone?.();
+        } catch (err) {
+            message.error(err instanceof Error ? err.message : t("jobs.actionFailed"));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="mx-auto max-w-3xl space-y-4 px-6 py-8">
+                <Skeleton active paragraph={{ rows: 6 }} />
+            </div>
+        );
+    }
 
     if (!job) {
         return (
@@ -54,21 +103,18 @@ export default function JobDetailPage() {
                     <ArrowLeft className="size-4" />
                     {t("jobs.back")}
                 </Link>
-                <Typography.Title level={4}>{t("jobs.notFound")}</Typography.Title>
+                <Typography.Title level={4}>{user ? t("jobs.notFound") : t("jobs.loginFirst")}</Typography.Title>
+                {error && user ? <Alert type="warning" showIcon message={error} /> : null}
             </div>
         );
     }
 
-    const run = (fn: () => void, successKey: string) => {
-        if (!requireLogin()) return;
-        try {
-            fn();
-            message.success(t(successKey));
-        } catch (error) {
-            const code = error instanceof Error ? error.message : "";
-            message.error(t(code === "insufficient_credits" ? "jobs.insufficient" : "jobs.actionFailed"));
-        }
-    };
+    // 能做什么由「你是谁」决定，不再由界面上的角色开关决定。这些判断只影响按钮显不显示，
+    // 真正的拦截在服务端 —— 直接构造请求也越不过去。
+    const isClient = job.clientId === userId;
+    const isCreator = Boolean(job.creatorId) && job.creatorId === userId;
+    const openForQuote = job.status === "open" || job.status === "quoted";
+    const myQuote = job.quotes.find((quote) => quote.creatorId === userId);
 
     return (
         <div className="mx-auto max-w-3xl space-y-6 px-6 py-8">
@@ -82,29 +128,51 @@ export default function JobDetailPage() {
                     <Typography.Title level={3} className="!mb-2">
                         {job.title}
                     </Typography.Title>
-                    <Tag color={statusColor[job.status]}>{t(`jobs.status.${job.status}`)}</Tag>
+                    <Space size={4}>
+                        <Tag color={statusColor[job.status]}>{t(`jobs.status.${job.status}`)}</Tag>
+                        {isClient ? <Tag>{t("jobs.youArePoster")}</Tag> : null}
+                        {isCreator ? <Tag>{t("jobs.youAreTaker")}</Tag> : null}
+                    </Space>
                 </div>
                 <Space wrap>
-                    {role === "creator" && (job.status === "open" || job.status === "quoted") ? (
-                        <Button type="primary" onClick={() => { if (!requireLogin()) return; setQuoteOpen(true); }}>
-                            {t("jobs.submitQuote")}
+                    {!isClient && openForQuote ? (
+                        <Button
+                            type="primary"
+                            onClick={() => {
+                                if (!requireLogin()) return;
+                                setQuoteOpen(true);
+                            }}
+                        >
+                            {myQuote ? t("jobs.updateQuote") : t("jobs.submitQuote")}
                         </Button>
                     ) : null}
-                    {role === "client" && job.status === "quoted"
+                    {isClient && openForQuote
                         ? job.quotes.map((quote) => (
-                              <Button key={quote.id} type="primary" onClick={() => run(() => acceptQuote(job.id, quote.id), "jobs.quoteAccepted")}>
+                              <Button key={quote.id} type="primary" loading={busy} onClick={() => void run(() => api.acceptQuote(job.id, quote.id), "jobs.quoteAccepted")}>
                                   {t("jobs.acceptQuoteAmount", { amount: formatCredits(quote.amount) })}
                               </Button>
                           ))
                         : null}
-                    {role === "creator" && (job.status === "active" || job.status === "submitted") ? (
-                        <Button type="primary" onClick={() => { if (!requireLogin()) return; setDeliveryOpen(true); }}>
+                    {isCreator && (job.status === "active" || job.status === "submitted") ? (
+                        <Button
+                            type="primary"
+                            onClick={() => {
+                                if (!requireLogin()) return;
+                                setDeliveryOpen(true);
+                            }}
+                        >
                             {t("jobs.submitDelivery")}
                         </Button>
                     ) : null}
-                    {role === "client" && job.status === "submitted" ? (
+                    {isClient && job.status === "submitted" ? (
                         <>
-                            <Button type="primary" onClick={() => { if (!requireLogin()) return; setAcceptOpen(true); }}>
+                            <Button
+                                type="primary"
+                                onClick={() => {
+                                    if (!requireLogin()) return;
+                                    setAcceptOpen(true);
+                                }}
+                            >
                                 {t("jobs.acceptDelivery")}
                             </Button>
                             <Button
@@ -117,8 +185,8 @@ export default function JobDetailPage() {
                             </Button>
                         </>
                     ) : null}
-                    {role === "client" && job.status !== "completed" && job.status !== "cancelled" ? (
-                        <Button danger onClick={() => run(() => cancelJob(job.id), "jobs.cancelled")}>
+                    {isClient && job.status !== "completed" && job.status !== "cancelled" ? (
+                        <Button danger loading={busy} onClick={() => void run(() => api.cancelJob(job.id), "jobs.cancelled")}>
                             {t("jobs.cancel")}
                         </Button>
                     ) : null}
@@ -130,9 +198,7 @@ export default function JobDetailPage() {
                 <Descriptions.Item label={t("jobs.fieldBrief")}>
                     <JobBriefView markdown={job.brief} />
                 </Descriptions.Item>
-                {acceptedQuote ? (
-                    <Descriptions.Item label={t("jobs.acceptedQuote")}>{formatCredits(acceptedQuote.amount)} credits</Descriptions.Item>
-                ) : null}
+                {acceptedQuote ? <Descriptions.Item label={t("jobs.acceptedQuote")}>{formatCredits(acceptedQuote.amount)} credits</Descriptions.Item> : null}
             </Descriptions>
 
             {job.quotes.length ? (
@@ -140,7 +206,10 @@ export default function JobDetailPage() {
                     <Typography.Title level={5}>{t("jobs.quotes")}</Typography.Title>
                     {job.quotes.map((quote) => (
                         <div key={quote.id} className="rounded-lg border border-stone-200 px-4 py-3 text-sm dark:border-stone-800">
-                            <div className="font-medium">{formatCredits(quote.amount)} credits</div>
+                            <div className="flex items-center gap-2 font-medium">
+                                {formatCredits(quote.amount)} credits
+                                {quote.creatorId === userId ? <Tag>{t("jobs.yourQuote")}</Tag> : null}
+                            </div>
                             <div className="text-stone-500">{quote.note || t("jobs.noNote")}</div>
                         </div>
                     ))}
@@ -189,20 +258,24 @@ export default function JobDetailPage() {
             ) : null}
 
             <Modal
-                title={t("jobs.submitQuote")}
+                title={myQuote ? t("jobs.updateQuote") : t("jobs.submitQuote")}
                 open={quoteOpen}
+                confirmLoading={busy}
                 onCancel={() => setQuoteOpen(false)}
                 onOk={async () => {
                     const values = await quoteForm.validateFields();
-                    run(() => {
-                        submitQuote(job.id, values.amount, values.note || "");
-                        setQuoteOpen(false);
-                        quoteForm.resetFields();
-                    }, "jobs.quoteSubmitted");
+                    await run(
+                        () => api.submitQuote(job.id, values.amount, values.note || ""),
+                        "jobs.quoteSubmitted",
+                        () => {
+                            setQuoteOpen(false);
+                            quoteForm.resetFields();
+                        },
+                    );
                 }}
                 destroyOnHidden
             >
-                <Form form={quoteForm} layout="vertical" initialValues={{ amount: job.budget, note: "" }}>
+                <Form form={quoteForm} layout="vertical" initialValues={{ amount: myQuote?.amount ?? job.budget, note: myQuote?.note ?? "" }}>
                     <Form.Item name="amount" label={t("jobs.quoteAmount")} rules={[{ required: true }]}>
                         <InputNumber min={1} className="w-full" addonAfter="credits" />
                     </Form.Item>
@@ -215,14 +288,18 @@ export default function JobDetailPage() {
             <Modal
                 title={t("jobs.submitDelivery")}
                 open={deliveryOpen}
+                confirmLoading={busy}
                 onCancel={() => setDeliveryOpen(false)}
                 onOk={async () => {
                     const values = await deliveryForm.validateFields();
-                    run(() => {
-                        submitDelivery(job.id, values);
-                        setDeliveryOpen(false);
-                        deliveryForm.resetFields();
-                    }, "jobs.deliverySubmitted");
+                    await run(
+                        () => api.submitDelivery(job.id, values),
+                        "jobs.deliverySubmitted",
+                        () => {
+                            setDeliveryOpen(false);
+                            deliveryForm.resetFields();
+                        },
+                    );
                 }}
                 destroyOnHidden
             >
@@ -242,14 +319,18 @@ export default function JobDetailPage() {
             <Modal
                 title={t("jobs.acceptDelivery")}
                 open={acceptOpen}
+                confirmLoading={busy}
                 onCancel={() => setAcceptOpen(false)}
                 onOk={async () => {
                     const values = await acceptForm.validateFields();
-                    run(() => {
-                        acceptDelivery(job.id, values.costAmount || 0);
-                        setAcceptOpen(false);
-                        acceptForm.resetFields();
-                    }, "jobs.settled");
+                    await run(
+                        () => api.acceptDelivery(job.id, values.costAmount || 0),
+                        "jobs.settled",
+                        () => {
+                            setAcceptOpen(false);
+                            acceptForm.resetFields();
+                        },
+                    );
                 }}
                 destroyOnHidden
             >
@@ -272,13 +353,18 @@ export default function JobDetailPage() {
             <Modal
                 title={t("jobs.rejectDelivery")}
                 open={rejectOpen}
+                confirmLoading={busy}
                 onCancel={() => setRejectOpen(false)}
                 onOk={async () => {
                     const values = await rejectForm.validateFields();
-                    rejectDelivery(job.id, values.reason.trim() || t("jobs.rejectDefault"));
-                    setRejectOpen(false);
-                    rejectForm.resetFields();
-                    message.success(t("jobs.rejected"));
+                    await run(
+                        () => api.rejectDelivery(job.id, values.reason.trim() || t("jobs.rejectDefault")),
+                        "jobs.rejected",
+                        () => {
+                            setRejectOpen(false);
+                            rejectForm.resetFields();
+                        },
+                    );
                 }}
                 destroyOnHidden
             >

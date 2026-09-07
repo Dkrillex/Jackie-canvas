@@ -9,3 +9,16 @@ services:
     # environment:
     #   ANALYTICS_GA4_ID: G-XXXXXXXXXX                    # Google Analytics 4 衡量 ID
     #   ANALYTICS_BAIDU_ID: xxxxxxxxxxxxxxxxxxxxxxxxxxxx   # 百度统计站点 ID
+
+  # 积分充值服务（支付宝 + MySQL）。不需要充值功能就整段删掉，前端其余部分照常跑。
+  # 启用前先把 server/.env.example 复制成 server/.env 填好密钥，
+  # 再把前端的 /pay-api 反代到这里（nginx.conf 或部署平台的 rewrite）。
+  # pay:
+  #   build:
+  #     context: .
+  #     dockerfile: server/Dockerfile
+  #   container_name: infinite-canvas-pay
+  #   ports:
+  #     - "8787:8787"
+  #   env_file: server/.env
+  #   restart: unless-stopped

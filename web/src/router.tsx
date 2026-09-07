@@ -13,6 +13,7 @@ import JobDetailPage from "@/pages/jobs/detail";
 import NotFound from "@/pages/not-found";
 import PromptsPage from "@/pages/prompts";
 import VideoPage from "@/pages/video";
+import WalletPage from "@/pages/wallet";
 
 export const router = createBrowserRouter([
     {
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
             { path: "/video", element: <VideoPage /> },
             { path: "/jobs", element: <JobsPage /> },
             { path: "/jobs/:id", element: <JobDetailPage /> },
+            { path: "/wallet", element: <WalletPage /> },
             { path: "/assets", element: <AssetsPage /> },
             { path: "/prompts", element: <PromptsPage /> },
             { path: "/canvas", element: <CanvasPage /> },
