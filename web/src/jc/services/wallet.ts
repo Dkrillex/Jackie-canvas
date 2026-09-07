@@ -69,9 +69,12 @@ async function payRequest<T>(path: string, init?: RequestInit): Promise<T> {
     return response.json() as Promise<T>;
 }
 
-/** 服务端认的档位表。enabled 为 false 说明支付宝或数据库没配好，充值入口应置灰。 */
+/**
+ * 服务端认的档位表。enabled 为 false 时充值入口置灰，`missing` 说明到底缺哪一样 ——
+ * 「支付宝没配」和「数据库没配」的排查方向完全不同，别在界面上笼统地说「或」。
+ */
 export async function getRechargePackages() {
-    return payRequest<{ enabled: boolean; packages: RechargePackage[] }>("/api/pay/packages");
+    return payRequest<{ enabled: boolean; missing: ("alipay" | "mysql")[]; packages: RechargePackage[] }>("/api/pay/packages");
 }
 
 /** 下一笔充值单，返回支付宝收银台地址。只传档位 id。 */

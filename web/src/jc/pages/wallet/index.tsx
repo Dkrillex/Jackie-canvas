@@ -47,7 +47,7 @@ export default function WalletPage() {
         else clear();
     }, [clear, reload, user]);
 
-    const { packages, enabled, loadError, order, creating, paid, pollError, start, reset } = useRecharge(reload);
+    const { packages, enabled, missing, loadError, order, creating, paid, pollError, start, reset } = useRecharge(reload);
 
     useEffect(() => {
         if (packages.length && !selected) setSelected(packages[0].id);
@@ -113,7 +113,7 @@ export default function WalletPage() {
             ) : null}
             {user && error ? <Alert type="warning" showIcon message={error} /> : null}
             {loadError ? <Alert type="warning" showIcon message={loadError} /> : null}
-            {!loadError && !enabled && packages.length ? <Alert type="warning" showIcon message={t("wallet.unavailable")} /> : null}
+            {!loadError && !enabled && packages.length ? <Alert type="warning" showIcon message={t(missing.length === 1 ? `wallet.unavailable_${missing[0]}` : "wallet.unavailable")} /> : null}
 
             <div className="grid gap-4 sm:grid-cols-3">
                 {[

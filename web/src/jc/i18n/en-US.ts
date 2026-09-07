@@ -8,6 +8,8 @@ export default {
         subtitle: "Top up with Alipay. Credits fund image and video generation (1 credit = $1).",
         refresh: "Refresh",
         loginFirst: "Sign in to view your balance and top up.",
+        unavailable_alipay: "Top-up unavailable: the server has no Alipay merchant keys yet (the database is fine). Jobs and credit conversion still work.",
+        unavailable_mysql: "Top-up unavailable: the server cannot reach the database (Alipay is configured).",
         unavailable: "Top-up is unavailable: the server has no Alipay or database configured.",
         available: "Available",
         balance: "Balance",

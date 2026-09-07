@@ -11,6 +11,8 @@ export default {
         subtitle: "支付宝付款，到账后积分可用于生图与视频生成（1 积分 = 1 美元）。",
         refresh: "刷新",
         loginFirst: "登录后才能查看余额和充值。",
+        unavailable_alipay: "充值暂不可用：服务端还没配置支付宝商户密钥（数据库正常）。接单中心与积分兑换不受影响。",
+        unavailable_mysql: "充值暂不可用：服务端连不上数据库（支付宝已配置）。",
         unavailable: "充值服务暂不可用：服务端还没配置支付宝或数据库。",
         available: "可用积分",
         balance: "账户余额",

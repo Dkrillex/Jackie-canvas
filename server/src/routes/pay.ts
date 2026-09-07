@@ -34,14 +34,14 @@ function shouldAskAlipay(outTradeNo: string): boolean {
 }
 
 /** 前端展示用。价格以这里为准 —— 前端那份档位列表只是文案。 */
-payRoutes.get("/packages", (c) =>
-    c.json({
-        // enabled 要两样都齐：支付宝配好、库连得上，这条链路才真的能用。少算一样的话
-        // 前端会亮出充值入口，用户点下去才撞 503。
-        enabled: alipayConfigured() && mysqlConfigured(),
-        packages,
-    }),
-);
+payRoutes.get("/packages", (c) => {
+    // enabled 要两样都齐：支付宝配好、库连得上，这条链路才真的能用。少算一样的话
+    // 前端会亮出充值入口，用户点下去才撞 503。
+    const missing = [!alipayConfigured() && "alipay", !mysqlConfigured() && "mysql"].filter(Boolean) as string[];
+    // 服务端知道缺的是哪一个，就别让前端笼统地说「支付宝或数据库」——
+    // 两样都没配和只差一样，排查方向完全不同。
+    return c.json({ enabled: missing.length === 0, missing, packages });
+});
 
 /**
  * 下一笔充值单。

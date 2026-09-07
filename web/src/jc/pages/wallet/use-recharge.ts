@@ -8,6 +8,7 @@ const POLL_INTERVAL_MS = 2000;
 export function useRecharge(onPaid: () => void) {
     const [packages, setPackages] = useState<RechargePackage[]>([]);
     const [enabled, setEnabled] = useState(false);
+    const [missing, setMissing] = useState<("alipay" | "mysql")[]>([]);
     const [loadError, setLoadError] = useState("");
     const [order, setOrder] = useState<RechargeOrder | null>(null);
     const [creating, setCreating] = useState(false);
@@ -19,6 +20,7 @@ export function useRecharge(onPaid: () => void) {
             .then((data) => {
                 setPackages(data.packages);
                 setEnabled(data.enabled);
+                setMissing(data.missing || []);
             })
             .catch((error: unknown) => setLoadError(error instanceof Error ? error.message : "获取充值档位失败"));
     }, []);
@@ -73,5 +75,5 @@ export function useRecharge(onPaid: () => void) {
         setPollError("");
     }, []);
 
-    return { packages, enabled, loadError, order, creating, paid, pollError, start, reset };
+    return { packages, enabled, missing, loadError, order, creating, paid, pollError, start, reset };
 }
