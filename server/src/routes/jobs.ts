@@ -35,7 +35,7 @@ jobRoutes.post("/", async (c) => {
 
 jobRoutes.get("/:id", async (c) => {
     const user = await resolveUser(c.req.header("Authorization"));
-    const job = await jobs.get(c.req.param("id"));
+    const job = await jobs.get(c.req.param("id"), user.userId);
     if (!job) return c.json({ message: "工单不存在" }, 404);
     return c.json({ job, userId: user.userId });
 });

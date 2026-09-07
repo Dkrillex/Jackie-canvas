@@ -136,7 +136,18 @@ async function attachQuotes(rows: JobRow[]): Promise<JobView[]> {
     return rows.map((row) => toView(row, quotes.filter((quote) => quote.job_id === row.id)));
 }
 
-/** scope: hall=可接的单，client=我发的，creator=我报过价或已接的 */
+/** 只有发单人和接单人能看到交付内容与结算明细，其余人拿到的是去掉这两块的版本。 */
+function redactForViewer(job: JobView, viewerId: string): JobView {
+    if (job.clientId === viewerId || job.creatorId === viewerId) return job;
+    return { ...job, delivery: undefined, settlement: undefined };
+}
+
+/**
+ * scope: hall=可接的单，client=我发的，creator=我报过价或已接的
+ *
+ * creator 这一档包含「报过价但没被选中」的单，那些单对当前用户来说只是历史记录，
+ * 中标者的交付物和结算金额不该跟着一起返回 —— 所以这里同样要过一遍 redactForViewer。
+ */
 export async function list(userId: string, scope: "hall" | "client" | "creator"): Promise<JobView[]> {
     const pool = await getPool();
     const sql =
@@ -148,14 +159,21 @@ export async function list(userId: string, scope: "hall" | "client" | "creator")
               : `SELECT ${JOB_COLUMNS} FROM jobs WHERE status IN ('open','quoted') ORDER BY created_at DESC LIMIT 200`;
     const params = scope === "creator" ? [userId, userId] : scope === "client" ? [userId] : [];
     const [rows] = await pool.query<JobRow[]>(sql, params);
-    return attachQuotes(rows);
+    return (await attachQuotes(rows)).map((job) => redactForViewer(job, userId));
 }
 
-export async function get(jobId: string): Promise<JobView | null> {
+/**
+ * 读一个工单。`viewerId` 决定看得到多少 —— 工单本身（标题、需求、预算、状态）对登录用户
+ * 公开，因为大厅要能浏览；但**交付内容和结算明细只对当事双方可见**。
+ *
+ * 不做这层过滤的话，任何人拿到工单 id 就能看到别人的交付物，以及成交金额、实际成本、
+ * 平台利润 —— 最后两个连当事人都不该随便看到的东西。
+ */
+export async function get(jobId: string, viewerId: string): Promise<JobView | null> {
     const pool = await getPool();
     const [rows] = await pool.execute<JobRow[]>(`SELECT ${JOB_COLUMNS} FROM jobs WHERE id = ?`, [jobId]);
     if (!rows.length) return null;
-    return (await attachQuotes(rows))[0];
+    return redactForViewer((await attachQuotes(rows))[0], viewerId);
 }
 
 export async function create(userId: string, input: { title: string; brief: string; budget: number }): Promise<string> {

@@ -165,7 +165,8 @@ export default function WalletPage() {
                     {t("wallet.exchangeHint")}
                 </Typography.Paragraph>
                 <div className="flex flex-wrap items-center gap-3">
-                    <InputNumber min={1} max={Number(available) || 1} value={exchangeCredits} onChange={setExchangeCredits} className="w-48" addonAfter={t("wallet.creditsUnit")} />
+                    {/* 上限就是可用积分本身。`|| 1` 那种写法在余额为 0 时会让上限变成 1，看着像还能兑换 1 积分 */}
+                    <InputNumber min={1} max={Number(available)} value={exchangeCredits} onChange={setExchangeCredits} className="w-48" addonAfter={t("wallet.creditsUnit")} />
                     <Button type="primary" loading={exchanging} disabled={!user || !exchangeCredits || exchangeCredits > Number(available)} onClick={() => void exchange()}>
                         {t("wallet.exchangeConfirm")}
                     </Button>
