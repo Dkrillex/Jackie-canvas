@@ -1,15 +1,16 @@
-import { Alert, App, Button, Modal, Result, Spin, Table, Tabs, Tag, Typography } from "antd";
-import { CheckCircle2, RefreshCw, Wallet } from "lucide-react";
+import { Alert, App, Button, InputNumber, Modal, Result, Spin, Table, Tabs, Tag, Typography } from "antd";
+import { ArrowRightLeft, CheckCircle2, RefreshCw, Wallet } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useRequireLogin } from "@/hooks/use-require-login";
-import { listRechargeOrders, listWalletLedger, type LedgerEntry, type RechargeRecord } from "@/jc/services/wallet";
+import { createExchange, listExchanges, listRechargeOrders, listWalletLedger, type CreditExchange, type LedgerEntry, type RechargeRecord } from "@/jc/services/wallet";
 import { useUserStore } from "@/stores/use-user-store";
 import { useWalletStore } from "@/jc/stores/use-wallet-store";
 import { useRecharge } from "./use-recharge";
 
 const statusColor: Record<string, string> = { created: "gold", paid: "success", closed: "default" };
+const exchangeStatusColor: Record<string, string> = { pending: "processing", done: "success", failed: "error" };
 
 export default function WalletPage() {
     const { t } = useTranslation();
@@ -20,7 +21,10 @@ export default function WalletPage() {
     const { balance, frozen, available, loading, error, refresh, clear } = useWalletStore();
     const [ledger, setLedger] = useState<LedgerEntry[]>([]);
     const [records, setRecords] = useState<RechargeRecord[]>([]);
+    const [exchanges, setExchanges] = useState<CreditExchange[]>([]);
     const [selected, setSelected] = useState("");
+    const [exchangeCredits, setExchangeCredits] = useState<number | null>(10);
+    const [exchanging, setExchanging] = useState(false);
 
     const reload = useCallback(async () => {
         await refresh();
@@ -31,6 +35,9 @@ export default function WalletPage() {
                 .catch(() => undefined),
             listRechargeOrders()
                 .then((data) => setRecords(data.orders))
+                .catch(() => undefined),
+            listExchanges()
+                .then((data) => setExchanges(data.exchanges))
                 .catch(() => undefined),
         ]);
     }, [refresh]);
@@ -57,6 +64,21 @@ export default function WalletPage() {
         } catch (err) {
             cashier?.close();
             message.error(err instanceof Error ? err.message : t("wallet.createFailed"));
+        }
+    };
+
+    const exchange = async () => {
+        if (!requireLogin()) return;
+        if (!exchangeCredits || exchangeCredits <= 0) return;
+        setExchanging(true);
+        try {
+            await createExchange(exchangeCredits);
+            await reload();
+            message.success(t("wallet.exchangeSubmitted"));
+        } catch (err) {
+            message.error(err instanceof Error ? err.message : t("wallet.exchangeFailed"));
+        } finally {
+            setExchanging(false);
         }
     };
 
@@ -134,6 +156,23 @@ export default function WalletPage() {
                 </Button>
             </div>
 
+            <div className="space-y-3 rounded-xl border border-stone-200 px-4 py-4 dark:border-stone-800">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                    <ArrowRightLeft className="size-4" />
+                    {t("wallet.exchangeTitle")}
+                </div>
+                <Typography.Paragraph type="secondary" className="!mb-0 text-sm">
+                    {t("wallet.exchangeHint")}
+                </Typography.Paragraph>
+                <div className="flex flex-wrap items-center gap-3">
+                    <InputNumber min={1} max={Number(available) || 1} value={exchangeCredits} onChange={setExchangeCredits} className="w-48" addonAfter={t("wallet.creditsUnit")} />
+                    <Button type="primary" loading={exchanging} disabled={!user || !exchangeCredits || exchangeCredits > Number(available)} onClick={() => void exchange()}>
+                        {t("wallet.exchangeConfirm")}
+                    </Button>
+                    <span className="text-xs text-stone-500">{t("wallet.exchangeAvailable", { available })}</span>
+                </div>
+            </div>
+
             <Tabs
                 items={[
                     {
@@ -168,6 +207,23 @@ export default function WalletPage() {
                                     { title: t("wallet.payAmount"), dataIndex: "amount", width: 120, align: "right", render: (amount: string) => <span className="tabular-nums">¥{amount}</span> },
                                     { title: t("wallet.willCredit"), dataIndex: "credits", width: 120, align: "right", render: (value: string) => <span className="tabular-nums">{value}</span> },
                                     { title: t("wallet.status"), dataIndex: "status", width: 110, render: (status: string) => <Tag color={statusColor[status] || "default"}>{t(`wallet.status_${status}`, status)}</Tag> },
+                                ]}
+                            />
+                        ),
+                    },
+                    {
+                        key: "exchanges",
+                        label: t("wallet.tabExchanges"),
+                        children: (
+                            <Table<CreditExchange>
+                                rowKey="id"
+                                dataSource={exchanges}
+                                pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                                columns={[
+                                    { title: t("wallet.time"), dataIndex: "createdAt", width: 180 },
+                                    { title: t("wallet.exchangeCredits"), dataIndex: "credits", width: 120, align: "right", render: (value: string) => <span className="tabular-nums">{value}</span> },
+                                    { title: t("wallet.status"), dataIndex: "status", width: 130, render: (status: string) => <Tag color={exchangeStatusColor[status] || "default"}>{t(`wallet.exchange_${status}`, status)}</Tag> },
+                                    { title: t("wallet.gwRef"), dataIndex: "gwRef", render: (value: string | null, row: CreditExchange) => value || row.note || "—" },
                                 ]}
                             />
                         ),

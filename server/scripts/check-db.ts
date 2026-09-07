@@ -11,7 +11,7 @@ console.log(`连接 ${settings.mysqlUser}@${settings.mysqlHost}:${settings.mysql
 const pool = await getPool(); // getPool 内部会建表，跑通即说明建表语句也没问题
 console.log("✓ 连接成功，表已就绪");
 
-for (const table of ["recharge_orders", "user_wallets", "wallet_ledger", "jobs", "job_quotes"]) {
+for (const table of ["recharge_orders", "user_wallets", "wallet_ledger", "jobs", "job_quotes", "credit_exchanges"]) {
     const [rows] = await pool.query<any[]>(`SELECT COUNT(*) AS n FROM ${table}`);
     console.log(`  ${table}: ${rows[0].n} 行`);
 }

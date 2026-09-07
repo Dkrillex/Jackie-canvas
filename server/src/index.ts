@@ -5,8 +5,10 @@ import { cors } from "hono/cors";
 import { Unauthorized } from "./auth.js";
 import { alipayConfigured, mysqlConfigured, settings } from "./config.js";
 import { DatabaseNotConfigured } from "./db.js";
+import { ExchangeError } from "./exchange.js";
 import { JobError } from "./jobs.js";
 import { startReconcileLoop } from "./reconcile.js";
+import { exchangeRoutes } from "./routes/exchange.js";
 import { jobRoutes } from "./routes/jobs.js";
 import { payRoutes } from "./routes/pay.js";
 import { walletRoutes } from "./routes/wallet.js";
@@ -28,6 +30,7 @@ app.onError((error, c) => {
     if (error instanceof DatabaseNotConfigured) return c.json({ message: error.message }, 503);
     // 工单的业务拒绝（状态不对、余额不够、不是你的单）是预期内的，原样把原因回给用户
     if (error instanceof JobError) return c.json({ message: error.message }, error.status as 400);
+    if (error instanceof ExchangeError) return c.json({ message: error.message }, error.status as 400);
     console.error(`[pay] 未处理的错误 ${c.req.method} ${c.req.path}：${error.stack || error.message}`);
     return c.json({ message: error.message || "服务异常" }, 500);
 });
@@ -36,6 +39,7 @@ app.get("/health", (c) => c.json({ ok: true, alipay: alipayConfigured(), mysql: 
 app.route("/api/pay", payRoutes);
 app.route("/api/wallet", walletRoutes);
 app.route("/api/jobs", jobRoutes);
+app.route("/api/exchange", exchangeRoutes);
 
 startReconcileLoop();
 

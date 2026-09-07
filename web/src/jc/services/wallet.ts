@@ -95,3 +95,28 @@ export async function getWallet() {
 export async function listWalletLedger(limit = 50) {
     return payRequest<{ entries: LedgerEntry[] }>(`/api/wallet/ledger?limit=${limit}`);
 }
+
+export type CreditExchange = {
+    id: string;
+    credits: string;
+    /** pending=已扣积分待发放，done=额度已发放，failed=发放失败且积分已退回 */
+    status: "pending" | "done" | "failed";
+    gwRef: string | null;
+    note: string;
+    createdAt: string;
+    settledAt: string | null;
+};
+
+/**
+ * 发起一笔积分兑换 API 额度。
+ *
+ * 服务端此刻只做到「扣积分 + 落一条 pending」，真正发额度的网关接口还没接。
+ * 所以前端拿到 pending 是正常结果，不要显示成失败。
+ */
+export async function createExchange(credits: number) {
+    return payRequest<{ exchange: CreditExchange }>("/api/exchange", { method: "POST", body: JSON.stringify({ credits }) });
+}
+
+export async function listExchanges(limit = 20) {
+    return payRequest<{ exchanges: CreditExchange[] }>(`/api/exchange?limit=${limit}`);
+}

@@ -15,3 +15,5 @@ web/public/plugins
 plugins/canvas/*/dist
 plugins/canvas/*/node_modules
 web/public/plugins
+# 本机开发账号与口令，含明文密码，不进仓库
+jc-account-info.md
