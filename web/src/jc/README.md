@@ -17,9 +17,9 @@ Git 冲突是按文件按 hunk 算的：只有你改、上游不改的文件，�
 | --------------------------------------------- | ------------------------------------------------------------ |
 | `src/router.tsx`                              | `...jcRoutes` —— 路由全在 `jc/routes.tsx`                    |
 | `src/i18n/index.ts`                           | `mergeJcLocale(zhCN, jcZhCN)` —— 文案全在 `jc/i18n/`         |
-| `src/components/layout/app-top-nav.tsx`       | 导航项与登录可见性来自 `jc/nav.ts`                           |
+| `src/components/layout/app-top-nav.tsx`       | 导航项来自 `jc/nav.ts`，顶栏视觉是 `jc-top-nav` + `<BrandName />` |
 | `src/components/layout/mobile-nav-drawer.tsx` | 同上                                                         |
-| `src/pages/home/index.tsx`                    | 挂 `<FlowBackdrop />`，并移除上游的 `<AsciiRing />`   |
+| `src/pages/home/index.tsx`                    | 挂 `<FlowBackdrop />` + `home-page.css`（胶囊按钮 / 玻璃展示卡），并移除上游的 `<AsciiRing />` |
 
 仓库根部的 `server/`（充值与接单服务）、`vite.config.ts` 的 `/pay-api` 代理、
 `middleware.js`、`vercel.json`、`nginx.conf` 也属于二开范围，但它们要么是新增文件、
@@ -43,8 +43,10 @@ jc/
 ## 和上游 home 装饰的关系
 
 上游的 `components/home/ascii-ring.tsx`（字符莫比乌斯环）本分支不用了，首页背景改成
-`FlowBackdrop`。上游那个文件**原样留着没动**，只是首页不再引用它 —— 上游以后怎么改都
-不会冲突。曾经做过一版流动的字符环，需要的话从 `23cbb46` 取回。
+和 hinnflow.com 同一套 Paper `MeshGradient`（`FlowBackdrop`），配色是白银而不是电光蓝。
+首页与顶栏正文是 Source Serif 4，产品名 Jackie Canvas 仍是 Instrument Serif 斜体。
+上游那个文件**原样留着没动**，只是首页不再引用它。曾经做过一版流动的字符环，需要的话从
+`23cbb46` 取回。
 
 ## 和上游 jobs 的关系
 

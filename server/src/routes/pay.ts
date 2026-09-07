@@ -12,7 +12,7 @@ import { resolveUser } from "../auth.js";
 import { alipayConfigured, mysqlConfigured, settings } from "../config.js";
 import { DatabaseNotConfigured } from "../db.js";
 import * as orders from "../orders.js";
-import { findPackage, packages } from "../packages.js";
+import { findPackage, MAX_RECHARGE_YUAN, packages } from "../packages.js";
 import { settleFromQuery } from "../reconcile.js";
 
 export const payRoutes = new Hono();
@@ -57,6 +57,9 @@ payRoutes.post("/orders", async (c) => {
     const body = await c.req.json<{ packageId?: string }>().catch(() => ({}) as { packageId?: string });
     const pkg = findPackage(String(body.packageId || ""));
     if (!pkg) return c.json({ message: "充值档位不存在" }, 400);
+    if (Number(pkg.amount) > MAX_RECHARGE_YUAN) {
+        return c.json({ message: `单笔充值最多 ${MAX_RECHARGE_YUAN} 元，更大额度请联系商务` }, 400);
+    }
 
     const outTradeNo = orders.newOrderNo();
     // 先落库再去支付宝：反过来的话，支付宝那边单建好了、我们这边没记上，

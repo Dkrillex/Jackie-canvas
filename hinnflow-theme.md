@@ -56,8 +56,15 @@ Jackie Canvas 是 Hinnflow 的子产品，视觉上要认得出是一家。这�
 
 ### 背景流动
 
-首页背景是 `position: fixed` 的整屏舞台 + 两层色团（第二层 `opacity: .5`），
-外加一层兜底渐变。兜底那层能直接读出配色意图：
+首页背景不是 CSS 色团，是 Paper `@paper-design/shaders-react` 的双层 `MeshGradient`
+（`data-paper-shader`），外加一层 CSS 兜底。实测参数：
+
+```tsx
+<MeshGradient className="shader-layer-a" colors={["#001447", "#012293", "#0544E9", "#001447", "#0544E9", "#0295F4"]} distortion={1.6} speed={0.3} maxPixelCount={1_440_000} />
+<MeshGradient className="shader-layer-b" colors={["#001447", "#05AFFE", "#0295F4", "#001447"]} distortion={1.8} speed={0.2} maxPixelCount={1_440_000} />
+```
+
+第二层 `opacity: .5`。无 WebGL 时露出兜底：
 
 ```css
 .shader-fallback {
@@ -142,14 +149,16 @@ Jackie Canvas 是 Hinnflow 的子产品，视觉上要认得出是一家。这�
 | 项 | 母站 | 本项目 |
 | --- | --- | --- |
 | Logo | 页头品牌标 | 直接用同一个（`web/public/logo.svg`，`currentColor` 跟随主题） |
-| 背景流动 | 深海军蓝 + 蓝青色团 | `web/src/jc/styles/flow-backdrop.css`，白银色调，浅色深色两套 |
+| 背景流动 | 双层 MeshGradient（电光蓝） | 同一套 shader，色表换成白银 / 铂金（`web/src/jc/components/flow-backdrop.tsx`） |
+| 顶栏 | 透明 → 滚动后黑玻璃；胶囊导航；希流 + 斜体 Hinnflow | `jc-top-nav`：白银薄玻璃、胶囊导航、整段 Jackie Canvas 用 Instrument Serif 斜体 |
+| Hero 按钮 | 全圆胶囊，实心 / 幽灵一对 | `jc-hero-actions`：`999px` 胶囊，浅色墨色实心 + 透明幽灵 |
+| 展示区 | 发丝分割、大写 eyebrow、宋体点睛、20px 玻璃卡 | `jc-showcase`：半透明底 + blur，丝绸从缝里透出 |
+| 正文字体 | 无衬线 + 衬线大标题 | 首页/顶栏用 Source Serif 4；Jackie Canvas 仍是 Instrument Serif |
 
 还没动、可以继续对齐的：
 
-- **胶囊圆角**：本项目按钮还是 Ant Design 默认圆角，母站是 `999px`
-- **玻璃拟态**：本项目用实色卡片 + `border-stone-200`，母站是 5% 白 + 9% 描边 + `backdrop-filter`
-- **衬线大标题**：本项目 Hero 用无衬线，母站用 Instrument Serif / Noto Serif SC
 - **强调色**：本项目沿用 stone 灰阶，没有引入 `#0544e9`
+- **其它内页**：提示词库、钱包、接单中心仍是上游卡片，未做玻璃拟态
 
 > 注意 AGENTS.md 里有一整节画布 UI 规范（不硬编码黑白、按钮默认扁平无底色、复用现有工具栏
 > 风格等）。往画布里引入母站风格前先对一下，别把那边的克制感冲掉。

@@ -3,9 +3,13 @@ export default {
     navigation: {
         wallet: "Credits",
     },
+    home: {
+        showcaseEyebrow: "Prompt Library",
+        showcaseTitle: "Keep every <serif>great result</serif>",
+    },
     wallet: {
         title: "Credits",
-        subtitle: "Top up with Alipay. Credits fund image and video generation (1 credit = $1).",
+        subtitle: "Top up with Alipay. Credits fund image and video generation (1 credit = $1). Online top-ups are capped at ¥200.",
         refresh: "Refresh",
         loginFirst: "Sign in to view your balance and top up.",
         unavailable_alipay: "Top-up unavailable: the server has no Alipay merchant keys yet (the database is fine). Jobs and credit conversion still work.",
@@ -17,6 +21,9 @@ export default {
         pickPackage: "Choose an amount",
         packageCredits: "{{credits}} credits",
         bonus: "+{{bonus}} bonus",
+        enterpriseTitle: "Larger amount",
+        enterpriseHint: "Online top-ups stop at ¥200. Contact sales for more.",
+        enterpriseContact: "Contact sales",
         pay: "Pay with Alipay",
         createFailed: "Could not create the order",
         payingTitle: "Waiting for payment",

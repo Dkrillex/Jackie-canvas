@@ -1,0 +1,89 @@
+@import "@fontsource/instrument-serif/400-italic.css";
+@import "./type.css";
+
+/*
+ * 顶栏对齐 hinnflow.com 的 .site-header / .main-nav / .brand：
+ * 薄玻璃底让丝绸背景透出来，导航做成胶囊，品牌拉丁名用衬线斜体。
+ * 母站是深色底上的白玻璃；产品是白银，透明度与描边按浅色/深色各写一套。
+ */
+
+.jc-top-nav {
+    height: 64px;
+    background: rgba(255, 255, 255, 0.28);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.dark .jc-top-nav {
+    background: rgba(10, 12, 16, 0.42);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.jc-top-nav .jc-brand-mark {
+    display: block;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    background: currentColor;
+    mask: url("/logo.svg") center / contain no-repeat;
+    -webkit-mask: url("/logo.svg") center / contain no-repeat;
+}
+
+.jc-top-nav .jc-brand-name {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.jc-top-nav nav {
+    height: 64px;
+    gap: 4px;
+}
+
+.jc-top-nav nav a {
+    height: auto;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 14.5px;
+    font-weight: 500;
+    transition:
+        color 0.2s,
+        background 0.2s;
+}
+
+.jc-top-nav nav a::after {
+    display: none;
+}
+
+.jc-top-nav nav a:hover {
+    color: #1c1917;
+    background: rgba(15, 23, 42, 0.06);
+}
+
+.jc-top-nav nav a.jc-nav-active {
+    color: #1c1917;
+    background: rgba(15, 23, 42, 0.08);
+}
+
+.dark .jc-top-nav nav a:hover,
+.dark .jc-top-nav nav a.jc-nav-active {
+    color: #fafaf9;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.jc-top-nav .jc-nav-menu {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.dark .jc-top-nav .jc-nav-menu {
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.jc-top-nav .size-7.rounded-md {
+    border-radius: 999px;
+}

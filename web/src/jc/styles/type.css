@@ -1,0 +1,24 @@
+@import "@fontsource/instrument-serif/400-italic.css";
+@import "@fontsource/source-serif-4/latin-400.css";
+@import "@fontsource/source-serif-4/latin-600.css";
+@import "@fontsource/source-serif-4/latin-700.css";
+
+/*
+ * 产品名 Jackie Canvas 用 Instrument Serif 斜体。
+ * 首页正文、展示区、顶栏导航用 Source Serif 4（Anthropic 那套衬线的公开替代）。
+ * 中文走系统宋体，不把整站/画布改成衬线。
+ */
+.jc-home,
+.jc-home .ant-btn,
+.jc-top-nav {
+    font-family: "Source Serif 4", "Songti SC", "Noto Serif SC", Georgia, serif;
+}
+
+.jc-wordmark {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    -webkit-text-stroke: 0.032em currentColor;
+    paint-order: stroke fill;
+}

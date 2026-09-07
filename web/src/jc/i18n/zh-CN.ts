@@ -6,9 +6,13 @@ export default {
     navigation: {
         wallet: "积分充值",
     },
+    home: {
+        showcaseEyebrow: "Prompt Library",
+        showcaseTitle: "沉淀每一次 <serif>好结果</serif>",
+    },
     wallet: {
         title: "积分充值",
-        subtitle: "支付宝付款，到账后积分可用于生图与视频生成（1 积分 = 1 美元）。",
+        subtitle: "支付宝付款，到账后积分可用于生图与视频生成（1 积分 = 1 美元）。在线单笔最多 200 元。",
         refresh: "刷新",
         loginFirst: "登录后才能查看余额和充值。",
         unavailable_alipay: "充值暂不可用：服务端还没配置支付宝商户密钥（数据库正常）。接单中心与积分兑换不受影响。",
@@ -20,6 +24,9 @@ export default {
         pickPackage: "选择充值档位",
         packageCredits: "到账 {{credits}} 积分",
         bonus: "赠 {{bonus}}",
+        enterpriseTitle: "更大额度",
+        enterpriseHint: "单笔最多 200 元，更大额度请联系商务。",
+        enterpriseContact: "联系商务",
         pay: "去支付宝付款",
         createFailed: "下单失败",
         payingTitle: "等待付款",

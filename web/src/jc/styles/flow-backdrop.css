@@ -1,125 +1,41 @@
 /*
- * 首页流动背景。结构参考 hinnflow.com：一个铺满视口的舞台 + 多层缓慢移动的色团，
- * 各层反向旋转、周期互不整除，交叠关系永不重复 —— 这才是「流」，单层平移只会像在滑。
- *
- * 母站是深海军蓝底配电光蓝/青，这里改成**白银**：中性偏冷的灰阶铺在白底上。
- *
- * 银色在白底上对比度天生很低，只堆灰色团出来是一坨雾。让它读成金属靠两件事：
- *   1. 色团带一点冷偏（蓝紫向），纯中性灰会显得脏；
- *   2. 一道窄而亮的高光带斜着扫过（.jc-flow-sheen）—— 这是金属感的来源，
- *      去掉它就只剩灰雾了。
- *
- * 只动 transform 和 opacity：这两个由合成器处理，不触发重排重绘。
- * 别去动 background-position 或 filter，那会让整块视口每帧重新光栅化。
+ * 首页流动背景。舞台结构对齐 hinnflow.com：
+ *   .shader-stage 固定铺满 → .shader-layer-a 不透明 + .shader-layer-b opacity .5
+ * 真正的丝绸体由 Paper MeshGradient 画；这张表只负责叠层和 WebGL 兜底。
  */
 
-.jc-flow-backdrop {
+.jc-flow-backdrop,
+.jc-flow-fallback {
+    pointer-events: none;
     position: fixed;
     inset: 0;
     z-index: 0;
     overflow: hidden;
-    pointer-events: none;
 }
 
-/*
- * 层比视口大一圈：各层都在旋转，不留余量会把空角转进画面。
- * 1.8 倍视口、最大旋转 8°、最大平移 3%，算下来仍能盖住整屏。
- *
- * 这里刻意不写 will-change：transform 动画浏览器本来就会自动提升为合成层，
- * 而这几层都是好几倍视口大小，提前常驻会白占一大块显存。
- */
-.jc-flow-layer {
-    position: absolute;
-    inset: -40%;
-}
-
-/* 银的「体」：冷灰色团，浅色主题下压得很淡，让点阵网格仍能透出来 */
-.jc-flow-layer-a {
-    background:
-        radial-gradient(38% 34% at 22% 30%, rgba(148, 163, 184, 0.28), transparent 68%), radial-gradient(34% 30% at 78% 24%, rgba(203, 213, 225, 0.34), transparent 66%), radial-gradient(40% 36% at 66% 78%, rgba(100, 116, 139, 0.2), transparent 70%);
-    animation: jc-flow-drift-a 78s ease-in-out infinite;
-}
-
-/* 银的「亮部」：更浅的一层，反向转、周期不同 */
+.jc-flow-layer-a,
 .jc-flow-layer-b {
-    opacity: 0.6;
-    background: radial-gradient(32% 30% at 68% 40%, rgba(226, 232, 240, 0.4), transparent 66%), radial-gradient(36% 32% at 30% 72%, rgba(148, 163, 184, 0.22), transparent 68%);
-    animation: jc-flow-drift-b 104s ease-in-out infinite reverse;
-}
-
-/*
- * 高光带。一条很宽很软的白色斜带缓慢扫过整屏 —— 金属感就来自这里。
- * 用 transform 平移而不是动 background-position：后者每帧都要重画整个渐变。
- */
-.jc-flow-sheen {
     position: absolute;
-    inset: -70%;
-    background: linear-gradient(104deg, transparent 38%, rgba(255, 255, 255, 0.72) 50%, transparent 62%);
-    animation: jc-flow-sheen 46s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    inset: 0;
 }
 
-.dark .jc-flow-layer-a {
-    background: radial-gradient(38% 34% at 22% 30%, rgba(148, 163, 184, 0.2), transparent 68%), radial-gradient(34% 30% at 78% 24%, rgba(226, 232, 240, 0.16), transparent 66%), radial-gradient(40% 36% at 66% 78%, rgba(71, 85, 105, 0.28), transparent 70%);
+.jc-flow-layer-b {
+    opacity: 0.5;
 }
 
-.dark .jc-flow-layer-b {
-    opacity: 0.45;
-    background: radial-gradient(32% 30% at 68% 40%, rgba(226, 232, 240, 0.18), transparent 66%), radial-gradient(36% 32% at 30% 72%, rgba(148, 163, 184, 0.14), transparent 68%);
+/* 母站 .shader-fallback 的三团结构，色相从电光蓝换成冷银 */
+.jc-flow-fallback {
+    background:
+        radial-gradient(60% 50% at 18% 28%, rgba(139, 148, 163, 0.45), transparent 70%),
+        radial-gradient(50% 45% at 82% 22%, rgba(255, 255, 255, 0.7), transparent 70%),
+        radial-gradient(55% 50% at 68% 82%, rgba(197, 203, 212, 0.65), transparent 72%),
+        #f4f5f7;
 }
 
-/* 深色底上高光要收得多，不然像一道白光扫过屏幕 */
-.dark .jc-flow-sheen {
-    background: linear-gradient(104deg, transparent 38%, rgba(255, 255, 255, 0.1) 50%, transparent 62%);
-}
-
-@keyframes jc-flow-drift-a {
-    0%,
-    100% {
-        transform: rotate(0deg) scale(1) translate3d(0, 0, 0);
-    }
-    33% {
-        transform: rotate(6deg) scale(1.12) translate3d(2%, -3%, 0);
-    }
-    66% {
-        transform: rotate(-5deg) scale(1.06) translate3d(-3%, 2%, 0);
-    }
-}
-
-@keyframes jc-flow-drift-b {
-    0%,
-    100% {
-        transform: rotate(0deg) scale(1.05) translate3d(0, 0, 0);
-    }
-    40% {
-        transform: rotate(-8deg) scale(1) translate3d(-3%, 3%, 0);
-    }
-    75% {
-        transform: rotate(5deg) scale(1.14) translate3d(3%, 1%, 0);
-    }
-}
-
-/*
- * 从左上扫到右下再回来。走完一趟停一会儿（缓动吃掉两端），不至于一直在闪。
- *
- * 位移上限受覆盖条件约束：inset -70% 意味着元素宽 2.4 倍视口、左边缘在 -0.7 倍处，
- * 平移量 t（相对元素自身宽度）要同时满足左边缘 ≤ 0、右边缘 ≥ 1 倍视口，
- * 即 |t| ≤ 0.7 / 2.4 ≈ 29%。超了两端就会露出没盖住的区域。
- */
-@keyframes jc-flow-sheen {
-    0%,
-    100% {
-        transform: translate3d(-28%, -15%, 0);
-    }
-    50% {
-        transform: translate3d(28%, 15%, 0);
-    }
-}
-
-/* 系统要求减少动态效果时全部停在初始姿态，颜色还在，只是不动 */
-@media (prefers-reduced-motion: reduce) {
-    .jc-flow-layer-a,
-    .jc-flow-layer-b,
-    .jc-flow-sheen {
-        animation: none;
-    }
+.dark .jc-flow-fallback {
+    background:
+        radial-gradient(60% 50% at 18% 28%, rgba(44, 49, 58, 0.7), transparent 70%),
+        radial-gradient(50% 45% at 82% 22%, rgba(212, 216, 224, 0.28), transparent 70%),
+        radial-gradient(55% 50% at 68% 82%, rgba(16, 18, 22, 0.85), transparent 72%),
+        #101216;
 }

@@ -8,7 +8,13 @@
  * 档位里同时写死了「多少钱换多少积分」，因此运行时不需要任何汇率换算 ——
  * 这张表本身就是价目表。调价直接改这里（或用 RECHARGE_PACKAGES 覆盖），
  * 已经创建的订单不受影响：订单落库时把 amount 和 credits 都抄了一份。
+ *
+ * 在线支付宝单笔上限 200 元。RECHARGE_PACKAGES 里更高的档会被丢掉；
+ * 更大额度走商务，不要在这里加档。
  */
+
+/** 在线充值单笔上限（元）。超过的档位既不展示也不能下单。 */
+export const MAX_RECHARGE_YUAN = 200;
 
 export type RechargePackage = {
     id: string;
@@ -21,12 +27,9 @@ export type RechargePackage = {
     subject: string;
 };
 
-// ⚠ 下面这四档是**占位价格**，上线前必须按真实定价改掉（或用 RECHARGE_PACKAGES 覆盖）。
 const DEFAULT_PACKAGES: RechargePackage[] = [
     { id: "starter", amount: "50.00", credits: "7.00", bonus: "0.00", subject: "Jackie Canvas 积分充值 50 元" },
     { id: "basic", amount: "200.00", credits: "29.00", bonus: "1.00", subject: "Jackie Canvas 积分充值 200 元" },
-    { id: "pro", amount: "500.00", credits: "75.00", bonus: "5.00", subject: "Jackie Canvas 积分充值 500 元" },
-    { id: "max", amount: "1000.00", credits: "155.00", bonus: "15.00", subject: "Jackie Canvas 积分充值 1000 元" },
 ];
 
 function parsePackages(): RechargePackage[] {
@@ -36,12 +39,18 @@ function parsePackages(): RechargePackage[] {
         const parsed = JSON.parse(raw) as RechargePackage[];
         if (!Array.isArray(parsed) || !parsed.length) throw new Error("空列表");
         // 金额和积分统一成两位小数字符串，免得覆盖配置里写成数字后一路带着浮点误差
-        return parsed.map((item) => ({
+        const normalized = parsed.map((item) => ({
             ...item,
             amount: Number(item.amount).toFixed(2),
             credits: Number(item.credits).toFixed(2),
             bonus: Number(item.bonus || 0).toFixed(2),
         }));
+        const capped = normalized.filter((item) => Number(item.amount) <= MAX_RECHARGE_YUAN);
+        if (capped.length !== normalized.length) {
+            console.warn(`[pay] RECHARGE_PACKAGES 里有超过 ${MAX_RECHARGE_YUAN} 元的档，已丢弃`);
+        }
+        if (!capped.length) throw new Error(`没有不超过 ${MAX_RECHARGE_YUAN} 元的档`);
+        return capped;
     } catch (error) {
         // 配错了就退回默认档位并且说清楚，不要静默用一份谁也不知道的价目表
         console.error(`[pay] RECHARGE_PACKAGES 解析失败，改用内置档位：${(error as Error).message}`);

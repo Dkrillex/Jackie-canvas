@@ -7,6 +7,7 @@ import { useRequireLogin } from "@/hooks/use-require-login";
 import { createExchange, listExchanges, listRechargeOrders, listWalletLedger, type CreditExchange, type LedgerEntry, type RechargeRecord } from "@/jc/services/wallet";
 import { useUserStore } from "@/stores/use-user-store";
 import { useWalletStore } from "@/jc/stores/use-wallet-store";
+import { BUSINESS_MAIL, MAX_RECHARGE_YUAN } from "@/jc/config";
 import { useRecharge } from "./use-recharge";
 
 const statusColor: Record<string, string> = { created: "gold", paid: "success", closed: "default" };
@@ -48,10 +49,13 @@ export default function WalletPage() {
     }, [clear, reload, user]);
 
     const { packages, enabled, missing, loadError, order, creating, paid, pollError, start, reset } = useRecharge(reload);
+    const visiblePackages = packages.filter((item) => Number(item.amount) <= MAX_RECHARGE_YUAN);
 
     useEffect(() => {
-        if (packages.length && !selected) setSelected(packages[0].id);
-    }, [packages, selected]);
+        if (visiblePackages.length && !visiblePackages.some((item) => item.id === selected)) {
+            setSelected(visiblePackages[0].id);
+        }
+    }, [visiblePackages, selected]);
 
     const pay = async () => {
         if (!requireLogin()) return;
@@ -83,6 +87,7 @@ export default function WalletPage() {
     };
 
     return (
+        <div className="h-full overflow-y-auto">
         <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div>
@@ -130,8 +135,8 @@ export default function WalletPage() {
 
             <div className="space-y-3">
                 <div className="text-sm font-semibold">{t("wallet.pickPackage")}</div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    {packages.map((item) => {
+                <div className="grid gap-3 sm:grid-cols-3">
+                    {visiblePackages.map((item) => {
                         const active = item.id === selected;
                         return (
                             <button
@@ -150,6 +155,14 @@ export default function WalletPage() {
                             </button>
                         );
                     })}
+                    <a
+                        href={BUSINESS_MAIL}
+                        className="rounded-xl border border-dashed border-stone-300 px-4 py-4 text-left no-underline transition hover:border-stone-500 dark:border-stone-700 dark:hover:border-stone-500"
+                    >
+                        <div className="text-2xl font-semibold">{t("wallet.enterpriseTitle")}</div>
+                        <div className="mt-1 text-sm text-stone-600 dark:text-stone-300">{t("wallet.enterpriseHint")}</div>
+                        <div className="mt-2 text-sm font-medium text-stone-900 dark:text-stone-100">{t("wallet.enterpriseContact")}</div>
+                    </a>
                 </div>
                 <Button type="primary" size="large" loading={creating} disabled={!enabled || !selected} onClick={() => void pay()}>
                     {t("wallet.pay")}
@@ -273,6 +286,7 @@ export default function WalletPage() {
                     </div>
                 )}
             </Modal>
+        </div>
         </div>
     );
 }
