@@ -28,8 +28,14 @@ jobRoutes.get("/", async (c) => {
 
 jobRoutes.post("/", async (c) => {
     const user = await resolveUser(c.req.header("Authorization"));
-    const input = await body<{ title?: string; brief?: string; budget?: number }>(c);
-    const id = await jobs.create(user.userId, { title: String(input.title || ""), brief: String(input.brief || ""), budget: Number(input.budget) });
+    const input = await body<{ title?: string; brief?: string; budget?: number; workDays?: number; jobDays?: number }>(c);
+    const id = await jobs.create(user.userId, {
+        title: String(input.title || ""),
+        brief: String(input.brief || ""),
+        budget: Number(input.budget),
+        workDays: Number(input.workDays),
+        jobDays: Number(input.jobDays),
+    });
     return c.json({ id });
 });
 

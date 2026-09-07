@@ -6,6 +6,7 @@ import { Unauthorized } from "./auth.js";
 import { alipayConfigured, mysqlConfigured, settings } from "./config.js";
 import { DatabaseNotConfigured } from "./db.js";
 import { ExchangeError } from "./exchange.js";
+import { startJobExpiryLoop } from "./expire.js";
 import { JobError } from "./jobs.js";
 import { startReconcileLoop } from "./reconcile.js";
 import { exchangeRoutes } from "./routes/exchange.js";
@@ -42,6 +43,7 @@ app.route("/api/jobs", jobRoutes);
 app.route("/api/exchange", exchangeRoutes);
 
 startReconcileLoop();
+startJobExpiryLoop();
 
 serve({ fetch: app.fetch, hostname: settings.host, port: settings.port }, (info) => {
     console.log(`[pay] 充值服务已启动 http://${settings.host}:${info.port}`);

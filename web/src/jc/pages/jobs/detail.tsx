@@ -12,6 +12,7 @@ import * as api from "@/jc/services/jobs";
 import { useUserStore } from "@/stores/use-user-store";
 import { useWalletStore } from "@/jc/stores/use-wallet-store";
 import { JobBriefView } from "./brief-view";
+import { JobDeadline } from "./job-deadline";
 
 const statusColor: Record<JobStatus, string> = {
     open: "blue",
@@ -20,6 +21,7 @@ const statusColor: Record<JobStatus, string> = {
     submitted: "gold",
     completed: "success",
     cancelled: "default",
+    expired: "default",
 };
 
 export default function JobDetailPage() {
@@ -130,6 +132,7 @@ export default function JobDetailPage() {
                     </Typography.Title>
                     <Space size={4}>
                         <Tag color={statusColor[job.status]}>{t(`jobs.status.${job.status}`)}</Tag>
+                        <JobDeadline job={job} />
                         {isClient ? <Tag>{t("jobs.youArePoster")}</Tag> : null}
                         {isCreator ? <Tag>{t("jobs.youAreTaker")}</Tag> : null}
                     </Space>
@@ -198,7 +201,12 @@ export default function JobDetailPage() {
                 <Descriptions.Item label={t("jobs.fieldBrief")}>
                     <JobBriefView markdown={job.brief} />
                 </Descriptions.Item>
+                <Descriptions.Item label={t("jobs.fieldWorkDays")}>{t("jobs.workDaysValue", { n: job.workDays })}</Descriptions.Item>
+                <Descriptions.Item label={t("jobs.fieldJobDays")}>{job.jobDeadlineAt}</Descriptions.Item>
+                {job.workDeadlineAt ? <Descriptions.Item label={t("jobs.deadlineWork")}>{job.workDeadlineAt}</Descriptions.Item> : null}
+                {job.reviewDeadlineAt ? <Descriptions.Item label={t("jobs.deadlineReview")}>{job.reviewDeadlineAt}</Descriptions.Item> : null}
                 {acceptedQuote ? <Descriptions.Item label={t("jobs.acceptedQuote")}>{formatCredits(acceptedQuote.amount)} credits</Descriptions.Item> : null}
+                {job.expireReason ? <Descriptions.Item label={t("jobs.expireReason")}>{job.expireReason}</Descriptions.Item> : null}
             </Descriptions>
 
             {job.quotes.length ? (
@@ -275,6 +283,7 @@ export default function JobDetailPage() {
                 }}
                 destroyOnHidden
             >
+                <Alert type="info" showIcon className="!mb-4" message={t("jobs.depositNotice", { amount: formatCredits(job.depositAmount), days: job.workDays })} />
                 <Form form={quoteForm} layout="vertical" initialValues={{ amount: myQuote?.amount ?? job.budget, note: myQuote?.note ?? "" }}>
                     <Form.Item name="amount" label={t("jobs.quoteAmount")} rules={[{ required: true }]}>
                         <InputNumber min={1} className="w-full" addonAfter="credits" />

@@ -11,6 +11,7 @@ import { useJobStore } from "@/jc/stores/use-job-store";
 import { useUserStore } from "@/stores/use-user-store";
 import { useWalletStore } from "@/jc/stores/use-wallet-store";
 import { JobBriefEditor } from "./brief-editor";
+import { JobDeadline } from "./job-deadline";
 
 const statusColor: Record<JobStatus, string> = {
     open: "blue",
@@ -19,6 +20,7 @@ const statusColor: Record<JobStatus, string> = {
     submitted: "gold",
     completed: "success",
     cancelled: "default",
+    expired: "default",
 };
 
 export default function JobsPage() {
@@ -28,7 +30,7 @@ export default function JobsPage() {
     const user = useUserStore((state) => state.user);
     const [createOpen, setCreateOpen] = useState(false);
     const [creating, setCreating] = useState(false);
-    const [createForm] = Form.useForm<{ title: string; brief: string; budget: number }>();
+    const [createForm] = Form.useForm<{ title: string; brief: string; budget: number; workDays: number; jobDays: number }>();
 
     const scope = useJobStore((s) => s.scope);
     const setScope = useJobStore((s) => s.setScope);
@@ -148,6 +150,11 @@ export default function JobsPage() {
                         render: (value: number) => formatCredits(value),
                     },
                     {
+                        title: t("jobs.colDeadline"),
+                        width: 200,
+                        render: (_: unknown, job: Job) => <JobDeadline job={job} />,
+                    },
+                    {
                         title: t("jobs.colUpdated"),
                         dataIndex: "updatedAt",
                         width: 180,
@@ -161,7 +168,7 @@ export default function JobsPage() {
             />
 
             <Modal title={t("jobs.create")} open={createOpen} confirmLoading={creating} onCancel={() => setCreateOpen(false)} onOk={onCreate} width={720} destroyOnHidden>
-                <Form form={createForm} layout="vertical" initialValues={{ budget: 50, brief: "" }}>
+                <Form form={createForm} layout="vertical" initialValues={{ budget: 50, brief: "", workDays: 3, jobDays: 30 }}>
                     <Form.Item name="title" label={t("jobs.fieldTitle")} rules={[{ required: true }]}>
                         <Input maxLength={80} />
                     </Form.Item>
@@ -171,6 +178,14 @@ export default function JobsPage() {
                     <Form.Item name="budget" label={t("jobs.fieldBudget")} rules={[{ required: true }]}>
                         <InputNumber min={1} step={1} className="w-full" addonAfter="credits" />
                     </Form.Item>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <Form.Item name="workDays" label={t("jobs.fieldWorkDays")} extra={t("jobs.workDaysHint")} rules={[{ required: true }]}>
+                            <InputNumber min={1} max={365} className="w-full" addonAfter={t("jobs.daysUnit")} />
+                        </Form.Item>
+                        <Form.Item name="jobDays" label={t("jobs.fieldJobDays")} extra={t("jobs.jobDaysHint")} rules={[{ required: true }]}>
+                            <InputNumber min={1} max={365} className="w-full" addonAfter={t("jobs.daysUnit")} />
+                        </Form.Item>
+                    </div>
                 </Form>
             </Modal>
         </div>

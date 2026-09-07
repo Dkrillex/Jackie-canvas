@@ -41,33 +41,52 @@ const SCHEMA = [
         updated_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户积分钱包'`,
 
-    // uk_kind_ref 是「同一笔订单只能入账一次」的第二道保险：即使事务里的状态判断
-    // 因为哪天改坏了而漏过，重复入账也会在这里撞唯一键失败。ref_no 为 NULL 的手工
-    // 调账不受约束（MySQL 唯一索引不比较 NULL）。
+    // ref_no 是「这条流水属于哪一次动作」的键，配合 UNIQUE(kind, ref_no) 兜重复写入：
+    //   充值   → out_trade_no      兑换/退回 → exchange id
+    //   结算   → job id（一个单只结算一次）
+    //   冻结/解冻/押金/罚没 → job_deposits.id，也就是「这一次接单」的 id
+    // 最后一类不能用 job id：单子超时会回到市场被别人再接，同一个 job 会有多次冻结和押金，
+    // 用 job id 当键第二次就撞唯一约束了。job_id 另开一列，方便按单查全部资金流水。
     `CREATE TABLE IF NOT EXISTS wallet_ledger (
         id            BIGINT AUTO_INCREMENT PRIMARY KEY,
         user_id       VARCHAR(64)   NOT NULL,
-        kind          VARCHAR(16)   NOT NULL         COMMENT 'recharge/freeze/unfreeze/charge/payout/adjust',
-        amount        DECIMAL(14,2) NOT NULL         COMMENT '正负即方向：入账为正，扣款为负；freeze/unfreeze 记的是冻结变动量',
+        kind          VARCHAR(16)   NOT NULL         COMMENT 'recharge/freeze/unfreeze/charge/payout/deposit/deposit_back/forfeit/compensate/exchange/refund/adjust',
+        amount        DECIMAL(14,2) NOT NULL         COMMENT '正负即方向；freeze/unfreeze/deposit 记的是冻结变动量',
         balance_after DECIMAL(14,2) NOT NULL,
         frozen_after  DECIMAL(14,2) NOT NULL DEFAULT 0,
-        ref_no        VARCHAR(64)   NULL             COMMENT '关联单号：充值是 out_trade_no，工单是 job id',
+        ref_no        VARCHAR(64)   NULL             COMMENT '见上方说明',
+        job_id        VARCHAR(32)   NULL             COMMENT '工单相关流水的所属工单',
         note          VARCHAR(255)  NOT NULL DEFAULT '',
         created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY uk_kind_ref (kind, ref_no),
-        INDEX idx_user_created (user_id, created_at)
+        INDEX idx_user_created (user_id, created_at),
+        INDEX idx_job (job_id)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='积分流水'`,
 
     // 工单。交付和结算都是一对一的，拆表只会让每次读都要多 join 一次，直接铺平成列。
+    //
+    // 两个有效期是分开的，因为到期后的处置完全相反：
+    //   work_deadline_at  接单工时有效期 —— 超时罚没接单人押金、单子退回市场重新接，
+    //                     雇主的钱**继续冻结**（单子还在流转，下一个人接了要继续用）
+    //   job_deadline_at   任务单整体有效期 —— 超时整单作废、退出市场，
+    //                     雇主的冻结款**解冻返还**，当前接单人押金原样退回（他没违规）
+    // frozen_amount 记的是这个单当前替雇主冻着多少：换一个接单人时报价可能不同，
+    // 要按差额补冻或退冻，没有这一列就只能靠猜。
     `CREATE TABLE IF NOT EXISTS jobs (
         id                     VARCHAR(32)   NOT NULL PRIMARY KEY,
         title                  VARCHAR(255)  NOT NULL,
         brief                  MEDIUMTEXT    NOT NULL COMMENT 'Markdown 正文，可能内嵌图片引用',
         budget                 DECIMAL(14,2) NOT NULL,
-        status                 VARCHAR(16)   NOT NULL COMMENT 'open/quoted/active/submitted/completed/cancelled',
+        status                 VARCHAR(16)   NOT NULL COMMENT 'open/quoted/active/submitted/completed/cancelled/expired',
         client_id              VARCHAR(64)   NOT NULL COMMENT '发单人 MaaS userId',
         creator_id             VARCHAR(64)   NULL     COMMENT '接单人，接受报价时写入',
         accepted_quote_id      VARCHAR(32)   NULL,
+        deposit_id             VARCHAR(32)   NULL     COMMENT '当前这次接单的押金记录 id',
+        frozen_amount          DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT '当前替雇主冻结的金额',
+        work_days              INT           NOT NULL DEFAULT 3 COMMENT '接受报价后允许的交付天数',
+        work_deadline_at       DATETIME      NULL     COMMENT '接受报价时算出 = NOW() + work_days',
+        job_deadline_at        DATETIME      NOT NULL COMMENT '发单时算出 = NOW() + job_days',
+        review_deadline_at     DATETIME      NULL     COMMENT '提交交付时算出；到期未验收则自动验收打款',
         delivery_content       MEDIUMTEXT    NULL,
         delivery_link          VARCHAR(500)  NULL,
         delivery_canvas_id     VARCHAR(64)   NULL,
@@ -79,11 +98,15 @@ const SCHEMA = [
         settle_creator_payout  DECIMAL(14,2) NULL,
         settle_profit          DECIMAL(14,2) NULL,
         settled_at             DATETIME      NULL,
+        expire_reason          VARCHAR(255)  NULL,
         created_at             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_status_created (status, created_at),
         INDEX idx_client (client_id, created_at),
-        INDEX idx_creator (creator_id, created_at)
+        INDEX idx_creator (creator_id, created_at),
+        INDEX idx_work_deadline (status, work_deadline_at),
+        INDEX idx_job_deadline (status, job_deadline_at),
+        INDEX idx_review_deadline (status, review_deadline_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='接单中心工单'`,
 
     // 积分 → API 额度的兑换。这是一张**中间表**：点「确认转换」时先把积分扣掉并落一条
@@ -103,6 +126,37 @@ const SCHEMA = [
         INDEX idx_user_created (user_id, created_at),
         INDEX idx_status_created (status, created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='积分兑换 API 额度'`,
+
+    // 接单押金。按「哪个单 × 哪次接单」记，不是按单记 —— 单子超时会回到市场被别人再接，
+    // 同一个 job 会产生多笔押金，各自独立结算。
+    `CREATE TABLE IF NOT EXISTS job_deposits (
+        id           VARCHAR(32)   NOT NULL PRIMARY KEY,
+        job_id       VARCHAR(32)   NOT NULL,
+        creator_id   VARCHAR(64)   NOT NULL,
+        amount       DECIMAL(14,2) NOT NULL,
+        status       VARCHAR(16)   NOT NULL         COMMENT 'held/refunded/forfeited',
+        to_client    DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT '罚没时赔给雇主的部分',
+        to_platform  DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT '罚没时归平台的部分',
+        note         VARCHAR(255)  NOT NULL DEFAULT '',
+        created_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        settled_at   DATETIME      NULL,
+        INDEX idx_job (job_id),
+        INDEX idx_creator (creator_id, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='接单押金'`,
+
+    // 平台自己的账。在此之前，10% 抽成只写在 jobs.settle_platform_fee 那一列里 ——
+    // 每单算得出来，但没有任何地方汇总，平台到底赚了多少无从对账。罚没的押金同理。
+    `CREATE TABLE IF NOT EXISTS platform_ledger (
+        id         BIGINT        AUTO_INCREMENT PRIMARY KEY,
+        kind       VARCHAR(16)   NOT NULL         COMMENT 'fee=工单抽成 / forfeit=罚没押金',
+        amount     DECIMAL(14,2) NOT NULL,
+        ref_no     VARCHAR(64)   NULL             COMMENT 'fee 用 job id，forfeit 用押金 id',
+        job_id     VARCHAR(32)   NULL,
+        note       VARCHAR(255)  NOT NULL DEFAULT '',
+        created_at DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_kind_ref (kind, ref_no),
+        INDEX idx_created (created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台收入流水'`,
 
     // 一个创作者对同一个工单只保留最新一份报价，靠唯一键 + upsert 实现
     `CREATE TABLE IF NOT EXISTS job_quotes (

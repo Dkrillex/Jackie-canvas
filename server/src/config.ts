@@ -35,6 +35,16 @@ export const settings = {
     reconcileIntervalSec: Number(env("RECONCILE_INTERVAL_SEC", "60")),
     reconcileWindowMin: Number(env("RECONCILE_WINDOW_MIN", "1440")),
 
+    // ---------- 接单押金与有效期 ----------
+    // 接单时冻结的押金。工时超时未交付会被罚没，一部分赔给雇主、剩下的归平台。
+    // 两个数都以服务端为准，前端只是展示。
+    jobDepositAmount: Number(env("JOB_DEPOSIT_AMOUNT", "5")),
+    jobDepositToClient: Number(env("JOB_DEPOSIT_TO_CLIENT", "2")),
+    /** 提交交付后雇主的验收期，超时自动验收打款 —— 否则雇主只要不点验收就能白嫖交付物 */
+    jobReviewDays: Number(env("JOB_REVIEW_DAYS", "3")),
+    /** 到期扫描间隔秒数。设成 0 或负数就关掉（关掉之后没有任何东西会让单子过期） */
+    jobExpiryIntervalSec: Number(env("JOB_EXPIRY_INTERVAL_SEC", "60")),
+
     // ---------- 用户身份（复用前端已有的 MaaS 登录）----------
     // 本服务不自建账号：前端带着 MaaS 的 JWT 过来，这里拿去问 MaaS「你是谁」，认它返回的
     // userId。订单和钱包因此天然和现有登录体系对齐，不用再发一套凭据、也不用同步用户表。

@@ -3,7 +3,7 @@
 /** 列表筛选：大厅可接的单 / 我发布的 / 我报过价或已接的 */
 export type JobScope = "hall" | "client" | "creator";
 
-export type JobStatus = "open" | "quoted" | "active" | "submitted" | "completed" | "cancelled";
+export type JobStatus = "open" | "quoted" | "active" | "submitted" | "completed" | "cancelled" | "expired";
 
 export type JobQuote = {
     id: string;
@@ -38,6 +38,17 @@ export type Job = {
     status: JobStatus;
     clientId: string;
     creatorId?: string;
+    /** 接受报价后允许的交付天数 */
+    workDays: number;
+    /** 接单人必须在此之前交付，超时罚没押金并退回市场 */
+    workDeadlineAt?: string;
+    /** 整单有效期，到期作废退款给雇主 */
+    jobDeadlineAt: string;
+    /** 雇主必须在此之前验收，超时自动验收打款 */
+    reviewDeadlineAt?: string;
+    /** 接单要冻结的押金，服务端给的展示值 */
+    depositAmount: number;
+    expireReason?: string;
     quotes: JobQuote[];
     acceptedQuoteId?: string;
     delivery?: JobDelivery;

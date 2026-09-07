@@ -11,8 +11,9 @@ import type { Job, JobQuote, JobScope } from "@/jc/lib/job-types";
 export type { Job, JobScope };
 
 /** 服务端返回的工单，金额都是字符串 */
-type JobPayload = Omit<Job, "budget" | "quotes" | "settlement"> & {
+type JobPayload = Omit<Job, "budget" | "quotes" | "settlement" | "depositAmount"> & {
     budget: string;
+    depositAmount: string;
     quotes: (Omit<JobQuote, "amount"> & { amount: string })[];
     settlement?: Record<keyof NonNullable<Job["settlement"]>, string>;
 };
@@ -39,6 +40,7 @@ function toJob(payload: JobPayload): Job {
     return {
         ...payload,
         budget: Number(payload.budget),
+        depositAmount: Number(payload.depositAmount),
         quotes: payload.quotes.map((quote) => ({ ...quote, amount: Number(quote.amount) })),
         settlement: payload.settlement
             ? {
@@ -66,7 +68,7 @@ export async function getJob(id: string) {
     return { job: toJob(data.job), userId: data.userId };
 }
 
-export async function createJob(input: { title: string; brief: string; budget: number }) {
+export async function createJob(input: { title: string; brief: string; budget: number; workDays: number; jobDays: number }) {
     return jobRequest<{ id: string }>("", { method: "POST", body: JSON.stringify(input) });
 }
 

@@ -23,7 +23,7 @@ type JobStore = {
     error: string;
     setScope: (scope: JobScope) => void;
     refresh: (scope?: JobScope) => Promise<void>;
-    createJob: (input: { title: string; brief: string; budget: number }) => Promise<string>;
+    createJob: (input: { title: string; brief: string; budget: number; workDays: number; jobDays: number }) => Promise<string>;
     clear: () => void;
 };
 

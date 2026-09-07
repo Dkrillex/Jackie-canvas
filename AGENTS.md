@@ -74,6 +74,8 @@
 - 钱一律用 `DECIMAL` 存、字符串读，不要在 JS 里用浮点数做加减；余额的加法交给数据库 `balance = balance + ?`，不要读出来算完再写回去。
 - 新增前缀（如 `/pay-api`）时，Vite 代理、`middleware.js`、`vercel.json` 的 SPA fallback 排除项三处都要一起改，漏一处就会返回一页 HTML 而不是接口响应。
 - 接单中心的冻结与结算是真实托管：接受报价冻结雇主积分（压可用额、不动余额），验收时在一个事务里扣款、解冻、给创作者打款。任何动余额的地方都要先 `SELECT ... FOR UPDATE` 锁钱包行，并把状态流转写进 `UPDATE ... WHERE status = ?`，不要先查后改。
+- 工单有三个时钟：`work_deadline_at`（交付）、`review_deadline_at`（验收）、`job_deadline_at`（整单）。到期处置在 `server/src/expire.ts`，扫描顺序必须是「验收 → 工时 → 整单」，且整单过期那一档**不能包含 submitted** —— 否则雇主拖着不验收就能把交付物白拿走再把钱要回去。
+- 接单押金冻结在接单人身上，罚没时按 `JOB_DEPOSIT_TO_CLIENT` 分给雇主、其余进 `platform_ledger`。平台的每一笔收入（抽成、罚没）都要写 `platform_ledger`，不要只写在工单的结算列里。
 - 谁能做什么一律由服务端按登录 userId 判定（发单人才能接受报价/打回/验收/取消，接单人才能交付）。前端的筛选和按钮显隐只是界面，不算权限。
 
 ## 文档规范
