@@ -47,3 +47,18 @@ async function storageKeyToDataUrl(storageKey: string) {
         reader.readAsDataURL(blob);
     });
 }
+
+/**
+ * 列表卡片用的纯文本摘要。Markdown 直接截断会露出 `![](image:xxx)` 这种噪音，
+ * 所以先把图片、链接、代码块和标记符号去掉，只留能读的一行字。
+ */
+export function briefExcerpt(markdown: string, max = 120) {
+    const text = markdown
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+        .replace(/\[([^\]]*)]\([^)]*\)/g, "$1")
+        .replace(/[#>*_`~|]|^\s*[-+]\s+/gm, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    return text.length > max ? `${text.slice(0, max)}…` : text;
+}

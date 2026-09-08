@@ -59,3 +59,14 @@ export type Job = {
 
 /** 展示用。实际抽成以服务端 server/src/jobs.ts 的 PLATFORM_FEE_RATE 为准。 */
 export const PLATFORM_FEE_RATE = 0.1;
+
+/** 状态徽章配色。列表和详情共用一份，两处各写一遍迟早会对不上。 */
+export const JOB_STATUS_COLOR: Record<JobStatus, string> = {
+    open: "blue",
+    quoted: "cyan",
+    active: "processing",
+    submitted: "gold",
+    completed: "success",
+    cancelled: "default",
+    expired: "default",
+};
