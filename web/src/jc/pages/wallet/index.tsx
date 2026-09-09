@@ -7,7 +7,8 @@ import { useRequireLogin } from "@/hooks/use-require-login";
 import { createExchange, listExchanges, listRechargeOrders, listWalletLedger, type CreditExchange, type LedgerEntry, type RechargeRecord } from "@/jc/services/wallet";
 import { useUserStore } from "@/stores/use-user-store";
 import { useWalletStore } from "@/jc/stores/use-wallet-store";
-import { BUSINESS_MAIL, BUSINESS_MAIL_TEXT, BUSINESS_WECHAT_QR, MAX_RECHARGE_YUAN } from "@/jc/config";
+import { MAX_RECHARGE_YUAN } from "@/jc/config";
+import { BusinessContactModal } from "@/jc/components/business-contact-modal";
 import { useRecharge } from "./use-recharge";
 
 const statusColor: Record<string, string> = { created: "gold", paid: "success", closed: "default" };
@@ -264,18 +265,7 @@ export default function WalletPage() {
                     </>
                 )}
 
-                <Modal open={businessOpen} onCancel={() => setBusinessOpen(false)} footer={null} title={t("wallet.businessTitle")} width={380}>
-                    <div className="flex flex-col items-center gap-3 pb-2 pt-1 text-center">
-                        <div className="text-sm text-stone-500 dark:text-stone-400">{t("wallet.businessHint")}</div>
-                        <img src={BUSINESS_WECHAT_QR} alt={t("wallet.businessTitle")} className="size-52 rounded-xl border border-stone-200 object-cover dark:border-stone-800" />
-                        <div className="text-xs text-stone-400">
-                            {t("wallet.businessMail")}
-                            <a href={BUSINESS_MAIL} className="ml-1">
-                                {BUSINESS_MAIL_TEXT}
-                            </a>
-                        </div>
-                    </div>
-                </Modal>
+                <BusinessContactModal open={businessOpen} onClose={() => setBusinessOpen(false)} />
 
                 <Modal open={Boolean(order)} onCancel={reset} footer={null} maskClosable={false} title={paid ? null : t("wallet.payingTitle")}>
                     {paid ? (

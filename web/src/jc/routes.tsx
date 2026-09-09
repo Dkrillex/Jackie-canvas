@@ -1,5 +1,6 @@
 import type { RouteObject } from "react-router-dom";
 
+import EnterprisePage from "./pages/enterprise";
 import JobsPage from "./pages/jobs";
 import JobDetailPage from "./pages/jobs/detail";
 import WalletPage from "./pages/wallet";
@@ -14,4 +15,5 @@ export const jcRoutes: RouteObject[] = [
     { path: "/jobs", element: <JobsPage /> },
     { path: "/jobs/:id", element: <JobDetailPage /> },
     { path: "/wallet", element: <WalletPage /> },
+    { path: "/enterprise", element: <EnterprisePage /> },
 ];

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 import { type NavigationToolSlug } from "@/constant/navigation-tools";
-import { visibleNavTools } from "@/jc/nav";
+import { useVisibleNavTools } from "@/jc/nav";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/stores/use-user-store";
 
@@ -16,7 +16,7 @@ type MobileNavDrawerProps = {
 export function MobileNavDrawer({ open, activeToolSlug, onClose }: MobileNavDrawerProps) {
     const { t } = useTranslation();
     const user = useUserStore((state) => state.user);
-    const visibleTools = visibleNavTools(Boolean(user));
+    const visibleTools = useVisibleNavTools(Boolean(user));
 
     return (
         <Drawer title={t("topNav.navigation")} placement="left" size={280} open={open} onClose={onClose} className="md:hidden">
