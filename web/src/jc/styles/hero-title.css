@@ -1,22 +1,5 @@
-@import "@fontsource/instrument-serif/400-italic.css";
-
-/*
- * 母站 Hero 里 Token 的 .latin-accent：
- * Instrument Serif / italic / 400，字号略放大。
- * 产品标题整句都是拉丁文，所以整颗 h1 都用这一套。
- */
 .jc-hero-title {
-    color: #1c1917;
-    font-family: "Instrument Serif", Georgia, serif;
-    font-style: italic;
-    font-weight: 400;
+    font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.08;
-    /* 这套字只有 400，描边加在外侧（paint-order）把笔画加厚，避免假粗体发糊 */
-    -webkit-text-stroke: 0.032em currentColor;
-    paint-order: stroke fill;
-}
-
-.dark .jc-hero-title {
-    color: #fafaf9;
 }

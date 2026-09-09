@@ -12,7 +12,7 @@ import { navigationTools } from "@/constant/navigation-tools";
 import i18n from "@/i18n";
 import { cn } from "@/lib/utils";
 
-function Highlighter({ action, color, brand, children }: { action: "highlight" | "underline"; color: string; brand?: boolean; children?: ReactNode }) {
+function Highlighter({ action, color, children }: { action: "highlight" | "underline"; color: string; children?: ReactNode }) {
     return (
         <span className="relative inline-block px-1">
             {action === "highlight" ? (
@@ -20,7 +20,7 @@ function Highlighter({ action, color, brand, children }: { action: "highlight" |
             ) : (
                 <span className="absolute inset-x-0 bottom-0 h-1 rounded-full opacity-80" style={{ backgroundColor: color }} />
             )}
-            <span className={cn("relative text-stone-800 dark:text-stone-200", brand ? "jc-wordmark" : "font-medium")}>{children}</span>
+            <span className="relative font-medium text-stone-800 dark:text-stone-200">{children}</span>
         </span>
     );
 }
@@ -44,9 +44,9 @@ export default function IndexPage() {
         <main className="jc-home relative h-full overflow-y-auto text-stone-950 dark:text-stone-100">
             <FlowBackdrop />
             <section className="relative mx-auto flex min-h-full max-w-7xl flex-col items-center justify-center px-6 text-center">
-                <h1 className="jc-hero-title max-w-5xl text-balance text-5xl sm:text-7xl lg:text-8xl">{t("meta.title")}</h1>
+                <h1 className="jc-hero-title ai-title-aurora max-w-5xl text-balance text-5xl sm:text-7xl lg:text-8xl">{t("meta.title")}</h1>
                 <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">
-                        <Trans i18nKey="home.description" components={{ canvas: <Highlighter action="underline" color="#FF9800" brand />, content: <Highlighter action="highlight" color="#87CEFA" /> }} />
+                        <Trans i18nKey="home.description" components={{ canvas: <Highlighter action="underline" color="#FF9800" />, content: <Highlighter action="highlight" color="#87CEFA" /> }} />
                 </p>
                 <div className="jc-hero-actions mt-10">
                     <Button className="jc-btn jc-btn-solid" onClick={() => navigate(`/${primaryTool.slug}`)} icon={<ArrowRight className="size-4" />} iconPlacement="end">

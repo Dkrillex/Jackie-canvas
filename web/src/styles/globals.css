@@ -147,7 +147,7 @@
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
-        animation: ai-title-aurora 7s ease-in-out infinite;
+        animation: ai-title-aurora 10s ease-in-out infinite;
     }
 
     .dark .ai-title-aurora {

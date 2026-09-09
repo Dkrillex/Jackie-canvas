@@ -1,9 +1,6 @@
-@import "@fontsource/instrument-serif/400-italic.css";
-@import "./type.css";
-
 /*
  * 顶栏对齐 hinnflow.com 的 .site-header / .main-nav / .brand：
- * 薄玻璃底让丝绸背景透出来，导航做成胶囊，品牌拉丁名用衬线斜体。
+ * 薄玻璃底让丝绸背景透出来，导航做成胶囊。
  * 母站是深色底上的白玻璃；产品是白银，透明度与描边按浅色/深色各写一套。
  */
 
@@ -31,7 +28,8 @@
 }
 
 .jc-top-nav .jc-brand-name {
-    font-size: 20px;
+    font-size: 16px;
+    font-weight: 500;
     line-height: 1;
 }
 

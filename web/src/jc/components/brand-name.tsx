@@ -1,11 +1,9 @@
-/**
- * 产品名整段用 Instrument Serif 斜体（.jc-wordmark），和首页大标题同一套。
- */
+/** 顶栏品牌名，字体跟站点默认无衬线走。 */
 export function BrandName() {
     return (
         <>
             <span className="jc-brand-mark" aria-hidden />
-            <span className="jc-brand-name jc-wordmark">Jackie Canvas</span>
+            <span className="jc-brand-name">Jackie Canvas</span>
         </>
     );
 }

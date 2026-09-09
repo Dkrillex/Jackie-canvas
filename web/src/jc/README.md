@@ -44,7 +44,7 @@ jc/
 
 上游的 `components/home/ascii-ring.tsx`（字符莫比乌斯环）本分支不用了，首页背景改成
 和 hinnflow.com 同一套 Paper `MeshGradient`（`FlowBackdrop`），配色是白银而不是电光蓝。
-首页与顶栏正文是 Source Serif 4，产品名 Jackie Canvas 仍是 Instrument Serif 斜体。
+首页与顶栏跟站点默认无衬线走，不再单独套衬线字体。
 上游那个文件**原样留着没动**，只是首页不再引用它。曾经做过一版流动的字符环，需要的话从
 `23cbb46` 取回。
 
