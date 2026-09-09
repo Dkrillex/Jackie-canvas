@@ -87,6 +87,8 @@ export default {
         statusHint: "禁用后该成员无法登录，额度保留。",
         initialBalanceHint: "从你的可分配额度里划出，当前可分配 {{amount}}。填 0 表示先不分配。",
         regenerate: "重新生成",
+        copyBoth: "复制账号和密码",
+        credentialsCopy: "账号：{{userName}}\n密码：{{password}}",
         createdWarn: "请立刻把账号密码交给该成员：密码只显示这一次，之后只能重置。",
         allocateHint: "从你的额度里划给 {{name}}，当前可分配 {{amount}}。",
         memberQuotaNow: "该成员当前 {{amount}}",

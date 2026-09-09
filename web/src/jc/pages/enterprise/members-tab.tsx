@@ -162,9 +162,15 @@ function AddMemberModal({ open, onClose, myQuotaUsd }: { open: boolean; onClose:
             afterOpenChange={(opened) => opened && form.setFieldValue("password", randomPassword())}
             footer={
                 created ? (
-                    <Button type="primary" onClick={close}>
-                        {t("common.done")}
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                        {/* 交接的时候是把账号密码一起发给对方的，分两次复制等于逼人去拼一遍 */}
+                        <Button icon={<Copy className="size-3.5" />} onClick={() => copyText(t("enterprise.credentialsCopy", { userName: created.userName, password: created.password }))}>
+                            {t("enterprise.copyBoth")}
+                        </Button>
+                        <Button type="primary" onClick={close}>
+                            {t("common.done")}
+                        </Button>
+                    </div>
                 ) : (
                     <div className="flex items-center justify-end gap-2">
                         <Button onClick={close}>{t("common.cancel")}</Button>

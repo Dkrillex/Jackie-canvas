@@ -84,6 +84,8 @@ export default {
         statusHint: "A disabled member cannot sign in; their credits are kept.",
         initialBalanceHint: "Taken from your own allocatable credits ({{amount}} available). 0 means none for now.",
         regenerate: "Regenerate",
+        copyBoth: "Copy both",
+        credentialsCopy: "Username: {{userName}}\nPassword: {{password}}",
         createdWarn: "Hand these credentials to the member now — the password is shown only once and can only be reset afterwards.",
         allocateHint: "Moved from your own credits to {{name}}. You can allocate up to {{amount}}.",
         memberQuotaNow: "Now {{amount}}",
