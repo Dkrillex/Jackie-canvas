@@ -44,7 +44,11 @@ export default function IndexPage() {
         <main className="jc-home relative h-full overflow-y-auto text-stone-950 dark:text-stone-100">
             <FlowBackdrop />
             <section className="relative mx-auto flex min-h-full max-w-7xl flex-col items-center justify-center px-6 text-center">
-                <h1 className="jc-hero-title ai-title-aurora max-w-5xl text-balance text-5xl sm:text-7xl lg:text-8xl">{t("meta.title")}</h1>
+                <h1 className="jc-hero-title ai-title-aurora max-w-6xl text-5xl sm:text-7xl lg:text-8xl" aria-label={t("home.heroTitle")}>
+                    <span className="jc-hero-heavy">NOVA</span>
+                    <span className="jc-hero-light">WANDER</span>
+                    <span className="jc-hero-heavy">&nbsp;AI</span>
+                </h1>
                 <p className="jc-hero-lead mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">
                     <Trans i18nKey="home.description" components={{ canvas: <Highlighter action="underline" color="#4F5BDB" />, content: <Highlighter action="highlight" color="#4F5BDB" /> }} />
                 </p>

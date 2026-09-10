@@ -1,5 +1,35 @@
 /** 见 ./zh-CN.ts 的说明：只写新增和覆盖上游的键。 */
 export default {
+    meta: {
+        title: "hinnflow",
+        description: "hinnflow creation tool",
+    },
+    login: {
+        title: "Sign in to hinnflow",
+    },
+    canvas: {
+        defaultTitle: "NOVAWANDER AI {{count}}",
+        title: "NOVAWANDER AI",
+        export: { defaultProjectName: "NOVAWANDER AI", defaultNodesName: "Canvas elements", item: "Element" },
+    },
+    config: {
+        localStorage: {
+            title: "IndexedDB storage usage",
+            description: "View browser data saved by NOVAWANDER AI, grouped by object store.",
+            indexedDbUsage: "IndexedDB usage",
+            siteUsage: "Total site usage",
+            quota: "Available quota",
+            contentEstimate: "Estimated from stored content",
+            siteUsageHint: "Includes IndexedDB and other site data",
+            quotaHint: "Allocated dynamically by the browser",
+            quotaProgress: "Site quota usage",
+            mainDatabase: "NOVAWANDER AI data",
+            records: "{{count}} records",
+            refresh: "Refresh usage",
+            readFailed: "Failed to read local storage",
+            stores: { appState: "App state", images: "Image files", media: "Audio and video files", imageLogs: "Image history", videoLogs: "Video history", agentMessages: "Agent messages", promptCache: "Prompt cache" },
+        },
+    },
     navigation: {
         wallet: "Credits",
         enterprise: "Enterprise",
@@ -92,6 +122,8 @@ export default {
         afterAllocate: "After: {{amount}}",
     },
     home: {
+        heroTitle: "NOVAWANDER AI",
+        description: "Generate, connect, and reshape <content>images, text, and graphics</content> in <canvas>NOVAWANDER AI</canvas>, turning one-off generations into a continuous creative process.",
         showcaseEyebrow: "Prompt Library",
         showcaseTitle: "Keep every <serif>great result</serif>",
     },

@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 首页大标题改为 NOVAWANDER AI，字重对齐 maas.novawander.cn（Inter：NOVA / AI 900、WANDER 300）；顶栏、浏览器标题和登录弹窗仍用 hinnflow。
 + [调整][Jackie] 提示词库内置来源 Banana Prompt Quicker 改为默认关闭，刷新后也不会再被旧缓存打开。
 + [调整][Jackie] 提示词库不再展示带 NSFW、Unknown 标签的条目（首页、库页、画布侧栏、选择弹窗共用同一过滤）。
 + [修复][Jackie] 配置中心「提示词来源」仅 `admin` 可见；此前对所有人隐藏，管理员也进不去。

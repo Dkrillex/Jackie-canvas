@@ -3,6 +3,36 @@
  * （合并规则见 ./index.ts 的 mergeJcLocale：顶层键做一层浅合并）。
  */
 export default {
+    meta: {
+        title: "hinnflow",
+        description: "hinnflow 创作工具",
+    },
+    login: {
+        title: "登录 hinnflow",
+    },
+    canvas: {
+        defaultTitle: "NOVAWANDER AI {{count}}",
+        title: "NOVAWANDER AI",
+        export: { defaultProjectName: "NOVAWANDER AI", defaultNodesName: "画布元素", item: "元素" },
+    },
+    config: {
+        localStorage: {
+            title: "IndexedDB 存储使用情况",
+            description: "查看 NOVAWANDER AI 在浏览器中保存的数据量，并按对象仓库统计内容体积。",
+            indexedDbUsage: "IndexedDB 占用",
+            siteUsage: "站点总占用",
+            quota: "可用配额",
+            contentEstimate: "按仓库内容估算",
+            siteUsageHint: "包含 IndexedDB 等站点数据",
+            quotaHint: "由浏览器动态分配",
+            quotaProgress: "站点配额使用率",
+            mainDatabase: "NOVAWANDER AI 主数据",
+            records: "{{count}} 条",
+            refresh: "刷新统计",
+            readFailed: "读取本地存储失败",
+            stores: { appState: "应用状态", images: "图片文件", media: "音视频文件", imageLogs: "生图记录", videoLogs: "视频记录", agentMessages: "Agent 消息", promptCache: "提示词缓存" },
+        },
+    },
     navigation: {
         wallet: "积分充值",
         enterprise: "企业",
@@ -95,6 +125,8 @@ export default {
         afterAllocate: "分配后 {{amount}}",
     },
     home: {
+        heroTitle: "NOVAWANDER AI",
+        description: "在 <canvas>NOVAWANDER AI</canvas> 中生成、连接和重组 <content>图片、文字与图形</content>，让创作从单次生成变成连续推演。",
         showcaseEyebrow: "Prompt Library",
         showcaseTitle: "沉淀每一次 <serif>好结果</serif>",
     },
