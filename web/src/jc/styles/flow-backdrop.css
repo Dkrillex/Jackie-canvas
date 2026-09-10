@@ -23,19 +23,19 @@
     opacity: 0.5;
 }
 
-/* 母站 .shader-fallback 的三团结构，色相从电光蓝换成冷银 */
+/* 母站 .shader-fallback 的三团结构，配色跟着 shader 走：蓝底 + 一团紫 */
 .jc-flow-fallback {
     background:
-        radial-gradient(60% 50% at 18% 28%, rgba(139, 148, 163, 0.45), transparent 70%),
+        radial-gradient(60% 50% at 18% 28%, rgba(110, 80, 250, 0.45), transparent 70%),
         radial-gradient(50% 45% at 82% 22%, rgba(255, 255, 255, 0.7), transparent 70%),
-        radial-gradient(55% 50% at 68% 82%, rgba(197, 203, 212, 0.65), transparent 72%),
-        #f4f5f7;
+        radial-gradient(55% 50% at 68% 82%, rgba(91, 153, 247, 0.7), transparent 72%),
+        #dbe7fd;
 }
 
 .dark .jc-flow-fallback {
     background:
-        radial-gradient(60% 50% at 18% 28%, rgba(44, 49, 58, 0.7), transparent 70%),
-        radial-gradient(50% 45% at 82% 22%, rgba(212, 216, 224, 0.28), transparent 70%),
-        radial-gradient(55% 50% at 68% 82%, rgba(16, 18, 22, 0.85), transparent 72%),
-        #101216;
+        radial-gradient(60% 50% at 18% 28%, rgba(59, 46, 158, 0.7), transparent 70%),
+        radial-gradient(50% 45% at 82% 22%, rgba(91, 153, 247, 0.3), transparent 70%),
+        radial-gradient(55% 50% at 68% 82%, rgba(10, 13, 24, 0.85), transparent 72%),
+        #0a0d18;
 }

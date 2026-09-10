@@ -5,11 +5,17 @@ import "@/jc/styles/flow-backdrop.css";
 
 const MeshGradient = lazy(() => import("@paper-design/shaders-react").then((m) => ({ default: m.MeshGradient })));
 
-/** 母站层 A 的蓝阶映射成白银 / 铂金：色位数不变，明暗拉开才能读出丝绸褶。 */
-const LIGHT_A = ["#F3F4F6", "#9DA6B5", "#5C6880", "#F3F4F6", "#DCE0E6", "#FFFFFF"];
-const LIGHT_B = ["#FFFFFF", "#7A8698", "#EEF1F4", "#FFFFFF"];
-const DARK_A = ["#0E1014", "#2A303A", "#8A93A2", "#0E1014", "#4A5160", "#D8DCE3"];
-const DARK_B = ["#0E1014", "#C5CBD4", "#9AA3B0", "#0E1014"];
+/**
+ * 蓝底 + 紫色流体。色位数沿用母站层 A/B 的 6 + 4，明暗照原来的梯度铺，
+ * 不然丝绸褶会糊成一块纯色：#5B99F7 亮度约 0.32、#6E50FA 约 0.16，
+ * 一个当底、一个当褶皱的暗面，剩下的位用白和浅蓝把高光留出来。
+ */
+const BLUE = "#5B99F7";
+const PURPLE = "#6E50FA";
+const LIGHT_A = ["#BFD6FC", BLUE, PURPLE, "#DCE8FE", "#8FBAFA", "#FFFFFF"];
+const LIGHT_B = ["#FFFFFF", PURPLE, "#A8C4FB", "#FFFFFF"];
+const DARK_A = ["#0A0D18", "#242C56", BLUE, "#0A0D18", "#3B2E9E", "#D3E1FE"];
+const DARK_B = ["#0A0D18", "#B7A6FF", PURPLE, "#0A0D18"];
 
 function hasWebGL() {
     try {
@@ -22,7 +28,7 @@ function hasWebGL() {
 
 /**
  * 首页流动背景。结构和参数对齐 hinnflow.com 的双层 MeshGradient，
- * 配色改成白银（浅色）/ 铂金（深色）。无 WebGL 时退回 CSS 兜底。
+ * 配色为蓝底紫流体。无 WebGL 时退回 CSS 兜底。
  */
 export function FlowBackdrop() {
     const theme = useThemeStore((s) => s.theme);

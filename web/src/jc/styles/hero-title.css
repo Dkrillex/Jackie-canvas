@@ -3,3 +3,15 @@
     letter-spacing: -0.02em;
     line-height: 1.08;
 }
+
+/*
+ * 标题在浅色下改成深靛蓝 #1b145c，扫过的那道亮带用背景那支紫 #6E50FA。
+ * 上游 .ai-title-aurora 写在 @layer utilities 里，这条没进 layer，所以能盖住它。
+ * 必须用 background-image 长写法：shorthand 会连 background-clip 一起重置成
+ * border-box，把上游的 clip: text 顶掉，标题就从字变成一整块方形色带。
+ * 动画和时长仍旧走上游那条规则。深色下背景本身就是近黑靛，深蓝字会糊没，保持原来的浅色。
+ */
+html:not(.dark) .jc-hero-title.ai-title-aurora {
+    background-image: linear-gradient(90deg, #1b145c 0%, #1b145c 36%, #6e50fa 54%, #1b145c 72%, #1b145c 100%);
+    background-size: 220% 100%;
+}
