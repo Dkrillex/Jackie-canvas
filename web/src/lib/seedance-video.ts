@@ -64,7 +64,7 @@ export function isSeedanceVideoConfig(config: AiConfig | Pick<AiConfig, "model" 
     const selectedModel = "channels" in config ? config.model || config.videoModel : config.model || config.videoModel;
     if (isSeedanceVideoModel(modelOptionName(selectedModel || ""))) return true;
     const requestConfig = "channels" in config ? resolveModelRequestConfig(config, selectedModel || "") : config;
-    return isSeedanceVideoModel(modelOptionName(requestConfig.model || requestConfig.videoModel || "")) || requestConfig.apiFormat === "ark" || isArkPlanBaseUrl(requestConfig.baseUrl);
+    return isSeedanceVideoModel(modelOptionName(requestConfig.model || requestConfig.videoModel || "")) || isArkPlanBaseUrl(requestConfig.baseUrl);
 }
 
 export function isSeedanceVideoModel(model: string) {
