@@ -26,10 +26,10 @@ function maskApiKey(key: string) {
     return `${value.slice(0, 7)}${"*".repeat(Math.min(18, value.length - 11))}${value.slice(-4)}`;
 }
 
-/** Jackie 限制：隐藏渠道 / 提示词来源 / OSS 配置，账户与偏好等仍可用 */
-const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels", "prompt-sources", "oss"];
+/** Jackie 限制：渠道和 OSS 对所有人隐藏；提示词来源、WebDAV 仅 `admin` 可见 */
+const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels", "oss"];
 /** 仅 `admin` 账号可见 */
-const ADMIN_ONLY_CONFIG_TABS: ConfigTabKey[] = ["webdav"];
+const ADMIN_ONLY_CONFIG_TABS: ConfigTabKey[] = ["webdav", "prompt-sources"];
 
 function isAdminUser(username?: string | null) {
     return (username || "").trim().toLowerCase() === "admin";
