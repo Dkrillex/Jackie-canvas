@@ -1,7 +1,7 @@
 {
   "framework": "vite",
-  "installCommand": "bun install && cd ../server && npm install",
-  "buildCommand": "bun run build && bun run build:pay",
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "functions": {
     "api/gw.js": {
