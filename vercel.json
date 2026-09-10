@@ -9,7 +9,7 @@
     },
     "api/pay.js": {
       "maxDuration": 60,
-      "includeFiles": "server/dist/**"
+      "includeFiles": "{server/dist/**,server/node_modules/**}"
     }
   },
   "rewrites": [

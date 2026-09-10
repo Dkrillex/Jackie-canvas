@@ -11,7 +11,7 @@ export const config = {
 let loaded;
 
 async function loadPayApp() {
-    if (!loaded) loaded = import("../server/dist/app.js");
+    if (!loaded) loaded = import("../functions-pay/app.js");
     const mod = await loaded;
     mod.startBackgroundJobsOnce();
     return mod.app;
@@ -41,7 +41,8 @@ export default async function handler(req, res) {
 
     let response;
     try {
-        response = await (await loadPayApp()).fetch(new Request(target, init));
+        const app = await loadPayApp();
+        response = await app.fetch(new Request(target, init));
     } catch (error) {
         res.statusCode = 502;
         res.setHeader("content-type", "application/json; charset=utf-8");

@@ -1,11 +1,15 @@
 {
   "framework": "vite",
-  "installCommand": "bun install",
-  "buildCommand": "bun run build",
+  "installCommand": "bun install && cd ../server && npm install",
+  "buildCommand": "bun run build && bun run build:pay",
   "outputDirectory": "dist",
   "functions": {
     "api/gw.js": {
       "maxDuration": 300
+    },
+    "api/pay.js": {
+      "maxDuration": 60,
+      "includeFiles": "functions-pay/**"
     }
   },
   "rewrites": [

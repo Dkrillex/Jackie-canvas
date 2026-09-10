@@ -9,6 +9,7 @@ data/
 .DS_Store
 .idea
 web/dist
+web/functions-pay
 
 **/dist
 web/public/plugins
