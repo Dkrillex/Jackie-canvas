@@ -8,7 +8,7 @@ import { getMediaBlob, resolveMediaUrl, uploadMediaFile, type UploadedFile } fro
 import { getImageBlob, imageToDataUrl } from "@/services/image-storage";
 import { isOssUploadReady, uploadBlobToOss } from "@/services/oss-upload";
 import { buildSeedancePromptText, isArkPlanBaseUrl, isSeedanceVideoConfig, normalizeSeedanceDuration, normalizeSeedanceRatio, normalizeSeedanceResolution, seedanceCloudAssetReferenceError, seedanceVideoReferenceError, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
-import { boolConfig, buildApiUrl, modelOptionName, resolveModelRequestConfig, resolveModelScript, withLocalProxy, type AiConfig } from "@/stores/use-config-store";
+import { boolConfig, buildApiUrl, modelOptionName, resolveModelRequestConfig, resolveModelScript, useConfigStore, withLocalProxy, type AiConfig } from "@/stores/use-config-store";
 import { runModelPlugin } from "./model-plugin";
 import type { ReferenceImage } from "@/types/image";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
@@ -482,6 +482,10 @@ function normalizeVideoResolution(value: string) {
 }
 
 function unwrapVideoResponse(payload: ApiVideoResponse) {
+    return unwrapEnvelope(payload, apiText("noVideoTask"));
+}
+
+function unwrapSeedanceTask(payload: ApiEnvelope<SeedanceTask>) {
     return unwrapEnvelope(payload, apiText("noVideoTask"));
 }
 

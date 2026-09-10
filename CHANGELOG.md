@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] 视频创作台 Seedance 补回缺失的 `unwrapSeedanceTask`，避免创建任务时报 is not defined。
 + [调整][Jackie] 顶栏去掉导航「配置」和右侧齿轮，登录后只保留头像入口打开配置。
 + [修复][Jackie] 线上 `/pay-api` 改为 Vercel Node 函数挂载 `server/`，并补上 `web/api/pay.js` 与同步后的 `pnpm-lock.yaml`，避免 Root Directory 为 web 时安装失败、健康检查 404。
 + [修复][Jackie] 线上 `/gw` 改为 300 秒 Node 代理，避免 Vercel Edge 约 25 秒超时把生图打成 504。
