@@ -16,11 +16,11 @@ function Highlighter({ action, color, children }: { action: "highlight" | "under
     return (
         <span className="relative inline-block px-1">
             {action === "highlight" ? (
-                <span className="absolute inset-x-0 bottom-0 top-1 rounded-sm opacity-45" style={{ backgroundColor: color }} />
+                <span className="absolute inset-x-0 bottom-0 top-1 rounded-sm opacity-40" style={{ backgroundColor: color }} />
             ) : (
-                <span className="absolute inset-x-0 bottom-0 h-1 rounded-full opacity-80" style={{ backgroundColor: color }} />
+                <span className="absolute inset-x-0 bottom-0 h-1 rounded-full" style={{ backgroundColor: color }} />
             )}
-            <span className="relative font-medium text-stone-800 dark:text-stone-200">{children}</span>
+            <span className="jc-highlight-text relative font-medium text-stone-800 dark:text-stone-200">{children}</span>
         </span>
     );
 }
@@ -45,8 +45,8 @@ export default function IndexPage() {
             <FlowBackdrop />
             <section className="relative mx-auto flex min-h-full max-w-7xl flex-col items-center justify-center px-6 text-center">
                 <h1 className="jc-hero-title ai-title-aurora max-w-5xl text-balance text-5xl sm:text-7xl lg:text-8xl">{t("meta.title")}</h1>
-                <p className="mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">
-                        <Trans i18nKey="home.description" components={{ canvas: <Highlighter action="underline" color="#FF9800" />, content: <Highlighter action="highlight" color="#87CEFA" /> }} />
+                <p className="jc-hero-lead mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">
+                    <Trans i18nKey="home.description" components={{ canvas: <Highlighter action="underline" color="#4F5BDB" />, content: <Highlighter action="highlight" color="#4F5BDB" /> }} />
                 </p>
                 <div className="jc-hero-actions mt-10">
                     <Button className="jc-btn jc-btn-solid" onClick={() => navigate(`/${primaryTool.slug}`)} icon={<ArrowRight className="size-4" />} iconPlacement="end">

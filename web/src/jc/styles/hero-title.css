@@ -15,3 +15,15 @@ html:not(.dark) .jc-hero-title.ai-title-aurora {
     background-image: linear-gradient(90deg, #1b145c 0%, #1b145c 36%, #6e50fa 54%, #1b145c 72%, #1b145c 100%);
     background-size: 220% 100%;
 }
+
+/*
+ * 标题下那行小字：浅色下用 #3f3c64（偏靛的深灰），和标题的 #1b145c 同一支冷调。
+ * 里面被 <Highlighter> 包住的词也跟着（`.jc-highlight-text`），靠字重 + 下划线 / 遮罩自己出层次，
+ * 不再另外压深，免得暖灰的 stone-800 和靛蓝撞在一起。
+ * 和上面同理：不进 @layer，才盖得住 Tailwind 的 text-stone-500 工具类。
+ * 深色下背景是近黑靛，这个色会糊没，保持原来的 stone-400。
+ */
+html:not(.dark) .jc-hero-lead,
+html:not(.dark) .jc-hero-lead .jc-highlight-text {
+    color: #3f3c64;
+}
