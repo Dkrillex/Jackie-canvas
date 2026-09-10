@@ -1,20 +1,8 @@
 const AUTH_UPSTREAM = "https://maas.gravitex.ai";
-// 充值服务（server/）的公网地址。Vercel 上跑不了常驻进程，这个服务要单独部署，
-// 地址通过环境变量给进来。没配就直接回 503 —— 让它落进 SPA fallback 的话，
-// 前端拿到的是一页 HTML，报错会变成看不懂的 JSON 解析失败。
-const PAY_UPSTREAM = (process.env.PAY_UPSTREAM || "").replace(/\/$/, "");
 
 export const config = {
-    matcher: ["/prod-api", "/prod-api/:path*", "/pay-api", "/pay-api/:path*"],
+    matcher: ["/prod-api", "/prod-api/:path*"],
 };
-
-function resolveUpstream(pathname) {
-    if (pathname === "/prod-api" || pathname.startsWith("/prod-api/")) return { base: AUTH_UPSTREAM, path: pathname };
-    if (pathname === "/pay-api" || pathname.startsWith("/pay-api/")) {
-        return PAY_UPSTREAM ? { base: PAY_UPSTREAM, path: pathname.replace(/^\/pay-api/, "") || "/" } : null;
-    }
-    return null;
-}
 
 function sanitizeSetCookie(cookie) {
     return cookie
@@ -26,17 +14,10 @@ function sanitizeSetCookie(cookie) {
 
 export default async function middleware(request) {
     const incoming = new URL(request.url);
-    const route = resolveUpstream(incoming.pathname);
-    if (!route) {
-        return new Response(JSON.stringify({ message: "充值服务未配置：请在部署环境设置 PAY_UPSTREAM 指向 server/ 的公网地址" }), {
-            status: 503,
-            headers: { "content-type": "application/json; charset=utf-8" },
-        });
-    }
-    const target = `${route.base}${route.path}${incoming.search}`;
+    const target = `${AUTH_UPSTREAM}${incoming.pathname}${incoming.search}`;
 
     const headers = new Headers(request.headers);
-    headers.set("host", new URL(route.base).host);
+    headers.set("host", new URL(AUTH_UPSTREAM).host);
     headers.delete("accept-encoding");
 
     const init = {

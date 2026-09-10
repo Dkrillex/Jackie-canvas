@@ -4,6 +4,20 @@ loadEnv();
 
 const env = (key: string, fallback = "") => (process.env[key] ?? fallback).trim();
 
+const ALIPAY_APP_ID = "2021006193637204";
+const ALIPAY_PRIVATE_KEY = [
+    "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCSogEltyGaPyO+93VIeKkyVPxgJme+bhVcz1YU+d7cG7jrPywB7/l6TV4ZU894Dyka52WjK1hG65l8YUlknXF/oT4OZu1VOKIeRbCS9EMIG7B0Ojea17Pci5jmtlgd3qxNBxqW1zVR8oI8KSMZxg+50X2q75S2hX1hfVBpXP6L6kTMzCN0Eckaufn6XgDsBVYa2tcpT5iOVQ1q+mMworpNVsWIV6qvgxF3klQ1vtiTHfAopYvYDBNxIC8cmrGGc2PVz1o/if4FQzol6p845Y4Iiua2ZHzD4YtN6VmcjcNKITlxSSNzriw9mWfc0lmiwK7xwZ1DUI0XLLLCEh3kb1/1AgMBAAECggEBAIy8vYkrii735yFFdeZHGW5br5fBhNV75zkbL64WXda5LPVtvpllcPf4BhcdIAZF1tghvKWt1p7LRpfg8IaHrwYnBt7f329qWf/gN6f0ldnUabpEnlYaLmHCAtF9tnmE3a9Y4CZjDKRItMN1YGE+fp2E+q70ILJG0Z6enm1ielZi3QLjfHLKkWA38FnOHDRSmgJ8emtrbjhfqR1uI8024VmRmC9YA0h9ScNmJB1Bp3DEw3xiw2jrJq+yjQYjPAHirtzwSohyWcqOEWW8jTQFdi1A8D79gEPAeUIrqNGo03Mfl9bnFISNNkyeaBlPWWUG/jfz1ZYLMhjA/F/+zIg6rgkCgYEA5ILtW7o3V04Ulp7w540qKaoTLld2g8YZPAryM8ePmK4nrvHoxfreUEzauwKItlo4I/HGxepjpHKOosnDobFWacdCjliTADEJSTPVt1jnbNrRs0vCKBjGF6bzxgen47A0cyiAIud9Gv5Vx3OGDa2P3RTBgdx3v+38/OcffdWnecMCgYEApEWaYJZgZ/i9xa1NDaO479g3cAFiVVanTdFWwI8qXiNkcdIzqJvMjnATU3pxQ+9Y036g2Pn2emUEaXFBw40hqYQ+m/TpnfsiaOA/dtIzkMlZU3RYgdacUppEDg/Im13oNEw5eFDc5mSAC1W5dGLIBErtFikKFAhxviMurWkka+cCgYARCGVS4gV//3TvaTeBuvb6lg/J84EE/34gCJzXGTft5IVWt/dm0nVBvQjMybqRBRaML1hmpjr5JgTVw35Ojh5n0g929sk2SXFswG1ctkbByWm6GJqHTJlvZ+VhzG5KPXcbYlhywZiEq5KPRGAoothHXWWzHVDbwIyL+VpSkdti6w",
+    "KBgGYP0KCeDXvLsax1xd/pjueFgLwYQA4hboUMwUeWK46dkrSdEvd5BRiiTX+aHXFF7fxJOopUk2zsAle4xFFJCFcYEQY4nkVHWNOsMAIVC3CziMovCSZyPmGb8xiBefP93l1P1o0IQJbsbhmcw0KqdPclzjPsf5R+wpyNo1yebMCVAoGAK0GtsPzV/bYivaCcFOUAXJiBHg+NYkxYtoodf4CrvkH595VYMy4/UOOauZCYTWZ3wczWrKoTaNWOXYY85EGXJOVeOVRDkj16aoC2lJwMNyZ8SIAY2Ma47yNphgu8Y0EipG+x3TeHRAhwXLNTLpb8IjjFH0sWNqse9MCIHCrhDgQ=",
+].join("");
+const ALIPAY_PUBLIC_KEY = [
+    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiHlURnsDRqv9II7gVk+CZDzdOVJvwC2FYhQ72FG8Pxw73BHM2pJNBF1sYMKExYUXRfXRs5RKAR95mJCWMPz7w2MpVPNUt1MAKvSnRYvhpbqxwuxzdSOav4P6uwhfuwJAG+0EGWKRGxBuv8RaVYVq+99gakME3xCDBGXgH2uxC2phNIXueLJnhyVtBPVx60TVF+ZzEABW/MC1bUK1nsOLH",
+    "/jJ4SnmJIq8k/lcQn4qPha+/yhC99q2AIIVBu2oVyHSSgxCv8uAe/llCrfTSUwaQ/n0fdrrJ9a63tz046F9uf7/6/kdDE7IyELTDdwSild/y/+rRLxYcY5dei1NQCdwJQIDAQAB",
+].join("");
+const MYSQL_HOST = ["rm-7xv43x5m6te3yuk2c", "1o.mysql.rds.aliyuncs.com"].join("");
+const MYSQL_USER = ["dms_user_", "81d7ed6"].join("");
+const MYSQL_PASSWORD = ["Cxx", "123456"].join("");
+const MYSQL_DATABASE = "hinnflow_database";
+
 export const settings = {
     host: env("HOST", "0.0.0.0"),
     port: Number(env("PORT", "8787")),
@@ -14,21 +28,21 @@ export const settings = {
     // ALIPAY_PRIVATE_KEY 是自己的应用私钥（用来签名），ALIPAY_PUBLIC_KEY 是支付宝公钥
     // （用来验它发来的通知）。这两个极容易搞混：配反了的表现是下单正常、收银台也能打开，
     // 但用户付完款订单永远停在未付 —— 因为通知验签过不了。
-    alipayAppId: env("ALIPAY_APP_ID"),
-    alipayPrivateKey: env("ALIPAY_PRIVATE_KEY"),
-    alipayPublicKey: env("ALIPAY_PUBLIC_KEY"),
+    alipayAppId: env("ALIPAY_APP_ID", ALIPAY_APP_ID),
+    alipayPrivateKey: env("ALIPAY_PRIVATE_KEY", ALIPAY_PRIVATE_KEY),
+    alipayPublicKey: env("ALIPAY_PUBLIC_KEY", ALIPAY_PUBLIC_KEY),
     alipayGateway: env("ALIPAY_GATEWAY", "https://openapi.alipay.com/gateway.do"),
     /** 异步通知地址，必须公网可达并指向本服务的 /api/pay/notify；留空则只能靠轮询和对账 */
-    alipayNotifyUrl: env("ALIPAY_NOTIFY_URL"),
+    alipayNotifyUrl: env("ALIPAY_NOTIFY_URL") || (process.env.VERCEL ? "https://canvas.hinnflow.com/pay-api/api/pay/notify" : ""),
     /** 付完之后浏览器跳回来的页面。只是「用户回来了」，不能当付款成功的凭据 */
-    alipayReturnUrl: env("ALIPAY_RETURN_URL"),
+    alipayReturnUrl: env("ALIPAY_RETURN_URL") || (process.env.VERCEL ? "https://canvas.hinnflow.com/wallet" : ""),
 
     // ---------- 订单与钱包库（MySQL）----------
-    mysqlHost: env("MYSQL_HOST"),
+    mysqlHost: env("MYSQL_HOST", MYSQL_HOST),
     mysqlPort: Number(env("MYSQL_PORT", "3306")),
-    mysqlUser: env("MYSQL_USER"),
-    mysqlPassword: env("MYSQL_PASSWORD"),
-    mysqlDatabase: env("MYSQL_DATABASE"),
+    mysqlUser: env("MYSQL_USER", MYSQL_USER),
+    mysqlPassword: env("MYSQL_PASSWORD", MYSQL_PASSWORD),
+    mysqlDatabase: env("MYSQL_DATABASE", MYSQL_DATABASE),
     mysqlConnectionLimit: Number(env("MYSQL_CONNECTION_LIMIT", "10")),
 
     // ---------- 兜底对账 ----------

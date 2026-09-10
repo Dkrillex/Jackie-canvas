@@ -55,9 +55,10 @@ npm run dev
 
 前端和本服务要在同一个域名下，前端才能用同源的 `/pay-api`。
 
-- **Vercel**：本服务另外部署（ECS / Docker / Railway 都行），然后在 Vercel 项目里加环境变量
-  `PAY_UPSTREAM=https://充值服务地址`，根目录的 `middleware.js` 会把 `/pay-api/*` 转发过去。
-  `vercel.json` 的 SPA fallback 已经排除了 `pay-api/`。
+- **Vercel（本仓库）**：`/pay-api` 由根目录 `api/pay.js` 挂载本服务，不再需要 `PAY_UPSTREAM`。
+  构建时会 `cd server && npm install && npm run build`。支付宝和 MySQL 默认写在 `src/config.ts`，
+  环境变量仍可覆盖。通知地址默认 `https://canvas.hinnflow.com/pay-api/api/pay/notify`。
+  本机开发仍用 `npm run dev` + Vite `/pay-api` 代理。
 - **Docker**：`docker-compose.yml` 里有一段注释掉的 `pay` 服务，取消注释即可；
   再把 `nginx.conf` 里的 `/pay-api` 反代到 `pay:8787`。
 - 跨域部署时把 `CORS_ORIGIN` 设成前端域名，不要在生产留 `*`。

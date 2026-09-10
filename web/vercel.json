@@ -18,6 +18,14 @@
       "destination": "/api/gw?gwPath=:path*"
     },
     {
+      "source": "/pay-api",
+      "destination": "/api/pay"
+    },
+    {
+      "source": "/pay-api/:path*",
+      "destination": "/api/pay?payPath=:path*"
+    },
+    {
       "source": "/prod-api/:path*",
       "destination": "https://maas.gravitex.ai/prod-api/:path*"
     },

@@ -1,11 +1,15 @@
 {
   "framework": "vite",
-  "installCommand": "cd web && bun install",
-  "buildCommand": "cd web && bun run build",
+  "installCommand": "cd web && bun install && cd ../server && npm install",
+  "buildCommand": "cd web && bun run build && cd ../server && npm run build",
   "outputDirectory": "web/dist",
   "functions": {
     "api/gw.js": {
       "maxDuration": 300
+    },
+    "api/pay.js": {
+      "maxDuration": 60,
+      "includeFiles": "server/dist/**"
     }
   },
   "rewrites": [
@@ -16,6 +20,14 @@
     {
       "source": "/gw/:path*",
       "destination": "/api/gw?gwPath=:path*"
+    },
+    {
+      "source": "/pay-api",
+      "destination": "/api/pay"
+    },
+    {
+      "source": "/pay-api/:path*",
+      "destination": "/api/pay?payPath=:path*"
     },
     {
       "source": "/prod-api/:path*",

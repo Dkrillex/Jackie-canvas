@@ -124,4 +124,4 @@
 - 「开始生成」等会发起 AI 请求的操作按钮，未登录时应提示并弹出登录，不真正发起生成。
 - 登录鉴权走同源 `/prod-api`（MaaS：`/auth/login` + JWT + 请求体 AES/RSA 加密），不要再走 New API 的 `/api/user/login` Cookie/`New-Api-User`。AI 请求仍走 `/gw`。
 - 登录成功与 hydrate 后，用 `/prod-api/llm/tokens/list`（仅 JWT，不传 userId）拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key 写入默认渠道；退出时清空。不要再写死内置 API Key。
-- 部署到 Vercel 时 `/gw` 必须走 Node 函数 `api/gw.js`（`maxDuration` 300 秒），不要走 Edge Middleware 或外部 rewrite——后两者约 25–30 秒会把生图/生视频掐成 504。`/prod-api` 仍走 Middleware 或外部 rewrite。SPA fallback 不能匹配 `/gw`、`/prod-api`、`/pay-api`、`/api`。登录不要改去未部署的 `/api` 回退，否则会 405。
+- 部署到 Vercel 时 `/gw` 必须走 Node 函数 `api/gw.js`（`maxDuration` 300 秒），不要走 Edge Middleware 或外部 rewrite——后两者约 25–30 秒会把生图/生视频掐成 504。`/pay-api` 走 Node 函数 `api/pay.js`（挂 `server/` 的 Hono 应用），不要再配 `PAY_UPSTREAM` 或走 Edge。充值 MySQL / 支付宝默认值写在 `server/src/config.ts`，环境变量仍可覆盖。`/prod-api` 仍走 Middleware 或外部 rewrite。SPA fallback 不能匹配 `/gw`、`/prod-api`、`/pay-api`、`/api`。登录不要改去未部署的 `/api` 回退，否则会 405。
