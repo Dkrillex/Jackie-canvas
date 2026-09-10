@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 顶栏去掉导航「配置」和右侧齿轮，登录后只保留头像入口打开配置。
 + [修复][Jackie] 线上 `/pay-api` 改为 Vercel Node 函数挂载 `server/`，并补上 `web/api/pay.js` 与同步后的 `pnpm-lock.yaml`，避免 Root Directory 为 web 时安装失败、健康检查 404。
 + [修复][Jackie] 线上 `/gw` 改为 300 秒 Node 代理，避免 Vercel Edge 约 25 秒超时把生图打成 504。
 + [修复][Jackie] OSS 公开链接按路径段做 URL 编码，中文文件名（如「白人.png」）发给模型时不再是未转义路径。

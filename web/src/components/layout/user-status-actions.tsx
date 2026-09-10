@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { Keyboard, Puzzle, Settings2, User } from "lucide-react";
+import { Keyboard, Puzzle, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { canvasThemes } from "@/lib/canvas-theme";
@@ -8,13 +8,12 @@ import { useThemeStore } from "@/stores/use-theme-store";
 import { useUserStore } from "@/stores/use-user-store";
 
 type UserStatusActionsProps = {
-    showConfig?: boolean;
     variant?: "default" | "canvas";
     onOpenShortcuts?: () => void;
     onOpenPlugins?: () => void;
 };
 
-export function UserStatusActions({ showConfig = true, variant = "default", onOpenShortcuts, onOpenPlugins }: UserStatusActionsProps) {
+export function UserStatusActions({ variant = "default", onOpenShortcuts, onOpenPlugins }: UserStatusActionsProps) {
     const { t } = useTranslation();
     const theme = useThemeStore((state) => state.theme);
     const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
@@ -41,11 +40,6 @@ export function UserStatusActions({ showConfig = true, variant = "default", onOp
             >
                 <User className="size-4" />
             </button>
-            {showConfig && user ? (
-                <button type="button" className={naturalIconClass} style={iconStyle} onClick={() => openConfigDialog(false)} aria-label={t("navigation.config")} title={t("navigation.config")}>
-                    <Settings2 className="size-4" />
-                </button>
-            ) : null}
             {onOpenShortcuts ? (
                 <button type="button" className={naturalIconClass} style={iconStyle} onClick={onOpenShortcuts} aria-label={t("topNav.shortcuts")} title={t("topNav.shortcuts")}>
                     <Keyboard className="size-4" />

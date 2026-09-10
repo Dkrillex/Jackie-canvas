@@ -120,7 +120,7 @@
 - 提示词库内置来源 Banana Prompt Quicker 默认关闭（含 NSFW / Unknown 条目），不要改回默认开启。
 - Seedance 视频模型在 `/gw`（OpenAI 兼容渠道）下按模型名识别（含 `seedance`），不要只依赖 `apiFormat === "ark"`；时长需落在 Seedance 合法范围（2.0 一般为 4–15 或 -1）。
 - Seedream 5.0 生图请求的 `size` 总像素至少 3686400（16:9 至少 2560×1440）；界面仍可选 1K，发请求时按比例抬上去，不要改回把 1536×864 原样发给上游。
-- 顶栏配置齿轮与导航「配置」仅登录后显示。
+- 配置只走顶栏头像按钮（登录后弹配置，未登录弹登录）。导航不再放「配置」，也不再单独放齿轮。
 - 「开始生成」等会发起 AI 请求的操作按钮，未登录时应提示并弹出登录，不真正发起生成。
 - 登录鉴权走同源 `/prod-api`（MaaS：`/auth/login` + JWT + 请求体 AES/RSA 加密），不要再走 New API 的 `/api/user/login` Cookie/`New-Api-User`。AI 请求仍走 `/gw`。
 - 登录成功与 hydrate 后，用 `/prod-api/llm/tokens/list`（仅 JWT，不传 userId）拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key 写入默认渠道；退出时清空。不要再写死内置 API Key。
