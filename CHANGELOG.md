@@ -4,6 +4,9 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] 线上 `/gw` 改为 300 秒 Node 代理，避免 Vercel Edge 约 25 秒超时把生图打成 504。
++ [修复][Jackie] OSS 公开链接按路径段做 URL 编码，中文文件名（如「白人.png」）发给模型时不再是未转义路径。
++ [修复][Jackie] Seedream 5.0 生图把过小的 `size` 按比例抬到至少 3686400 像素（如 1K 16:9 的 1536×864 改为 2560×1440），避免上游 InvalidParameter。
 + [调整][Jackie] 首页大标题改为 NOVAWANDER AI，字重对齐 maas.novawander.cn（Inter：NOVA / AI 900、WANDER 300）；顶栏、浏览器标题和登录弹窗仍用 hinnflow。
 + [调整][Jackie] 提示词库内置来源 Banana Prompt Quicker 改为默认关闭，刷新后也不会再被旧缓存打开。
 + [调整][Jackie] 提示词库不再展示带 NSFW、Unknown 标签的条目（首页、库页、画布侧栏、选择弹窗共用同一过滤）。

@@ -1,4 +1,3 @@
-const GW_UPSTREAM = "https://api.gravitex.ai";
 const AUTH_UPSTREAM = "https://maas.gravitex.ai";
 // 充值服务（server/）的公网地址。Vercel 上跑不了常驻进程，这个服务要单独部署，
 // 地址通过环境变量给进来。没配就直接回 503 —— 让它落进 SPA fallback 的话，
@@ -6,7 +5,7 @@ const AUTH_UPSTREAM = "https://maas.gravitex.ai";
 const PAY_UPSTREAM = (process.env.PAY_UPSTREAM || "").replace(/\/$/, "");
 
 export const config = {
-    matcher: ["/gw", "/gw/:path*", "/prod-api", "/prod-api/:path*", "/pay-api", "/pay-api/:path*"],
+    matcher: ["/prod-api", "/prod-api/:path*", "/pay-api", "/pay-api/:path*"],
 };
 
 function resolveUpstream(pathname) {
@@ -14,7 +13,7 @@ function resolveUpstream(pathname) {
     if (pathname === "/pay-api" || pathname.startsWith("/pay-api/")) {
         return PAY_UPSTREAM ? { base: PAY_UPSTREAM, path: pathname.replace(/^\/pay-api/, "") || "/" } : null;
     }
-    return { base: GW_UPSTREAM, path: pathname.replace(/^\/gw/, "") || "/" };
+    return null;
 }
 
 function sanitizeSetCookie(cookie) {

@@ -3,17 +3,26 @@
   "installCommand": "bun install",
   "buildCommand": "bun run build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/gw.js": {
+      "maxDuration": 300
+    }
+  },
   "rewrites": [
     {
+      "source": "/gw",
+      "destination": "/api/gw"
+    },
+    {
       "source": "/gw/:path*",
-      "destination": "https://api.gravitex.ai/:path*"
+      "destination": "/api/gw?gwPath=:path*"
     },
     {
       "source": "/prod-api/:path*",
       "destination": "https://maas.gravitex.ai/prod-api/:path*"
     },
     {
-      "source": "/((?!gw/|prod-api/|pay-api/).*)",
+      "source": "/((?!gw/|prod-api/|pay-api/|api/).*)",
       "destination": "/index.html"
     }
   ]

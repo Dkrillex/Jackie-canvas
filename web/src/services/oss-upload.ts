@@ -8,8 +8,9 @@ export function isOssUploadReady(config: OssUploadConfig) {
 
 export function ossPublicObjectUrl(config: OssUploadConfig, objectKey: string) {
     const key = objectKey.replace(/^\/+/, "");
+    const encoded = key.split("/").map(encodeURIComponent).join("/");
     const base = (config.publicBaseUrl.trim() || `https://${config.bucket}.${config.region}.aliyuncs.com`).replace(/\/+$/, "");
-    return `${base}/${key}`;
+    return `${base}/${encoded}`;
 }
 
 export async function uploadBlobToOss(config: OssUploadConfig, blob: Blob, fileName: string) {

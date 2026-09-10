@@ -72,7 +72,7 @@
 - 通知处理必须过四道关：验签 → `app_id` 一致 → 订单存在 → 金额一致；缺一道就是可以被伪造充值的洞。
 - 入账必须幂等且和订单状态在同一个事务里：`SELECT ... FOR UPDATE` + `UPDATE ... WHERE status <> 'paid'` + 流水表 `UNIQUE KEY (kind, ref_no)`。改这段代码前先想清楚支付宝会重发通知。
 - 钱一律用 `DECIMAL` 存、字符串读，不要在 JS 里用浮点数做加减；余额的加法交给数据库 `balance = balance + ?`，不要读出来算完再写回去。
-- 新增前缀（如 `/pay-api`）时，Vite 代理、`middleware.js`、`vercel.json` 的 SPA fallback 排除项三处都要一起改，漏一处就会返回一页 HTML 而不是接口响应。
+- 新增前缀（如 `/pay-api`）时，Vite 代理、`middleware.js`、`vercel.json` 的 SPA fallback 排除项三处都要一起改，漏一处就会返回一页 HTML 而不是接口响应。SPA fallback 还必须排除 `/api`（线上 `/gw` 的 Node 函数）。
 - 接单中心的冻结与结算是真实托管：接受报价冻结雇主积分（压可用额、不动余额），验收时在一个事务里扣款、解冻、给创作者打款。任何动余额的地方都要先 `SELECT ... FOR UPDATE` 锁钱包行，并把状态流转写进 `UPDATE ... WHERE status = ?`，不要先查后改。
 - 工单有三个时钟：`work_deadline_at`（交付）、`review_deadline_at`（验收）、`job_deadline_at`（整单）。到期处置在 `server/src/expire.ts`，扫描顺序必须是「验收 → 工时 → 整单」，且整单过期那一档**不能包含 submitted** —— 否则雇主拖着不验收就能把交付物白拿走再把钱要回去。
 - 接单押金冻结在接单人身上，罚没时按 `JOB_DEPOSIT_TO_CLIENT` 分给雇主、其余进 `platform_ledger`。平台的每一笔收入（抽成、罚没）都要写 `platform_ledger`，不要只写在工单的结算列里。
@@ -119,8 +119,9 @@
 - 对外文案与渠道配置界面不要暴露底层服务品牌、域名或内置 API Key（如 gravitex）；默认 OpenAI 兼容地址用同源 `/gw`。渠道 Base URL / API Key 表单项仅 `admin` 账号渲染，普通用户不显示。配置中心 WebDAV 同步、提示词来源页签仅 `admin` 账号可见。
 - 提示词库内置来源 Banana Prompt Quicker 默认关闭（含 NSFW / Unknown 条目），不要改回默认开启。
 - Seedance 视频模型在 `/gw`（OpenAI 兼容渠道）下按模型名识别（含 `seedance`），不要只依赖 `apiFormat === "ark"`；时长需落在 Seedance 合法范围（2.0 一般为 4–15 或 -1）。
+- Seedream 5.0 生图请求的 `size` 总像素至少 3686400（16:9 至少 2560×1440）；界面仍可选 1K，发请求时按比例抬上去，不要改回把 1536×864 原样发给上游。
 - 顶栏配置齿轮与导航「配置」仅登录后显示。
 - 「开始生成」等会发起 AI 请求的操作按钮，未登录时应提示并弹出登录，不真正发起生成。
 - 登录鉴权走同源 `/prod-api`（MaaS：`/auth/login` + JWT + 请求体 AES/RSA 加密），不要再走 New API 的 `/api/user/login` Cookie/`New-Api-User`。AI 请求仍走 `/gw`。
 - 登录成功与 hydrate 后，用 `/prod-api/llm/tokens/list`（仅 JWT，不传 userId）拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key 写入默认渠道；退出时清空。不要再写死内置 API Key。
-- 部署到 Vercel 时 `/gw` 与 `/prod-api` 必须走外部 rewrite 或 Middleware 代理到上游，且 SPA fallback 不能匹配这两条前缀；不要依赖未部署成功的 `/api` Serverless 回退，否则登录会 405。
+- 部署到 Vercel 时 `/gw` 必须走 Node 函数 `api/gw.js`（`maxDuration` 300 秒），不要走 Edge Middleware 或外部 rewrite——后两者约 25–30 秒会把生图/生视频掐成 504。`/prod-api` 仍走 Middleware 或外部 rewrite。SPA fallback 不能匹配 `/gw`、`/prod-api`、`/pay-api`、`/api`。登录不要改去未部署的 `/api` 回退，否则会 405。
