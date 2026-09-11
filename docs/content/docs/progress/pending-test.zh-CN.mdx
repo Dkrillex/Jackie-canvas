@@ -18,7 +18,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 线上 `/gw` 超时：在 canvas.hinnflow.com 用 `gpt-image-2` 发长提示 16:9 生图，不应再在约 30 秒时出现 Vercel `504 An error occurred with your deployment`；可等到最多 5 分钟。超过 5 分钟仍失败则是上游或函数上限。登录 `/prod-api` 不受影响。
 - Seedream 5.0：选 1K 16:9 时 Network 里 `/images/generations` 的 `size` 应为 2560x1440 或更大（总像素 ≥ 3686400），不应再发 1536x864。
 - OSS 中文文件名：参考图如「白人.png」上传后公开 URL 应是百分号编码。用默认 `*.aliyuncs.com` 打开仍可能强制下载（阿里云 0048-00000113），那是要绑自定义域名，不是 PUT 失败。
-- 画布：选中配置节点或打开组装提示词时不显示悬浮工具栏；`@` 菜单贴光标。
+- 画布：选中配置节点或打开组装提示词时不显示悬浮工具栏；`@` 菜单贴光标。组装提示词用中文输入法组字时，灰色占位文案应立刻消失；`@` 插入引用后继续打拼音应走输入法上屏，不能变成一串字母。
 - Jackie 登录：hydrate 会话；生成前校验登录；WebDAV 页签仅 `admin`；Nano Banana / Gemini 在 `/gw` 走 `generateContent`。
 - 顶栏、浏览器标题、登录弹窗为 hinnflow；首页大标题为 NOVAWANDER AI。不出现 Jackie Canvas /「无限画布」/ Infinite Canvas 对外文案。
 

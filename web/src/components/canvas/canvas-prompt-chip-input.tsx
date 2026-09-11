@@ -34,6 +34,7 @@ type Token =
 export function CanvasPromptChipInput({ value, references, onChange, onSubmit, className, style, placeholder }: Props) {
     const theme = canvasThemes[useThemeStore((state) => state.theme)];
     const editorRef = useRef<HTMLDivElement>(null);
+    const placeholderRef = useRef<HTMLDivElement>(null);
     const composingRef = useRef(false);
     // Track the last value emitted to the parent. An identical focused value is this component's own echo,
     // so skip rebuilding to preserve the caret and IME. Rebuild external changes even while focused.
@@ -109,16 +110,13 @@ export function CanvasPromptChipInput({ value, references, onChange, onSubmit, c
         const space = document.createTextNode(" ");
         const selection = window.getSelection();
         const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-        if (range) {
+        if (range && selection) {
             range.insertNode(space);
             range.insertNode(chip);
-            range.setStartAfter(space);
-            range.collapse(true);
-            selection?.removeAllRanges();
-            selection?.addRange(range);
+            placeCaretInTextNode(selection, space, space.length);
         } else {
             editor.append(chip, space);
-            placeCaretAtEnd(editor);
+            placeCaretInTextNode(window.getSelection(), space, space.length);
         }
         closeMention();
         emit(serializeEditor(editor));
@@ -129,7 +127,7 @@ export function CanvasPromptChipInput({ value, references, onChange, onSubmit, c
     return (
         <div className="relative w-full">
             {showPlaceholder && placeholder ? (
-                <div className="pointer-events-none absolute left-3 top-2 text-sm leading-5" style={{ color: theme.node.placeholder }}>
+                <div ref={placeholderRef} className="pointer-events-none absolute left-3 top-2 text-sm leading-5" style={{ color: theme.node.placeholder }}>
                     {placeholder}
                 </div>
             ) : null}
@@ -146,9 +144,11 @@ export function CanvasPromptChipInput({ value, references, onChange, onSubmit, c
                 }}
                 onCompositionStart={() => {
                     composingRef.current = true;
+                    placeholderRef.current?.classList.add("hidden");
                 }}
                 onCompositionEnd={() => {
                     composingRef.current = false;
+                    placeholderRef.current?.classList.remove("hidden");
                     syncFromEditor();
                 }}
                 onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
@@ -301,7 +301,7 @@ function createReferenceChip(reference: CanvasResourceReference, theme: (typeof 
 }
 
 function serializeEditor(editor: HTMLElement) {
-    return serializeNodes(editor.childNodes).replace(/﻿/g, "");
+    return serializeNodes(editor.childNodes).replace(/[\uFEFF\u200B]/g, "");
 }
 
 function serializeNodes(nodes: NodeListOf<ChildNode>) {
@@ -335,12 +335,9 @@ function deleteAdjacentReference(key: string) {
     const range = selection.getRangeAt(0);
     const target = adjacentReferenceNode(range, key);
     if (!target) return false;
-    const nextCaretNode = document.createTextNode("");
+    const nextCaretNode = document.createTextNode("\u200B");
     target.replaceWith(nextCaretNode);
-    range.setStart(nextCaretNode, 0);
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    placeCaretInTextNode(selection, nextCaretNode, 1);
     return true;
 }
 
@@ -390,13 +387,13 @@ function closestEditor(node: Node) {
     return element?.closest("[contenteditable='true']") || null;
 }
 
-function placeCaretAtEnd(element: HTMLElement) {
+function placeCaretInTextNode(selection: Selection | null, textNode: Text, offset: number) {
+    if (!selection) return;
     const range = document.createRange();
-    range.selectNodeContents(element);
-    range.collapse(false);
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
+    range.setStart(textNode, Math.min(offset, textNode.length));
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
 }
 
 // Split value into text fragments and matching active labels, which are already sorted by descending length.

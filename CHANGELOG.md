@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] 画布组装提示词：中文输入法组字时隐藏占位文案；`@` 引用后把光标放进文本节点，避免拼音被拆成字母。
 + [修复][Jackie] 视频创作台 Seedance 补回缺失的 `unwrapSeedanceTask`，避免创建任务时报 is not defined。
 + [调整][Jackie] 顶栏去掉导航「配置」和右侧齿轮，登录后只保留头像入口打开配置。
 + [修复][Jackie] 线上 `/pay-api` 改为 Vercel Node 函数挂载 `server/`，并补上 `web/api/pay.js` 与同步后的 `pnpm-lock.yaml`，避免 Root Directory 为 web 时安装失败、健康检查 404。

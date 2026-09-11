@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import i18n from "@/i18n";
 import { canvasThemes } from "@/lib/canvas-theme";
+import { isImeComposing } from "@/lib/keyboard-event";
 import { useThemeStore } from "@/stores/use-theme-store";
 import type { NodeGenerationInput } from "./canvas-node-generation";
 import { CanvasNodeReferenceBar } from "./canvas-node-reference-bar";
@@ -39,6 +40,7 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
     const { t } = useTranslation();
     const theme = canvasThemes[useThemeStore((state) => state.theme)];
     const editorRef = useRef<HTMLDivElement>(null);
+    const placeholderRef = useRef<HTMLDivElement>(null);
     const composingRef = useRef(false);
     const [mention, setMention] = useState<MentionState | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -99,16 +101,13 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
         const space = document.createTextNode(" ");
         const selection = window.getSelection();
         const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-        if (range) {
+        if (range && selection) {
             range.insertNode(space);
             range.insertNode(chip);
-            range.setStartAfter(space);
-            range.collapse(true);
-            selection?.removeAllRanges();
-            selection?.addRange(range);
+            placeCaretInTextNode(selection, space, space.length);
         } else {
             editor.append(chip, space);
-            placeCaretAtEnd(editor);
+            placeCaretInTextNode(window.getSelection(), space, space.length);
         }
         closeMention();
         onChange(serializeEditor(editor));
@@ -134,7 +133,7 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
             </div>
             <CanvasNodeReferenceBar nodeId={nodeId} nodes={nodes} connectedNodes={connectedNodes} onDisconnect={onDisconnectReference} onStartSelection={onStartReferenceSelection} />
             <div className="relative rounded-xl">
-                {!value.trim() ? <div className="pointer-events-none absolute left-3 top-2 text-sm leading-7" style={{ color: theme.node.placeholder }}>{t("canvas.composer.placeholder")}</div> : null}
+                {!value.trim() ? <div ref={placeholderRef} className="pointer-events-none absolute left-3 top-2 text-sm leading-7" style={{ color: theme.node.placeholder }}>{t("canvas.composer.placeholder")}</div> : null}
                 <div
                     ref={editorRef}
                     contentEditable
@@ -146,13 +145,16 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
                     }}
                     onCompositionStart={() => {
                         composingRef.current = true;
+                        placeholderRef.current?.classList.add("hidden");
                     }}
                     onCompositionEnd={() => {
                         composingRef.current = false;
+                        placeholderRef.current?.classList.remove("hidden");
                         syncFromEditor();
                     }}
                     onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
                         event.stopPropagation();
+                        if (isImeComposing(event)) return;
                         if (mention && candidates.length) {
                             if (event.key === "ArrowDown") {
                                 event.preventDefault();
@@ -296,7 +298,7 @@ function createReferenceChip(input: NodeGenerationInput, inputs: NodeGenerationI
 }
 
 function serializeEditor(editor: HTMLElement) {
-    return serializeNodes(editor.childNodes).replace(/\uFEFF/g, "");
+    return serializeNodes(editor.childNodes).replace(/[\uFEFF\u200B]/g, "");
 }
 
 function serializeNodes(nodes: NodeListOf<ChildNode>) {
@@ -329,12 +331,9 @@ function deleteAdjacentReference(key: string) {
     const range = selection.getRangeAt(0);
     const target = adjacentReferenceNode(range, key);
     if (!target) return false;
-    const nextCaretNode = document.createTextNode("");
+    const nextCaretNode = document.createTextNode("\u200B");
     target.replaceWith(nextCaretNode);
-    range.setStart(nextCaretNode, 0);
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    placeCaretInTextNode(selection, nextCaretNode, 1);
     return true;
 }
 
@@ -388,13 +387,13 @@ function clamp(value: number, min: number, max: number) {
     return Math.min(Math.max(value, min), max);
 }
 
-function placeCaretAtEnd(element: HTMLElement) {
+function placeCaretInTextNode(selection: Selection | null, textNode: Text, offset: number) {
+    if (!selection) return;
     const range = document.createRange();
-    range.selectNodeContents(element);
-    range.collapse(false);
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
+    range.setStart(textNode, Math.min(offset, textNode.length));
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
 }
 
 function parseComposerTokens(value: string): Token[] {
