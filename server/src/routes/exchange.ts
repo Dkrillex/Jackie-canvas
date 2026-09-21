@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 
-import { resolveUser } from "../auth.js";
+import { resolveUserFrom } from "../auth.js";
 import { mysqlConfigured } from "../config.js";
 import * as exchange from "../exchange.js";
 
@@ -29,14 +29,14 @@ const toView = (row: exchange.ExchangeRow) => ({
  * 网关调用要放在事务外，不要塞回 create() 里。
  */
 exchangeRoutes.post("/", async (c) => {
-    const user = await resolveUser(c.req.header("Authorization"));
+    const user = await resolveUserFrom(c);
     const body = await c.req.json<{ credits?: number }>().catch(() => ({}) as { credits?: number });
     const row = await exchange.create(user.userId, Number(body.credits));
     return c.json({ exchange: toView(row) });
 });
 
 exchangeRoutes.get("/", async (c) => {
-    const user = await resolveUser(c.req.header("Authorization"));
+    const user = await resolveUserFrom(c);
     const limit = Math.min(Number(c.req.query("limit") || 20) || 20, 100);
     const rows = await exchange.listByUser(user.userId, limit);
     return c.json({ exchanges: rows.map(toView) });

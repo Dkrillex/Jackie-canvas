@@ -23,6 +23,7 @@
 
 - [二次开发分区说明](/../web/src/jc/README.md) —— `web/src/jc/` 的边界与上游接缝
 - [充值与接单服务](/../server/README.md) —— 支付宝、积分钱包、工单托管与到期机制
+- 自建 Docker 反代用 `hinnflow-docker.conf` + `docker-compose.hinnflow.yml`（`/gw`、`/new-api`、`/prod-api`），不要用上游纯静态 `nginx.conf`
 
 ## Business
 
@@ -42,5 +43,8 @@
 
 ## Notes
 
+- Login uses same-origin `/new-api` (NovaWander New API). AI calls go through `/gw` to `https://api.novawander.cn`. Do not send the console key to gravitex.
+- After login the default channel gets the first enabled `auto` group key. Canvas recharge/jobs still use `server/` (Alipay wallet), not nova-api quota.
+- Default channel models are the NovaWander catalog subset: six image models, three dated Seedance video IDs, `gpt-5.6-sol` and `deepseek-v4-flash`. Console `auto` maps `GPT_01` / `DeepSeek_01` / `Seedance` / `Gemini_01`, covering all eleven defaults. Claude / Kimi / GLM / Qwen / Minimax are still outside `auto`.
 - Canvas projects and My Assets are primarily stored in the browser. WebDAV can be configured for cross-device synchronization.
-- The AI API key is stored in the browser, which sends requests directly to OpenAI-compatible endpoints.
+- The AI API key is stored in the browser, which sends requests directly to OpenAI-compatible endpoints (`/gw` by default).

@@ -118,10 +118,14 @@
 - 对外产品展示：顶栏品牌、浏览器标题、登录弹窗用 hinnflow；首页大标题为 NOVAWANDER AI，字体对齐 maas.novawander.cn（Inter：NOVA / AI 为 900，WANDER 为 300）。不要再写 Jackie Canvas、「无限画布」或 Infinite Canvas（存储键、npm 包名等技术标识可继续用 `infinite-canvas`）。
 - 对外文案与渠道配置界面不要暴露底层服务品牌、域名或内置 API Key（如 gravitex）；默认 OpenAI 兼容地址用同源 `/gw`。渠道 Base URL / API Key 表单项仅 `admin` 账号渲染，普通用户不显示。配置中心 WebDAV 同步、提示词来源页签仅 `admin` 账号可见。
 - 提示词库内置来源 Banana Prompt Quicker 默认关闭（含 NSFW / Unknown 条目），不要改回默认开启。
-- Seedance 视频模型在 `/gw`（OpenAI 兼容渠道）下按模型名识别（含 `seedance`），不要只依赖 `apiFormat === "ark"`；时长需落在 Seedance 合法范围（2.0 一般为 4–15 或 -1）。
+- Seedance 视频模型在 `/gw` 下按模型名识别（含 `seedance`），不要只依赖 `apiFormat === "ark"`；时长需落在 Seedance 合法范围（2.0 一般为 4–15 或 -1）。现网 ID 带日期：`seedance-2-0-260128`、`seedance-2-0-fast-260128`、`seedance-2-0-mini-260615`，不要加回短名或 NSFW 变体。生视频走 `POST /gw/api/v3/contents/generations/tasks` 再 `GET .../tasks/{id}`，不要再打 `/v1/video/generations`。素材库现网走 REST `GET/POST /gw/v1/asset-groups` 与 `/gw/v1/assets`：文档里的 `ListAssetGroups` / `ListAssets` Action 上游 BytePlus 返回 UnsupportedAction，不要改去只用 Action 列列表。
+- 默认渠道模型只放 NovaWander 现网这一批：图片 `gpt-image-2` / `gpt-image-2.5-sunburst` / `gpt-image-2.5-flare` / `gemini-2.5-flash-image` / `gemini-3-pro-image` / `gemini-3.1-flash-image`；视频上述三档 Seedance；对话 `gpt-5.6-sol` / `deepseek-v4-flash`。不要加回 Veo、wan2.7、seedream、gpt-5.5、gpt-4o-mini-tts 或 MiniMax H3。
 - Seedream 5.0 生图请求的 `size` 总像素至少 3686400（16:9 至少 2560×1440）；界面仍可选 1K，发请求时按比例抬上去，不要改回把 1536×864 原样发给上游。
 - 配置只走顶栏头像按钮（登录后弹配置，未登录弹登录）。导航不再放「配置」，也不再单独放齿轮。
+- 本地 Agent 入口暂时关闭：`AGENT_UI_ENABLED` 为 false，顶栏 Bot、画布 Agent 按钮和右侧面板都不要加回来。代码留着，单独开分支再打开。
+- 本地代理页签暂时关闭：`LOCAL_PROXY_UI_ENABLED` 为 false，配置里不要把「本地代理」加回来，请求也不要再走 canvas-proxy。代码留着，单独开分支再打开。
 - 「开始生成」等会发起 AI 请求的操作按钮，未登录时应提示并弹出登录，不真正发起生成。
-- 登录鉴权走同源 `/prod-api`（MaaS：`/auth/login` + JWT + 请求体 AES/RSA 加密），不要再走 New API 的 `/api/user/login` Cookie/`New-Api-User`。AI 请求仍走 `/gw`。
-- 登录成功与 hydrate 后，用 `/prod-api/llm/tokens/list`（仅 JWT，不传 userId）拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key 写入默认渠道；退出时清空。不要再写死内置 API Key。
-- 部署到 Vercel 时 `/gw` 必须走 Node 函数 `api/gw.js`（`maxDuration` 300 秒），不要走 Edge Middleware 或外部 rewrite——后两者约 25–30 秒会把生图/生视频掐成 504。`/pay-api` 走 Node 函数 `api/pay.js`（挂 `server/` 的 Hono 应用），不要再配 `PAY_UPSTREAM` 或走 Edge。充值 MySQL / 支付宝默认值写在 `server/src/config.ts`，环境变量仍可覆盖。`/prod-api` 仍走 Middleware 或外部 rewrite。SPA fallback 不能匹配 `/gw`、`/prod-api`、`/pay-api`、`/api`。登录不要改去未部署的 `/api` 回退，否则会 405。
+- 登录鉴权走同源 `/new-api`（New API：`POST /api/user/login` + access_token + `New-Api-User`）。不要再走 MaaS `/prod-api/auth/login` 的 AES/RSA。AI 请求仍走 `/gw`，上游是 `https://api.novawander.cn`，不要改回 gravitex。登录/注册请求发出前先清掉旧的 `access_token` 和 `New-Api-User`，否则换账号会把上一份头带给 nova-api。
+- 企业管理仍挂 MaaS，入口已隐藏：顶栏不要再出现「企业」，登录后不要探测 `/prod-api`，`/enterprise` 深链回首页。页面代码留在 `web/src/jc/pages/enterprise/`，有 New API 身份映射之前不要接回去。
+- 登录成功与 hydrate 后，用 `/new-api/api/token/` 拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key（列表是脱敏的，要再 `POST /api/token/:id/key` 揭秘）写入默认渠道；退出时清空。不要再写死内置 API Key。
+- 部署到 Vercel 时 `/gw` 必须走 Node 函数 `api/gw.js`（`maxDuration` 300 秒，上游 `https://api.novawander.cn`），不要走 Edge Middleware 或外部 rewrite——后两者约 25–30 秒会把生图/生视频掐成 504。`/pay-api` 走 Node 函数 `api/pay.js`（挂 `server/` 的 Hono 应用），不要再配 `PAY_UPSTREAM` 或走 Edge。充值 MySQL / 支付宝默认值写在 `server/src/config.ts`，环境变量仍可覆盖。`/new-api` 走 Middleware 反代 `https://api.novawander.cn`（剥 Set-Cookie Domain），不要只写外部 rewrite——会丢 session cookie。`/prod-api` 代理可留着，但不要再接到登录或导航。SPA fallback 不能匹配 `/gw`、`/prod-api`、`/pay-api`、`/new-api`、`/api`。登录不要改去未部署的 `/api` 回退，否则会 405。

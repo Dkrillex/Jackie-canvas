@@ -1,6 +1,6 @@
 /**
  * 企业管理。接口是 MaaS 平台的**客户侧**企业接口（`/system/enterprise/client/...`），
- * 走的是登录用的同源 `/prod-api`，凭同一把 JWT —— 不需要新前缀，也没有后台权限位。
+ * 走的是同源 `/prod-api`，凭 MaaS JWT。登录改成 New API 之后这套接口暂时用不上。
  *
  * 权限由服务端判：`client/mine/users` 对管理员返回全部成员、对普通成员只返回自己；
  * 分配额度 / 增删改成员都要求 `userType === 1`。前端的按钮显隐只是界面。
@@ -8,7 +8,7 @@
 import axios from "axios";
 
 import { AUTH_CLIENT_ID, AUTH_TOKEN_KEY } from "@/constant/auth";
-import { AUTH_API_BASE } from "@/constant/env";
+import { MAAS_API_BASE } from "@/constant/env";
 
 /** 1-企业管理员 2-企业用户 */
 export const ENTERPRISE_ADMIN = 1;
@@ -68,7 +68,7 @@ export type EditMemberInput = {
  * 只有 `/auth/login` 需要 AES/RSA 加密，其余接口是普通 JSON + Bearer。
  */
 const client = axios.create({
-    baseURL: AUTH_API_BASE,
+    baseURL: MAAS_API_BASE,
     headers: { "Content-Type": "application/json;charset=utf-8", Clientid: AUTH_CLIENT_ID },
 });
 

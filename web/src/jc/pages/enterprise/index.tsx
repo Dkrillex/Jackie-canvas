@@ -31,9 +31,8 @@ export default function EnterprisePage() {
     const [addOpen, setAddOpen] = useState(false);
 
     useEffect(() => {
-        if (user) void refresh();
-        else clear();
-    }, [clear, refresh, user]);
+        clear();
+    }, [clear]);
 
     const isAdmin = enterprise?.userType === ENTERPRISE_ADMIN;
     /** 管理员自己那行的剩余额度，就是分配额度时能划出去的上限（钱从他账上扣） */
@@ -64,11 +63,7 @@ export default function EnterprisePage() {
             {error ? <Alert type="warning" showIcon message={error} /> : null}
 
             {!enterprise && !loading ? (
-                <EmptyCard text={t("enterprise.notJoined")}>
-                    <Button type="primary" onClick={() => setContactOpen(true)}>
-                        {t("wallet.enterpriseContact")}
-                    </Button>
-                </EmptyCard>
+                <EmptyCard text={t("enterprise.unavailableNewApi")} />
             ) : null}
 
             {enterprise ? (

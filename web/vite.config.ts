@@ -57,10 +57,17 @@ export default defineConfig({
     server: {
         proxy: {
             "/gw": {
-                target: "https://api.gravitex.ai",
+                target: "https://api.novawander.cn",
                 changeOrigin: true,
                 secure: true,
                 rewrite: (path) => path.replace(/^\/gw/, ""),
+            },
+            "/new-api": {
+                target: "https://api.novawander.cn",
+                changeOrigin: true,
+                secure: true,
+                cookieDomainRewrite: "",
+                rewrite: (path) => path.replace(/^\/new-api/, "") || "/",
             },
             "/prod-api": {
                 target: "https://maas.gravitex.ai",
@@ -68,6 +75,7 @@ export default defineConfig({
                 secure: true,
             },
             // 本机充值服务（server/）。没起服务时充值页会提示连不上，其余功能不受影响。
+            // 默认 8787；被占用时：PORT=8788 npm run dev，并设 VITE_PAY_API_TARGET=http://127.0.0.1:8788
             "/pay-api": {
                 target: process.env.VITE_PAY_API_TARGET || "http://127.0.0.1:8787",
                 changeOrigin: true,

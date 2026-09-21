@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 
 import i18n from "@/i18n";
+import { LOCAL_PROXY_UI_ENABLED } from "@/jc/config";
 
 export type ApiCallFormat = "openai" | "gemini";
 export type ModelCapability = "image" | "video" | "text" | "audio";
@@ -87,27 +88,20 @@ const CHANNEL_MODEL_SEPARATOR = "::";
 const OPENAI_BASE_URL = "/gw";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
 const ARK_BASE_URL = "https://ark.cn-beijing.volces.com/api/v3";
-const SYSTEM_BASE_URL_HOSTS = ["api.gravitex.ai", "gravitex.ai"];
+const SYSTEM_BASE_URL_HOSTS = ["api.novawander.cn", "novawander.cn", "api.gravitex.ai", "gravitex.ai"];
 
 const DEFAULT_CHANNEL_MODELS: ChannelModel[] = [
     { name: "gpt-image-2", capability: "image" },
-    { name: "gemini-3.1-flash-lite-image", capability: "image" },
-    { name: "gemini-3.1-flash-image", capability: "image" },
+    { name: "gpt-image-2.5-sunburst", capability: "image" },
+    { name: "gpt-image-2.5-flare", capability: "image" },
     { name: "gemini-2.5-flash-image", capability: "image" },
-    { name: "seedream-5-0-260128", capability: "image" },
-    { name: "veo-3.1-lite-generate-001", capability: "video" },
-    { name: "veo-3.1-fast-generate-001", capability: "video" },
-    { name: "seedance-2-0-mini-NSFW", capability: "video" },
-    { name: "seedance-2-0-fast-NSFW", capability: "video" },
-    { name: "seedance-2-0-fast", capability: "video" },
-    { name: "seedance-2-0-mini", capability: "video" },
-    { name: "seedance-2-0-NSFW", capability: "video" },
-    { name: "wan2.7-t2v", capability: "video" },
-    { name: "wan2.7-i2v", capability: "video" },
-    { name: "wan2.7-r2v", capability: "video" },
-    { name: "gpt-5.5", capability: "text" },
+    { name: "gemini-3-pro-image", capability: "image" },
+    { name: "gemini-3.1-flash-image", capability: "image" },
+    { name: "seedance-2-0-260128", capability: "video" },
+    { name: "seedance-2-0-fast-260128", capability: "video" },
+    { name: "seedance-2-0-mini-260615", capability: "video" },
     { name: "gpt-5.6-sol", capability: "text" },
-    { name: "gpt-4o-mini-tts", capability: "audio" },
+    { name: "deepseek-v4-flash", capability: "text" },
 ];
 export const LOCAL_PROXY_PACKAGE = "@basketikun/canvas-proxy";
 export const DEFAULT_LOCAL_PROXY_URL = "http://127.0.0.1:23210";
@@ -129,9 +123,9 @@ export const defaultConfig: AiConfig = {
     ],
     model: "default::gpt-image-2",
     imageModel: "default::gpt-image-2",
-    videoModel: "default::seedance-2-0-mini-NSFW",
-    textModel: "default::gpt-5.5",
-    audioModel: "default::gpt-4o-mini-tts",
+    videoModel: "default::seedance-2-0-260128",
+    textModel: "default::gpt-5.6-sol",
+    audioModel: "",
     audioVoice: "alloy",
     audioFormat: "mp3",
     audioSpeed: "1",
@@ -143,26 +137,7 @@ export const defaultConfig: AiConfig = {
     videoMode: "frames",
     systemPrompt: "",
     reasoningEffort: "auto",
-    models: [
-        "default::gpt-image-2",
-        "default::gemini-3.1-flash-lite-image",
-        "default::gemini-3.1-flash-image",
-        "default::gemini-2.5-flash-image",
-        "default::seedream-5-0-260128",
-        "default::veo-3.1-lite-generate-001",
-        "default::veo-3.1-fast-generate-001",
-        "default::seedance-2-0-mini-NSFW",
-        "default::seedance-2-0-fast-NSFW",
-        "default::seedance-2-0-fast",
-        "default::seedance-2-0-mini",
-        "default::seedance-2-0-NSFW",
-        "default::wan2.7-t2v",
-        "default::wan2.7-i2v",
-        "default::wan2.7-r2v",
-        "default::gpt-5.5",
-        "default::gpt-5.6-sol",
-        "default::gpt-4o-mini-tts",
-    ],
+    models: DEFAULT_CHANNEL_MODELS.map((model) => encodeChannelModel("default", model.name)),
     quality: "auto",
     size: "1:1",
     background: "",
@@ -211,7 +186,7 @@ type ConfigStore = {
     clearPromptContinue: () => void;
 };
 
-const VIDEO_KEYWORDS = ["video", "sora", "veo", "kling", "wan", "hailuo"];
+const VIDEO_KEYWORDS = ["video", "sora", "veo", "kling", "wan", "hailuo", "seedance"];
 
 export function boolConfig(value: string, fallback: boolean) {
     return value ? value === "true" : fallback;
@@ -330,7 +305,13 @@ export const useConfigStore = create<ConfigStore>()(
                     channel.id === "default" ? { ...channel, models: DEFAULT_CHANNEL_MODELS.map((model) => ({ ...model })), baseUrl: normalizeOpenAiBaseUrl(channel.baseUrl || defaultConfig.baseUrl) } : channel,
                 );
                 const models = modelOptionsFromChannels(channels);
-                const pickModel = (value: string | undefined, fallback: string) => normalizeModelOptionValue(value, channels) || normalizeModelOptionValue(fallback, channels);
+                const pickCap = (value: string | undefined, fallback: string, capability: ModelCapability) => {
+                    const options = channels.flatMap((channel) => channel.models.filter((model) => model.capability === capability).map((model) => encodeChannelModel(channel.id, model.name)));
+                    const normalized = normalizeModelOptionValue(value, channels);
+                    if (options.includes(normalized)) return normalized;
+                    const next = normalizeModelOptionValue(fallback, channels);
+                    return options.includes(next) ? next : options[0] || "";
+                };
                 return {
                     ...current,
                     webdav: { ...defaultWebdavSyncConfig, ...persistedWebdav },
@@ -347,10 +328,10 @@ export const useConfigStore = create<ConfigStore>()(
                         apiFormat: normalizeApiFormat(config.apiFormat),
                         channels,
                         models,
-                        imageModel: pickModel(config.imageModel || config.model, defaultConfig.imageModel),
-                        videoModel: pickModel(config.videoModel, defaultConfig.videoModel),
-                        textModel: pickModel(config.textModel || config.model, defaultConfig.textModel),
-                        audioModel: pickModel(config.audioModel || defaultConfig.audioModel, defaultConfig.audioModel),
+                        imageModel: pickCap(config.imageModel || config.model, defaultConfig.imageModel, "image"),
+                        videoModel: pickCap(config.videoModel, defaultConfig.videoModel, "video"),
+                        textModel: pickCap(config.textModel, defaultConfig.textModel, "text"),
+                        audioModel: pickCap(config.audioModel, defaultConfig.audioModel, "audio"),
                         audioVoice: config.audioVoice || defaultConfig.audioVoice,
                         audioFormat: config.audioFormat || defaultConfig.audioFormat,
                         audioSpeed: config.audioSpeed || defaultConfig.audioSpeed,
@@ -596,6 +577,7 @@ export function normalizeLocalProxyUrl(value: string) {
 
 /** Prefix an outgoing request with the local forwarding proxy so the browser is not blocked by CORS. */
 export function withLocalProxy(url: string) {
+    if (!LOCAL_PROXY_UI_ENABLED) return url;
     const { proxyEnabled, proxyUrl } = useConfigStore.getState().config;
     if (!proxyEnabled || !/^https?:\/\//i.test(url)) return url;
     const base = normalizeLocalProxyUrl(proxyUrl);

@@ -1,8 +1,7 @@
-import axios, { type AxiosResponse } from "axios";
+import axios from "axios";
 
-import { AUTH_CLIENT_ID, AUTH_GRANT_TYPE, AUTH_TENANT_ID, AUTH_TOKEN_KEY, AUTH_USER_ID_KEY } from "@/constant/auth";
+import { AUTH_TOKEN_KEY, AUTH_USER_ID_KEY, getSessionHeaders } from "@/constant/auth";
 import { AUTH_API_BASE } from "@/constant/env";
-import { decryptResponseBody, encryptRequestBody } from "@/lib/auth-crypto";
 import type { AiConfig } from "@/stores/use-config-store";
 import type { LocalUser } from "@/stores/use-user-store";
 
@@ -32,140 +31,129 @@ type TokenLogResponse = {
     data?: Array<{ username?: string; token_name?: string }>;
 };
 
-type RuoyiResponse<T = unknown> = {
-    code?: number | string;
-    msg?: string;
+type NewApiResponse<T = unknown> = {
+    success?: boolean;
+    message?: string;
     data?: T;
-    access_token?: string;
-    client_id?: string;
-    expire_in?: number;
 };
 
-type LoginData = {
-    access_token?: string;
-    client_id?: string;
-    expire_in?: number;
+type LoginUserData = {
+    id?: string | number;
+    username?: string;
+    display_name?: string;
+    role?: number;
+    status?: number;
+    group?: string;
+    require_2fa?: boolean;
 };
 
-type UserInfoData = {
-    permissions?: string[];
-    roles?: string[];
-    user?: {
-        userId?: number | string;
-        userName?: string;
-        nickName?: string;
-        avatar?: string;
-        apiId?: number | string;
-    };
-};
-
-type UserQuotaData = {
+type SelfUserData = {
+    id?: string | number;
+    username?: string;
+    display_name?: string;
+    role?: number;
     quota?: number;
-    quotaDollar?: string | number;
-    usedQuota?: number;
+    used_quota?: number;
 };
 
-type LlmTokenRow = {
+type TokenRow = {
+    id?: number;
     key?: string;
     status?: number;
-    deletedAt?: string | null;
-    userGroup?: string;
     group?: string;
-};
-
-type LlmTokenListRaw = RuoyiResponse<LlmTokenRow[] | { rows?: LlmTokenRow[]; total?: number }> & {
-    rows?: LlmTokenRow[];
-    total?: number;
+    expired_time?: number;
 };
 
 const NEW_API_QUOTA_PER_UNIT = 500_000;
 
+export class TwoFactorRequiredError extends Error {
+    constructor() {
+        super("需要两步验证");
+        this.name = "TwoFactorRequiredError";
+    }
+}
+
 const authClient = axios.create({
     baseURL: AUTH_API_BASE,
-    headers: {
-        "Content-Type": "application/json;charset=utf-8",
-        Clientid: AUTH_CLIENT_ID,
-    },
+    withCredentials: true,
+    headers: { "Content-Type": "application/json" },
 });
 
 authClient.interceptors.request.use((config) => {
-    const token = typeof window !== "undefined" ? window.localStorage.getItem(AUTH_TOKEN_KEY) : "";
-    if (token) {
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${token}`;
+    const headers = getSessionHeaders();
+    config.headers = config.headers || {};
+    for (const [key, value] of Object.entries(headers)) {
+        config.headers[key] = value;
     }
     return config;
 });
 
 export async function loginWithPassword(username: string, password: string): Promise<LocalUser> {
-    const payload = {
-        username: username.trim(),
-        password,
-        clientId: AUTH_CLIENT_ID,
-        grantType: AUTH_GRANT_TYPE,
-        tenantId: AUTH_TENANT_ID,
-    };
-    const { body, encryptKey } = encryptRequestBody(payload);
-    const response = await authClient.post<RuoyiResponse<LoginData>>("/auth/login", body, {
-        headers: { "encrypt-key": encryptKey },
-        transformRequest: [(data) => data],
-    });
-    const login = unwrapRuoyi(await maybeDecrypt(response), "登录失败") as LoginData;
-    const token = login.access_token;
-    if (!token) throw new Error("登录失败：未返回 access_token");
-    setAuthToken(token);
-    return fetchCurrentUser();
+    clearAuthSession();
+    const data = await request(
+        authClient.post<NewApiResponse<LoginUserData>>("/api/user/login", {
+            username: username.trim(),
+            password,
+        }),
+        "登录失败",
+    );
+    if (data?.require_2fa) throw new TwoFactorRequiredError();
+    return completeSession(data);
+}
+
+export async function loginWithTwoFactor(code: string): Promise<LocalUser> {
+    const data = await request(authClient.post<NewApiResponse<LoginUserData>>("/api/user/login/2fa", { code: code.trim() }), "两步验证失败");
+    return completeSession(data);
+}
+
+export async function registerWithPassword(username: string, password: string): Promise<void> {
+    clearAuthSession();
+    await request(
+        authClient.post<NewApiResponse>("/api/user/register", {
+            username: username.trim(),
+            password,
+        }),
+        "注册失败",
+    );
 }
 
 export async function fetchCurrentUser(): Promise<LocalUser> {
-    const token = getAuthToken();
-    if (!token) throw new Error("未登录或会话已失效");
-
-    const response = await authClient.get<RuoyiResponse<UserInfoData>>("/system/user/getInfo");
-    const raw = await maybeDecrypt(response);
-    const info = unwrapRuoyi(raw, "未登录或会话已失效") as UserInfoData & { user?: UserInfoData["user"] };
-    // 兼容 data.user / 顶层 user
-    const profile = info.user || (raw as UserInfoData).user;
-    if (!profile) throw new Error("未登录或会话已失效");
-
-    const username = (profile.userName || "").trim() || "用户";
-    const userId = String(profile.userId ?? username);
-    // 余额接口仍可能需要 Nebula apiId；仅临时使用，不写入 LocalUser
-    const quotaUserId = String(profile.apiId ?? profile.userId ?? "").trim();
-    if (typeof window !== "undefined") {
-        window.localStorage.setItem(AUTH_USER_ID_KEY, userId);
-    }
-
-    const quota = quotaUserId ? await fetchUserQuota(quotaUserId).catch(() => ({ quota: 0, usedQuota: 0 })) : { quota: 0, usedQuota: 0 };
+    if (!getAuthToken() || !getAuthUserId()) throw new Error("未登录或会话已失效");
+    const profile = await request(authClient.get<NewApiResponse<SelfUserData>>("/api/user/self"), "未登录或会话已失效");
+    const username = (profile.username || "").trim() || "用户";
+    const userId = String(profile.id ?? "").trim();
+    if (!userId) throw new Error("未登录或会话已失效");
+    if (typeof window !== "undefined") window.localStorage.setItem(AUTH_USER_ID_KEY, userId);
     return {
         id: userId,
         username,
-        displayName: (profile.nickName || username).trim() || username,
-        avatarUrl: (profile.avatar || "").trim(),
-        quota: quota.quota,
-        usedQuota: quota.usedQuota,
+        displayName: (profile.display_name || username).trim() || username,
+        avatarUrl: "",
+        quota: Number(profile.quota) || 0,
+        usedQuota: Number(profile.used_quota) || 0,
+        role: Number(profile.role) || 0,
     };
 }
 
-/** 凭登录 JWT 拉取当前账号启用中的第一把 group=auto 密钥（不传 userId） */
+/** 凭登录态拉取当前账号启用中的第一把 group=auto 密钥 */
 export async function fetchAutoUserApiKey(): Promise<string | null> {
-    const response = await authClient.get<LlmTokenListRaw>("/llm/tokens/list", {
-        params: { pageNum: 1, pageSize: 100 },
-    });
-    const raw = await maybeDecrypt(response);
-    const code = (raw as RuoyiResponse)?.code;
-    if (code !== undefined && code !== 200 && code !== "200") {
-        throw new Error((raw as RuoyiResponse).msg || "获取密钥失败");
-    }
-    const rows = parseTokenRows(raw);
-    const token = rows.find((item) => !item?.deletedAt && Number(item.status) === 1 && isAutoGroup(item) && String(item.key || "").trim());
-    const key = String(token?.key || "").trim();
+    const list = await request(
+        authClient.get<NewApiResponse<{ items?: TokenRow[] }>>("/api/token/", {
+            params: { p: 1, page_size: 100 },
+        }),
+        "获取密钥失败",
+    );
+    const rows = Array.isArray(list?.items) ? list.items : [];
+    const token = rows.find((item) => Number(item.status) === 1 && isAutoGroup(item) && item.id != null && !isExpired(item));
+    if (!token?.id) return null;
+    const revealed = await request(authClient.post<NewApiResponse<{ key?: string }>>(`/api/token/${token.id}/key`, {}), "获取密钥失败");
+    const key = String(revealed?.key || "").trim();
     if (!key) return null;
     return key.startsWith("sk-") ? key : `sk-${key}`;
 }
 
 export async function logoutRemote(): Promise<void> {
-    await authClient.post<RuoyiResponse>("/auth/logout", {}).catch(() => undefined);
+    await authClient.get<NewApiResponse>("/api/user/logout").catch(() => undefined);
     clearAuthSession();
 }
 
@@ -201,73 +189,62 @@ export function formatQuotaCurrency(quota: number) {
     return `$${(Math.max(0, quota) / NEW_API_QUOTA_PER_UNIT).toFixed(2)}`;
 }
 
-/**
- * GET /api/users/{id}：与平台 Expenses 一致，quotaDollar/quota 为剩余美元余额（不是总额）。
- * 统一换算成 New API 内部单位（500000 = $1）存入 LocalUser.quota。
- */
-async function fetchUserQuota(apiId: string): Promise<{ quota: number; usedQuota: number }> {
-    const response = await authClient.get<RuoyiResponse<UserQuotaData>>(`/api/users/${apiId}`);
-    const data = unwrapRuoyi(await maybeDecrypt(response), "获取余额失败");
-    const remainingDollar = Number(data.quotaDollar ?? data.quota);
-    const usedRaw = Number(data.usedQuota);
-    const toInternal = (value: number) => {
-        if (!Number.isFinite(value)) return 0;
-        // 小于 1e6 视为美元；否则视为已是内部单位
-        return Math.abs(value) < 1_000_000 ? Math.round(value * NEW_API_QUOTA_PER_UNIT) : Math.round(value);
-    };
-    return {
-        quota: toInternal(remainingDollar),
-        usedQuota: toInternal(usedRaw),
-    };
-}
-
-function parseTokenRows(raw: LlmTokenListRaw | unknown): LlmTokenRow[] {
-    const res = raw as LlmTokenListRaw;
-    if (Array.isArray(res?.rows)) return res.rows;
-    const data = res?.data;
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === "object" && Array.isArray((data as { rows?: LlmTokenRow[] }).rows)) {
-        return (data as { rows: LlmTokenRow[] }).rows;
+async function completeSession(data: LoginUserData | undefined): Promise<LocalUser> {
+    const userId = String(data?.id ?? "").trim();
+    if (!userId) throw new Error("登录失败：未返回用户信息");
+    if (typeof window !== "undefined") {
+        window.localStorage.removeItem(AUTH_TOKEN_KEY);
+        window.localStorage.setItem(AUTH_USER_ID_KEY, userId);
     }
-    return [];
+    const accessToken = await request(authClient.get<NewApiResponse<string>>("/api/user/token"), "登录失败：未返回 access_token");
+    const token = String(accessToken || "").trim();
+    if (!token) throw new Error("登录失败：未返回 access_token");
+    setAuthToken(token);
+    return fetchCurrentUser();
 }
 
-function isAutoGroup(item: LlmTokenRow) {
-    const group = String(item.userGroup || item.group || "")
-        .trim()
-        .toLowerCase();
-    return group === "auto";
-}
-
-function unwrapRuoyi<T>(raw: RuoyiResponse<T> | T, fallback: string): T & RuoyiResponse {
-    const res = raw as RuoyiResponse<T>;
-    const code = res?.code;
-    if (code !== undefined && code !== 200 && code !== "200") {
-        throw new Error(res.msg || fallback);
-    }
-    if (res?.data !== undefined) return res.data as T & RuoyiResponse;
-    return raw as T & RuoyiResponse;
-}
-
-async function maybeDecrypt<T>(response: AxiosResponse<RuoyiResponse<T>>): Promise<RuoyiResponse<T>> {
-    const headers = response.headers as { get?: (name: string) => string | undefined; [key: string]: unknown };
-    const encryptKey = headers.get?.("encrypt-key") || (headers["encrypt-key"] as string | undefined) || (headers["Encrypt-Key"] as string | undefined);
-    if (!encryptKey || typeof response.data !== "string") return response.data;
+async function request<T>(pending: Promise<{ data: NewApiResponse<T> }>, fallback: string): Promise<T> {
     try {
-        return decryptResponseBody(response.data, encryptKey) as RuoyiResponse<T>;
-    } catch {
-        return response.data;
+        return unwrapNewApi(await pending, fallback);
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            const data = error.response?.data as NewApiResponse | undefined;
+            throw new Error(data?.message || fallback);
+        }
+        throw error;
     }
+}
+
+function unwrapNewApi<T>(response: { data: NewApiResponse<T> }, fallback: string): T {
+    const res = response.data;
+    if (res?.success === false) throw new Error(res.message || fallback);
+    if (res?.success === true) return res.data as T;
+    if (res?.data !== undefined) return res.data;
+    throw new Error(res?.message || fallback);
+}
+
+function isAutoGroup(item: TokenRow) {
+    return String(item.group || "")
+        .trim()
+        .toLowerCase() === "auto";
+}
+
+function isExpired(item: TokenRow) {
+    const expired = Number(item.expired_time);
+    return Number.isFinite(expired) && expired > 0 && expired * 1000 < Date.now();
 }
 
 function getAuthToken() {
     return typeof window !== "undefined" ? window.localStorage.getItem(AUTH_TOKEN_KEY) || "" : "";
 }
 
+function getAuthUserId() {
+    return typeof window !== "undefined" ? window.localStorage.getItem(AUTH_USER_ID_KEY) || "" : "";
+}
+
 function setAuthToken(token: string) {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(AUTH_TOKEN_KEY, token);
-    window.localStorage.removeItem(AUTH_USER_ID_KEY);
 }
 
 function clearAuthSession() {

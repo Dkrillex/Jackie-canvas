@@ -5,7 +5,7 @@
  * **只用于显示** —— 冻结、扣款、抽成的实际计算全在服务端做，前端算出来的数字不作数。
  */
 import { PAY_API_BASE } from "@/jc/config";
-import { AUTH_TOKEN_KEY } from "@/constant/auth";
+import { getSessionHeaders } from "@/constant/auth";
 import type { Job, JobQuote, JobScope } from "@/jc/lib/job-types";
 
 export type { Job, JobScope };
@@ -19,12 +19,11 @@ type JobPayload = Omit<Job, "budget" | "quotes" | "settlement" | "depositAmount"
 };
 
 async function jobRequest<T>(path: string, init?: RequestInit): Promise<T> {
-    const token = window.localStorage.getItem(AUTH_TOKEN_KEY) || "";
     const response = await fetch(`${PAY_API_BASE}/api/jobs${path}`, {
         ...init,
         headers: {
             ...(init?.body ? { "Content-Type": "application/json" } : {}),
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...getSessionHeaders(),
             ...init?.headers,
         },
     });

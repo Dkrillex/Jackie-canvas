@@ -20,7 +20,7 @@ app.use(
     "*",
     cors({
         origin: origins.includes("*") ? "*" : origins,
-        allowHeaders: ["Content-Type", "Authorization"],
+        allowHeaders: ["Content-Type", "Authorization", "New-Api-User"],
         allowMethods: ["GET", "POST", "OPTIONS"],
     }),
 );

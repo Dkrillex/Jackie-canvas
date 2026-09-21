@@ -8,7 +8,7 @@
 import { Hono } from "hono";
 
 import { AlipayNotConfigured, pagePayUrl, verifyNotify } from "../alipay.js";
-import { resolveUser } from "../auth.js";
+import { resolveUserFrom } from "../auth.js";
 import { alipayConfigured, mysqlConfigured, settings } from "../config.js";
 import { DatabaseNotConfigured } from "../db.js";
 import * as orders from "../orders.js";
@@ -53,7 +53,7 @@ payRoutes.post("/orders", async (c) => {
     if (!alipayConfigured()) return c.json({ message: "支付宝还没配置：请在服务端填 ALIPAY_APP_ID / ALIPAY_PRIVATE_KEY / ALIPAY_PUBLIC_KEY" }, 503);
     if (!mysqlConfigured()) return c.json({ message: "订单库还没配置：请在服务端填 MYSQL_HOST / MYSQL_USER / MYSQL_PASSWORD / MYSQL_DATABASE" }, 503);
 
-    const user = await resolveUser(c.req.header("Authorization"));
+    const user = await resolveUserFrom(c);
     const body = await c.req.json<{ packageId?: string }>().catch(() => ({}) as { packageId?: string });
     const pkg = findPackage(String(body.packageId || ""));
     if (!pkg) return c.json({ message: "充值档位不存在" }, 400);
@@ -91,7 +91,7 @@ payRoutes.post("/orders", async (c) => {
  */
 payRoutes.get("/orders/:outTradeNo", async (c) => {
     if (!mysqlConfigured()) return c.json({ message: "订单库还没配置" }, 503);
-    const user = await resolveUser(c.req.header("Authorization"));
+    const user = await resolveUserFrom(c);
     const outTradeNo = c.req.param("outTradeNo");
 
     let order = await orders.get(outTradeNo);
@@ -117,7 +117,7 @@ payRoutes.get("/orders/:outTradeNo", async (c) => {
 /** 当前用户的充值记录。 */
 payRoutes.get("/orders", async (c) => {
     if (!mysqlConfigured()) return c.json({ message: "订单库还没配置" }, 503);
-    const user = await resolveUser(c.req.header("Authorization"));
+    const user = await resolveUserFrom(c);
     const limit = Math.min(Number(c.req.query("limit") || 20) || 20, 100);
     const rows = await orders.listByUser(user.userId, limit);
     return c.json({

@@ -4,6 +4,14 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] Seedance 生视频改走 `/gw/api/v3/contents/generations/tasks`；素材库仍走现网可用的 `/gw/v1/asset-groups`（文档 ListAssetGroups Action 上游不支持）。
++ [调整][Jackie] 暂时隐藏本地代理：配置弹窗不再出现该页签，请求也不再转发 canvas-proxy，代码留待单独分支。
++ [调整][Jackie] 暂时隐藏本地 Agent：顶栏 Bot、画布 Agent 按钮和右侧面板都不出现，代码留待单独分支。
++ [调整][Jackie] 现网 `auto` 已覆盖 GPT / DeepSeek / Seedance / Gemini 四个渠道组，默认 11 个模型都能走登录同步的 auto 密钥。
++ [修复][Jackie] 登录/注册前清掉旧的 access_token 和 New-Api-User，避免换账号时把上一份头带给 nova-api。
++ [调整][Jackie] 默认渠道改为 NovaWander 现网模型：图片 6 个（gpt-image-2 / 2.5-sunburst / 2.5-flare、gemini-2.5-flash-image / 3-pro-image / 3.1-flash-image），视频三档 Seedance（2.0 / Fast / Mini 带日期 ID），对话 gpt-5.6-sol 与 deepseek-v4-flash。
++ [调整][Jackie] `/gw` 上游改为 `https://api.novawander.cn`，登录后同步的控制台 Key 才能用来生图。
++ [调整][Jackie] 登录注册改走 NovaWander 控制台同一套 New API 账号（同源 `/new-api`），不再用 MaaS `/prod-api` 加密登录。
 + [修复][Jackie] 选中图片时不再因为下方提示词面板而藏掉悬浮工具栏，反推提示词等快捷工具能重新看到。
 + [修复][Jackie] 画布组装提示词：中文输入法组字时隐藏占位文案；`@` 引用后把光标放进文本节点，避免拼音被拆成字母。
 + [修复][Jackie] 视频创作台 Seedance 补回缺失的 `unwrapSeedanceTask`，避免创建任务时报 is not defined。

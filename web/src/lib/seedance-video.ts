@@ -1,6 +1,6 @@
 import i18n from "@/i18n";
 import { isOssUploadReady } from "@/services/oss-upload";
-import { modelOptionName, resolveModelRequestConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
+import { modelOptionName, resolveModelRequestConfig, useConfigStore, withLocalProxy, type AiConfig } from "@/stores/use-config-store";
 import type { ReferenceImage } from "@/types/image";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
 
@@ -219,6 +219,17 @@ export function isSeedanceRemoteMediaUrl(value?: string) {
 export function isArkPlanBaseUrl(baseUrl: string) {
     const value = baseUrl.toLowerCase();
     return value.includes("ark.cn-beijing.volces.com/api/plan/v3") || value.includes("/api/plan/v3");
+}
+
+/** `/gw` 或带 `/v1` 的上游 origin，用来拼 `/api/v3/...`，不要再走 `buildApiUrl` 强制加 `/v1`。 */
+export function seedanceGatewayOrigin(baseUrl: string) {
+    const origin = baseUrl.trim().replace(/\/+$/, "").replace(/\/v1$/i, "");
+    return origin || "/gw";
+}
+
+export function seedanceTaskApiUrl(baseUrl: string, taskId?: string) {
+    const path = `/api/v3/contents/generations/tasks${taskId ? `/${encodeURIComponent(taskId)}` : ""}`;
+    return withLocalProxy(`${seedanceGatewayOrigin(baseUrl)}${path}`);
 }
 
 export function seedanceVideoReferenceHint() {

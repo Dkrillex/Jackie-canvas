@@ -19,17 +19,13 @@ export type SeedanceAsset = {
     virtual_id: string;
     asset_url: string;
     group_id: string;
-    /** 预览用 https，来自网关 gravitex_url */
+    /** 预览用 https */
     url?: string;
     filename?: string;
     name?: string;
     asset_type: SeedanceAssetType;
     status: SeedanceAssetStatus;
     created_at?: number;
-};
-
-type SeedanceAssetApi = SeedanceAsset & {
-    gravitex_url?: string;
 };
 
 type ApiEnvelope<T> = T | { code?: number | string; data?: T | null; msg?: string; message?: string; error?: { message?: string } };
@@ -47,25 +43,25 @@ export function getSeedanceRequestConfig(): AiConfig {
 export async function listSeedanceAssetGroups(options?: RequestOptions) {
     const config = getSeedanceRequestConfig();
     assertSeedanceAssetConfig(config);
-    const payload = (await axios.get<ApiEnvelope<{ groups?: SeedanceAssetGroup[]; total?: number } | SeedanceAssetGroup[]>>(assetApiUrl(config, "/asset-groups"), {
+    const payload = (await axios.get<ApiEnvelope<{ groups?: Record<string, unknown>[]; total?: number } | Record<string, unknown>[]>>(assetApiUrl(config, "/asset-groups"), {
         headers: aiHeaders(config),
         params: { group_type: "aigc" },
         signal: options?.signal,
     })).data;
     const data = unwrapEnvelope(payload, "素材组列表为空");
-    if (Array.isArray(data)) return data.filter((item) => !item.group_type || item.group_type === "aigc");
-    return (data.groups || []).filter((item) => !item.group_type || item.group_type === "aigc");
+    const groups = Array.isArray(data) ? data : data.groups || [];
+    return groups.map(normalizeGroup).filter((item) => isAigcGroup(item.group_type));
 }
 
 export async function createSeedanceAssetGroup(name: string, description = "", options?: RequestOptions) {
     const config = getSeedanceRequestConfig();
     assertSeedanceAssetConfig(config);
-    const payload = (await axios.post<ApiEnvelope<SeedanceAssetGroup>>(
+    const payload = (await axios.post<ApiEnvelope<Record<string, unknown>>>(
         assetApiUrl(config, "/asset-groups"),
         { name: name.trim() || "画布默认", description, group_type: "aigc" },
         { headers: aiHeaders(config, "application/json"), signal: options?.signal },
     )).data;
-    return unwrapEnvelope(payload, "创建素材组失败");
+    return normalizeGroup(unwrapEnvelope(payload, "创建素材组失败"));
 }
 
 export async function deleteSeedanceAssetGroup(groupId: string, options?: RequestOptions) {
@@ -80,7 +76,7 @@ export async function deleteSeedanceAssetGroup(groupId: string, options?: Reques
 export async function listSeedanceAssets(groupId?: string, options?: RequestOptions) {
     const config = getSeedanceRequestConfig();
     assertSeedanceAssetConfig(config);
-    const payload = (await axios.get<ApiEnvelope<{ assets?: SeedanceAsset[]; total?: number } | SeedanceAsset[]>>(assetApiUrl(config, "/assets"), {
+    const payload = (await axios.get<ApiEnvelope<{ assets?: Record<string, unknown>[]; total?: number } | Record<string, unknown>[]>>(assetApiUrl(config, "/assets"), {
         headers: aiHeaders(config),
         params: {
             group_type: "aigc",
@@ -96,7 +92,7 @@ export async function listSeedanceAssets(groupId?: string, options?: RequestOpti
 export async function getSeedanceAsset(virtualId: string, options?: RequestOptions) {
     const config = getSeedanceRequestConfig();
     assertSeedanceAssetConfig(config);
-    const payload = (await axios.get<ApiEnvelope<SeedanceAsset>>(assetApiUrl(config, `/assets/${encodeURIComponent(virtualId)}`), {
+    const payload = (await axios.get<ApiEnvelope<Record<string, unknown>>>(assetApiUrl(config, `/assets/${encodeURIComponent(virtualId)}`), {
         headers: aiHeaders(config),
         signal: options?.signal,
     })).data;
@@ -106,7 +102,7 @@ export async function getSeedanceAsset(virtualId: string, options?: RequestOptio
 export async function createSeedanceAsset(input: { url: string; groupId: string; assetType: SeedanceAssetType; name: string }, options?: RequestOptions) {
     const config = getSeedanceRequestConfig();
     assertSeedanceAssetConfig(config);
-    const payload = (await axios.post<ApiEnvelope<SeedanceAsset>>(
+    const payload = (await axios.post<ApiEnvelope<Record<string, unknown>>>(
         assetApiUrl(config, "/assets"),
         {
             url: input.url,
@@ -213,23 +209,37 @@ export function guessSeedanceAssetType(file: File): SeedanceAssetType | null {
     return null;
 }
 
-function normalizeAsset(asset: SeedanceAssetApi): SeedanceAsset {
-    const assetType = normalizeAssetType(asset.asset_type);
-    const status = normalizeAssetStatus(asset.status);
-    const fromUrl = asset.asset_url?.startsWith("asset://") ? asset.asset_url.slice("asset://".length) : "";
-    const virtualId = asset.virtual_id || fromUrl || "";
-    const assetUrl = asset.asset_url || (virtualId ? `asset://${virtualId}` : "");
+function normalizeGroup(raw: Record<string, unknown>): SeedanceAssetGroup {
+    const id = stringField(raw, "group_id", "Id", "GroupId");
+    return {
+        group_id: id,
+        group_type: stringField(raw, "group_type", "GroupType") || "aigc",
+        name: stringField(raw, "name", "Name", "Title") || id,
+        description: stringField(raw, "description", "Description"),
+        asset_count: numberField(raw, "asset_count", "AssetCount"),
+        created_at: parseTime(raw.created_at ?? raw.CreateTime),
+    };
+}
+
+function normalizeAsset(raw: Record<string, unknown>): SeedanceAsset {
+    const fromUrl = stringField(raw, "asset_url");
+    const virtualId = stringField(raw, "virtual_id", "Id") || (fromUrl.startsWith("asset://") ? fromUrl.slice("asset://".length) : "");
+    const preview = stringField(raw, "url", "URL");
     return {
         virtual_id: virtualId,
-        asset_url: assetUrl,
-        group_id: asset.group_id,
-        url: isHttpPreviewUrl(asset.gravitex_url) ? asset.gravitex_url : undefined,
-        filename: asset.filename || asset.name || virtualId,
-        name: asset.name,
-        asset_type: assetType,
-        status,
-        created_at: asset.created_at,
+        asset_url: fromUrl.startsWith("asset://") ? fromUrl : virtualId ? `asset://${virtualId}` : "",
+        group_id: stringField(raw, "group_id", "GroupId"),
+        url: isHttpPreviewUrl(preview) ? preview : undefined,
+        filename: stringField(raw, "filename", "name", "Name") || virtualId,
+        name: stringField(raw, "name", "Name") || undefined,
+        asset_type: normalizeAssetType(stringField(raw, "asset_type", "AssetType")),
+        status: normalizeAssetStatus(stringField(raw, "status", "Status")),
+        created_at: parseTime(raw.created_at ?? raw.CreateTime),
     };
+}
+
+function isAigcGroup(value?: string) {
+    return !value || value.toLowerCase() === "aigc";
 }
 
 function isHttpPreviewUrl(value?: string) {
@@ -248,6 +258,31 @@ function normalizeAssetStatus(value: string): SeedanceAssetStatus {
     if (lower === "active") return "active";
     if (lower === "failed") return "failed";
     return "pending";
+}
+
+function stringField(raw: Record<string, unknown>, ...keys: string[]) {
+    for (const key of keys) {
+        const value = raw[key];
+        if (typeof value === "string" && value.trim()) return value.trim();
+    }
+    return "";
+}
+
+function numberField(raw: Record<string, unknown>, ...keys: string[]) {
+    for (const key of keys) {
+        const value = Number(raw[key]);
+        if (Number.isFinite(value) && value > 0) return value;
+    }
+    return undefined;
+}
+
+function parseTime(value: unknown) {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string") {
+        const parsed = Date.parse(value);
+        if (Number.isFinite(parsed)) return Math.floor(parsed / 1000);
+    }
+    return undefined;
 }
 
 function assetApiUrl(config: AiConfig, path: string) {

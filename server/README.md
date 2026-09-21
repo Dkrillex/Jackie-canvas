@@ -80,9 +80,7 @@ ngrok / frp 把它暴露出去；不填也能到账，只是只剩轮询和对�
 
 ## 身份
 
-本服务不自建账号：前端带着现有的 MaaS JWT 过来，这里拿去问 MaaS `/system/user/getInfo`
-「你是谁」，认它返回的 `userId`。所以钱包天然和现有登录体系对齐，不用同步用户表。
-
-MaaS 可能加密返回（响应头带 `encrypt-key`），`src/auth.ts` 里做了对应的解密。注意其中的
-PKCS#1 去填充是手写的：Node 20 起 `privateDecrypt` 不再接受 `RSA_PKCS1_PADDING`
-（CVE-2023-46809），而前端 JSEncrypt 用的正是这个填充。
+本服务不自建账号：前端带着 New API 的 `access_token` 和 `New-Api-User` 过来，这里拿去问
+nova-api `GET /api/user/self`「你是谁」，认它返回的用户 id。所以钱包天然和现有登录体系对齐，
+不用同步用户表。默认 `AUTH_API_BASE=https://api.novawander.cn`，不再问 MaaS。
+旧 MaaS userId 底下的钱包行不会自动迁过来，换登录体系后余额可能是空的。

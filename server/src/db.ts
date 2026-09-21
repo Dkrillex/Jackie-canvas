@@ -18,7 +18,7 @@ const SCHEMA = [
     `CREATE TABLE IF NOT EXISTS recharge_orders (
         id            BIGINT AUTO_INCREMENT PRIMARY KEY,
         out_trade_no  VARCHAR(64)   NOT NULL UNIQUE  COMMENT '商户订单号，服务端生成',
-        user_id       VARCHAR(64)   NOT NULL         COMMENT 'MaaS userId，下单时从 JWT 解出来',
+        user_id       VARCHAR(64)   NOT NULL         COMMENT 'New API user id，下单时从登录态解出来',
         package_id    VARCHAR(64)   NOT NULL         COMMENT '充值档位 id',
         subject       VARCHAR(255)  NOT NULL,
         amount        DECIMAL(12,2) NOT NULL         COMMENT '应付人民币',
@@ -78,7 +78,7 @@ const SCHEMA = [
         brief                  MEDIUMTEXT    NOT NULL COMMENT 'Markdown 正文，可能内嵌图片引用',
         budget                 DECIMAL(14,2) NOT NULL,
         status                 VARCHAR(16)   NOT NULL COMMENT 'open/quoted/active/submitted/completed/cancelled/expired',
-        client_id              VARCHAR(64)   NOT NULL COMMENT '发单人 MaaS userId',
+        client_id              VARCHAR(64)   NOT NULL COMMENT '发单人 New API user id',
         creator_id             VARCHAR(64)   NULL     COMMENT '接单人，接受报价时写入',
         accepted_quote_id      VARCHAR(32)   NULL,
         deposit_id             VARCHAR(32)   NULL     COMMENT '当前这次接单的押金记录 id',

@@ -59,17 +59,17 @@ export const settings = {
     /** 到期扫描间隔秒数。设成 0 或负数就关掉（关掉之后没有任何东西会让单子过期） */
     jobExpiryIntervalSec: Number(env("JOB_EXPIRY_INTERVAL_SEC", "60")),
 
-    // ---------- 用户身份（复用前端已有的 MaaS 登录）----------
-    // 本服务不自建账号：前端带着 MaaS 的 JWT 过来，这里拿去问 MaaS「你是谁」，认它返回的
+    // ---------- 用户身份（复用前端已有的 New API 登录）----------
+    // 本服务不自建账号：前端带着 access_token 和 New-Api-User 过来，这里拿去问 nova-api「你是谁」，认它返回的
     // userId。订单和钱包因此天然和现有登录体系对齐，不用再发一套凭据、也不用同步用户表。
-    authApiBase: env("AUTH_API_BASE", "https://maas.gravitex.ai/prod-api"),
+    authApiBase: env("AUTH_API_BASE", "https://api.novawander.cn"),
     authClientId: env("AUTH_CLIENT_ID", "e5cd7e4891bf95d1d19206ce24a7b32e"),
     /** 与前端 constant/auth.ts 同一把：MaaS 用配对公钥加密响应体的 AES 密钥 */
     authRsaPrivateKey: env(
         "AUTH_RSA_PRIVATE_KEY",
         "MIIBVAIBADANBgkqhkiG9w0BAQEFAASCAT4wggE6AgEAAkEAmc3CuPiGL/LcIIm7zryCEIbl1SPzBkr75E2VMtxegyZ1lYRD+7TZGAPkvIsBcaMs6Nsy0L78n2qh+lIZMpLH8wIDAQABAkEAk82Mhz0tlv6IVCyIcw/s3f0E+WLmtPFyR9/WtV3Y5aaejUkU60JpX4m5xNR2VaqOLTZAYjW8Wy0aXr3zYIhhQQIhAMfqR9oFdYw1J9SsNc+CrhugAvKTi0+BF6VoL6psWhvbAiEAxPPNTmrkmrXwdm/pQQu3UOQmc2vCZ5tiKpW10CgJi8kCIFGkL6utxw93Ncj4exE/gPLvKcT+1Emnoox+O9kRXss5AiAMtYLJDaLEzPrAWcZeeSgSIzbL+ecokmFKSDDcRske6QIgSMkHedwND1olF8vlKsJUGK3BcdtM8w4Xq7BpSBwsloE=",
     ),
-    /** token → userId 的缓存秒数。前端每 2 秒轮一次订单，不缓存会把 MaaS 打爆 */
+    /** token → userId 的缓存秒数。前端每 2 秒轮一次订单，不缓存会把鉴权上游打爆 */
     authCacheSec: Number(env("AUTH_CACHE_SEC", "60")),
 };
 

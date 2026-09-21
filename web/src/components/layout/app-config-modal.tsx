@@ -11,6 +11,7 @@ import { ConfigPromptSources } from "@/components/layout/config-prompt-sources";
 import { ConfigLocalStorage } from "@/components/layout/config-local-storage";
 import { useCopyText } from "@/hooks/use-copy-text";
 import type { AppLocale } from "@/i18n";
+import { LOCAL_PROXY_UI_ENABLED } from "@/jc/config";
 import { exportAppConfig, importAppConfig } from "@/services/config-file";
 import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
@@ -31,12 +32,14 @@ const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels", "oss"];
 /** 仅 `admin` 账号可见 */
 const ADMIN_ONLY_CONFIG_TABS: ConfigTabKey[] = ["webdav", "prompt-sources"];
 
-function isAdminUser(username?: string | null) {
-    return (username || "").trim().toLowerCase() === "admin";
+function isAdminUser(user?: { username?: string | null; role?: number } | null) {
+    if ((user?.role ?? 0) >= 10) return true;
+    return (user?.username || "").trim().toLowerCase() === "admin";
 }
 
 function isConfigTabVisible(tab: ConfigTabKey, isAdmin: boolean) {
     if (HIDDEN_CONFIG_TABS.includes(tab)) return false;
+    if (tab === "local-proxy" && !LOCAL_PROXY_UI_ENABLED) return false;
     if (!isAdmin && ADMIN_ONLY_CONFIG_TABS.includes(tab)) return false;
     return true;
 }
@@ -77,7 +80,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
     const { i18n, t } = useTranslation();
     const configInputRef = useRef<HTMLInputElement>(null);
     const sessionUser = useUserStore((state) => state.user);
-    const isAdmin = isAdminUser(sessionUser?.username);
+    const isAdmin = isAdminUser(sessionUser);
     const resolveTab = (tab: ConfigTabKey) => (isConfigTabVisible(tab, isAdmin) ? tab : "user");
     const [activeTab, setActiveTab] = useState<ConfigTabKey>(() => resolveTab(initialTab));
     const [editingChannelId, setEditingChannelId] = useState("");

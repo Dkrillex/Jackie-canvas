@@ -5,7 +5,7 @@
  * 一旦允许前端传金额，改一个数字就能一分钱买下全部积分。页面上显示的价格来自
  * `getRechargePackages()`，也就是服务端那份，不会和结算价对不上。
  */
-import { AUTH_TOKEN_KEY } from "@/constant/auth";
+import { getSessionHeaders } from "@/constant/auth";
 import { PAY_API_BASE } from "@/jc/config";
 
 export type RechargePackage = {
@@ -51,12 +51,11 @@ export type OrderStatus = {
 export type RechargeRecord = Omit<OrderStatus, "paid">;
 
 async function payRequest<T>(path: string, init?: RequestInit): Promise<T> {
-    const token = window.localStorage.getItem(AUTH_TOKEN_KEY) || "";
     const response = await fetch(`${PAY_API_BASE}${path}`, {
         ...init,
         headers: {
             ...(init?.body ? { "Content-Type": "application/json" } : {}),
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...getSessionHeaders(),
             ...init?.headers,
         },
     });

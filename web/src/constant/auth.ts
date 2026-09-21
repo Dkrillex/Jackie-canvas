@@ -1,4 +1,4 @@
-/** MaaS 登录常量（与平台前端一致，仅用于同源 /prod-api 鉴权） */
+/** MaaS 企业管理仍用；登录已改走 New API，不再带这些去 /auth/login */
 export const AUTH_CLIENT_ID = "e5cd7e4891bf95d1d19206ce24a7b32e";
 export const AUTH_GRANT_TYPE = "password";
 export const AUTH_TENANT_ID = "000000";
@@ -13,3 +13,14 @@ export const AUTH_RSA_PRIVATE_KEY =
 
 export const AUTH_TOKEN_KEY = "infinite-canvas:auth_token";
 export const AUTH_USER_ID_KEY = "infinite-canvas:auth_user_id";
+
+/** 登录态请求头：Bearer access_token + New-Api-User */
+export function getSessionHeaders(): Record<string, string> {
+    if (typeof window === "undefined") return {};
+    const token = window.localStorage.getItem(AUTH_TOKEN_KEY) || "";
+    const userId = window.localStorage.getItem(AUTH_USER_ID_KEY) || "";
+    return {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(userId ? { "New-Api-User": userId } : {}),
+    };
+}

@@ -10,3 +10,7 @@ description: Planned follow-up work
 - Decide quote visibility. Every quote is currently visible to everyone who can open the job, so a later creator can undercut the earlier bids on purpose.
 - Replace the Claude Code CLI adapter with a Claude Agent SDK adapter and improve the tool queue, following the [Local Agent Integration Plan](/docs/progress/local-agent-integration-plan).
 - Add Skill installation from web search, Skill resource-file management, and controlled local-memory persistence.
+- WeChat Pay for canvas recharge: New API only has Epay `wxpay` (credits nova-api quota); native wechatpay in `server/` would credit the jobs wallet. Pick one ledger before implementing.
+- Local Agent UI is hidden (`AGENT_UI_ENABLED`). Restore it on a dedicated branch.
+- Local proxy UI is hidden (`LOCAL_PROXY_UI_ENABLED`). Restore it on a dedicated branch.
+- Enterprise management (MaaS `/prod-api`) is hidden. Restore it after there is a New API-compatible identity mapping.

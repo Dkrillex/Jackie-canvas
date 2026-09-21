@@ -1,8 +1,6 @@
 import { Building2, Wallet } from "lucide-react";
-import { useEffect } from "react";
 
 import { navigationTools } from "@/constant/navigation-tools";
-import { useEnterpriseStore } from "@/jc/stores/use-enterprise-store";
 import "@/jc/styles/top-nav.css";
 
 export { BrandName } from "@/jc/components/brand-name";
@@ -16,29 +14,15 @@ export const jcNavTools = [
 /** 未登录时不出现在导航里的页面：账户、余额这类只对本人有意义的东西。 */
 const LOGIN_ONLY = new Set<string>(["wallet"]);
 
-/** 配置只走顶栏头像弹窗，不再占导航一项。 */
-const HIDDEN = new Set<string>(["config"]);
+/** 配置只走顶栏头像；企业管理仍挂 MaaS，入口先藏掉。 */
+const HIDDEN = new Set<string>(["config", "enterprise"]);
 
 /**
  * 顶栏和移动端抽屉共用。两处各调一次，逻辑只有这一份。
- *
- * 「企业」是个例外：绝大多数用户没有企业，摆一个点进去只写着「你还没加入企业」的入口是噪音，
- * 所以登录后静默问一次 `client/mine`，只有确实加入了企业才把它挂上去。所以这是个 hook —— 探测
- * 是异步的，拿到结果得让顶栏重渲染。
  */
 export function useVisibleNavTools(signedIn: boolean) {
-    const joinedEnterprise = useEnterpriseStore((state) => Boolean(state.enterprise));
-    const ensureChecked = useEnterpriseStore((state) => state.ensureChecked);
-    const clear = useEnterpriseStore((state) => state.clear);
-
-    useEffect(() => {
-        if (signedIn) void ensureChecked();
-        else clear();
-    }, [clear, ensureChecked, signedIn]);
-
     return [...navigationTools, ...jcNavTools].filter((tool) => {
         if (HIDDEN.has(tool.slug)) return false;
-        if (tool.slug === "enterprise") return signedIn && joinedEnterprise;
         return signedIn || !LOGIN_ONLY.has(tool.slug);
     });
 }

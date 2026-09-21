@@ -7,7 +7,7 @@ import { clampVideoSeconds, computeVideoSize, inferVideoRatio } from "@/lib/medi
 import { getMediaBlob, resolveMediaUrl, uploadMediaFile, type UploadedFile } from "@/services/file-storage";
 import { getImageBlob, imageToDataUrl } from "@/services/image-storage";
 import { isOssUploadReady, uploadBlobToOss } from "@/services/oss-upload";
-import { buildSeedancePromptText, isArkPlanBaseUrl, isSeedanceVideoConfig, normalizeSeedanceDuration, normalizeSeedanceRatio, normalizeSeedanceResolution, seedanceCloudAssetReferenceError, seedanceVideoReferenceError, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
+import { buildSeedancePromptText, isArkPlanBaseUrl, isSeedanceVideoConfig, normalizeSeedanceDuration, normalizeSeedanceRatio, normalizeSeedanceResolution, seedanceCloudAssetReferenceError, seedanceTaskApiUrl, seedanceVideoReferenceError, SEEDANCE_REFERENCE_LIMITS } from "@/lib/seedance-video";
 import { boolConfig, buildApiUrl, modelOptionName, resolveModelRequestConfig, resolveModelScript, useConfigStore, withLocalProxy, type AiConfig } from "@/stores/use-config-store";
 import { runModelPlugin } from "./model-plugin";
 import type { ReferenceImage } from "@/types/image";
@@ -274,9 +274,10 @@ function assertSeedanceAudioReferences(audioReferences: ReferenceAudio[]) {
 }
 
 function seedanceApiUrl(config: AiConfig, taskId?: string) {
-    // Ark / Ark Plan keep tasks path; OpenAI-compatible Seedance uses /video/generations
-    const path = isArkPlanBaseUrl(config.baseUrl) ? "/contents/generations/tasks" : "/video/generations";
-    return buildApiUrl(config.baseUrl, `${path}${taskId ? `/${encodeURIComponent(taskId)}` : ""}`);
+    if (isArkPlanBaseUrl(config.baseUrl)) {
+        return buildApiUrl(config.baseUrl, `/contents/generations/tasks${taskId ? `/${encodeURIComponent(taskId)}` : ""}`);
+    }
+    return seedanceTaskApiUrl(config.baseUrl, taskId);
 }
 
 function seedanceTaskId(task: SeedanceTask) {
@@ -522,8 +523,8 @@ function readApiErrorMessage(value: unknown): string {
         }
     }
     if (typeof value !== "object") return "";
-    const payload = value as { msg?: unknown; message?: unknown; error?: unknown; detail?: unknown };
-    // error may be a string or an object containing a message.
+    const payload = value as { msg?: unknown; message?: unknown; error?: unknown; detail?: unknown; ResponseMetadata?: { Error?: { Message?: unknown; Code?: unknown } } };
+    const arkError = payload.ResponseMetadata?.Error;
     const errorMsg =
         typeof payload.error === "string"
             ? payload.error
@@ -533,6 +534,8 @@ function readApiErrorMessage(value: unknown): string {
         readApiErrorMessage(payload.message) ||
         readApiErrorMessage(errorMsg) ||
         readApiErrorMessage(payload.detail) ||
+        readApiErrorMessage(arkError?.Message) ||
+        (typeof arkError?.Code === "string" ? arkError.Code : "") ||
         ""
     );
 }

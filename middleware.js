@@ -1,7 +1,8 @@
-const AUTH_UPSTREAM = "https://maas.gravitex.ai";
+const MAAS_UPSTREAM = "https://maas.gravitex.ai";
+const NEW_API_UPSTREAM = "https://api.novawander.cn";
 
 export const config = {
-    matcher: ["/prod-api", "/prod-api/:path*"],
+    matcher: ["/prod-api", "/prod-api/:path*", "/new-api", "/new-api/:path*"],
 };
 
 function sanitizeSetCookie(cookie) {
@@ -14,10 +15,13 @@ function sanitizeSetCookie(cookie) {
 
 export default async function middleware(request) {
     const incoming = new URL(request.url);
-    const target = `${AUTH_UPSTREAM}${incoming.pathname}${incoming.search}`;
+    const isNewApi = incoming.pathname === "/new-api" || incoming.pathname.startsWith("/new-api/");
+    const upstream = isNewApi ? NEW_API_UPSTREAM : MAAS_UPSTREAM;
+    const path = isNewApi ? incoming.pathname.replace(/^\/new-api/, "") || "/" : incoming.pathname;
+    const target = `${upstream}${path}${incoming.search}`;
 
     const headers = new Headers(request.headers);
-    headers.set("host", new URL(AUTH_UPSTREAM).host);
+    headers.set("host", new URL(upstream).host);
     headers.delete("accept-encoding");
 
     const init = {
@@ -29,25 +33,25 @@ export default async function middleware(request) {
         init.body = await request.arrayBuffer();
     }
 
-    const upstream = await fetch(target, init);
+    const upstreamResponse = await fetch(target, init);
     const responseHeaders = new Headers();
-    upstream.headers.forEach((value, key) => {
+    upstreamResponse.headers.forEach((value, key) => {
         const lower = key.toLowerCase();
         if (lower === "content-encoding" || lower === "transfer-encoding" || lower === "set-cookie") return;
         responseHeaders.set(key, value);
     });
 
-    const cookies = typeof upstream.headers.getSetCookie === "function" ? upstream.headers.getSetCookie() : [];
+    const cookies = typeof upstreamResponse.headers.getSetCookie === "function" ? upstreamResponse.headers.getSetCookie() : [];
     if (cookies.length) {
         for (const cookie of cookies) responseHeaders.append("set-cookie", sanitizeSetCookie(cookie));
     } else {
-        const single = upstream.headers.get("set-cookie");
+        const single = upstreamResponse.headers.get("set-cookie");
         if (single) responseHeaders.append("set-cookie", sanitizeSetCookie(single));
     }
 
-    return new Response(upstream.body, {
-        status: upstream.status,
-        statusText: upstream.statusText,
+    return new Response(upstreamResponse.body, {
+        status: upstreamResponse.status,
+        statusText: upstreamResponse.statusText,
         headers: responseHeaders,
     });
 }

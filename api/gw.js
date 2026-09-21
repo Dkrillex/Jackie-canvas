@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
 
-const GW_UPSTREAM = "https://api.gravitex.ai";
+const GW_UPSTREAM = "https://api.novawander.cn";
 const SKIP_REQUEST_HEADERS = new Set(["host", "connection", "content-length", "accept-encoding", "transfer-encoding"]);
 const SKIP_RESPONSE_HEADERS = new Set(["content-encoding", "transfer-encoding", "connection", "keep-alive", "content-length"]);
 

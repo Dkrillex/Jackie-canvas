@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { AUTH_TOKEN_KEY, AUTH_USER_ID_KEY } from "@/constant/auth";
-import { fetchAutoUserApiKey, fetchCurrentUser, loginWithPassword, logoutRemote } from "@/services/api/user";
+import { fetchAutoUserApiKey, fetchCurrentUser, loginWithPassword, loginWithTwoFactor, logoutRemote, registerWithPassword } from "@/services/api/user";
 import { useConfigStore } from "@/stores/use-config-store";
 
 export type LocalUser = {
@@ -12,6 +12,7 @@ export type LocalUser = {
     avatarUrl: string;
     quota: number;
     usedQuota: number;
+    role: number;
 };
 
 type UserStore = {
@@ -24,7 +25,8 @@ type UserStore = {
     openLoginModal: (redirectPath?: string) => void;
     closeLoginModal: () => void;
     setUser: (user: LocalUser | null) => void;
-    login: (username: string, password: string) => Promise<LocalUser>;
+    login: (username: string, password: string, totp?: string) => Promise<LocalUser>;
+    register: (username: string, password: string) => Promise<LocalUser>;
     logout: () => Promise<void>;
     hydrateFromServer: () => Promise<void>;
     /** 重新拉取 auto 密钥并写入默认渠道 */
@@ -58,11 +60,15 @@ export const useUserStore = create<UserStore>()(
             openLoginModal: (redirectPath = "/canvas") => set({ isLoginOpen: true, loginRedirectPath: redirectPath }),
             closeLoginModal: () => set({ isLoginOpen: false }),
             setUser: (user) => set({ user }),
-            login: async (username, password) => {
-                const user = await loginWithPassword(username, password);
+            login: async (username, password, totp) => {
+                const user = totp ? await loginWithTwoFactor(totp) : await loginWithPassword(username, password);
                 await syncDefaultChannelApiKey();
                 set({ user, isLoginOpen: false, authReady: true });
                 return user;
+            },
+            register: async (username, password) => {
+                await registerWithPassword(username, password);
+                return get().login(username, password);
             },
             logout: async () => {
                 await logoutRemote();
@@ -74,8 +80,10 @@ export const useUserStore = create<UserStore>()(
                 set({ hydrating: true });
                 hydrateFromServerPromise = (async () => {
                     try {
-                        const hasToken = typeof window !== "undefined" && Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY));
-                        if (!hasToken) {
+                        const hasSession =
+                            typeof window !== "undefined" &&
+                            Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY) && window.localStorage.getItem(AUTH_USER_ID_KEY));
+                        if (!hasSession) {
                             if (get().user) set({ user: null });
                             useConfigStore.getState().setDefaultChannelApiKey("");
                             return;

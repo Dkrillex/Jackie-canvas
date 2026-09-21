@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AgentPanel } from "@/components/agent/agent-panel";
 import { AppTopNav } from "@/components/layout/app-top-nav";
 import { LoginModal } from "@/components/layout/login-modal";
+import { AGENT_UI_ENABLED } from "@/jc/config";
 
 export default function UserLayout({ children }: { children: ReactNode }) {
     return (
@@ -11,7 +12,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                 <AppTopNav />
                 <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
             </div>
-            <AgentPanel />
+            {AGENT_UI_ENABLED ? <AgentPanel /> : null}
             <LoginModal />
         </div>
     );
