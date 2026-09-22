@@ -2,6 +2,7 @@ import localforage from "localforage";
 
 import { nanoid } from "nanoid";
 import i18n from "@/i18n";
+import { dataUrlToFile } from "@/lib/image-utils";
 import { withLocalProxy } from "@/stores/use-config-store";
 
 export type UploadedImage = {
@@ -69,7 +70,7 @@ async function fetchImageBlob(url: string, options?: ImageReadOptions) {
         controller.abort();
     }, IMAGE_DOWNLOAD_TIMEOUT_MS);
     try {
-        const response = await fetch(withLocalProxy(url), { signal: controller.signal });
+        const response = await fetch(withLocalProxy(url), { signal: controller.signal, referrerPolicy: "no-referrer" });
         if (!response.ok) throw namedError(IMAGE_RESPONSE_ERROR);
         return await response.blob();
     } catch (error) {
@@ -155,14 +156,30 @@ export async function setImageBlob(storageKey: string, blob: Blob) {
 export async function imageToDataUrl(image: { url?: string; dataUrl?: string; storageKey?: string }, options?: ImageReadOptions) {
     const dataUrl = image.dataUrl || "";
     if (dataUrl.startsWith("data:")) return dataUrl;
-    if (dataUrl && !dataUrl.startsWith("asset://")) {
-        return blobToDataUrl(await fetchImageBlob(dataUrl, options));
+    const assetUrl = [image.url, dataUrl].find((value) => value?.startsWith("asset://"));
+    if (assetUrl) return assetUrl;
+    if (image.storageKey) {
+        const blob = await getImageBlob(image.storageKey);
+        if (blob) return blobToDataUrl(blob);
     }
-    if (image.url?.startsWith("asset://")) return image.url;
-    if (dataUrl.startsWith("asset://")) return dataUrl;
-    const url = await resolveImageUrl(image.storageKey, image.url || "");
-    if (!url || url.startsWith("data:") || url.startsWith("asset://")) return url;
-    return blobToDataUrl(await fetchImageBlob(url, options));
+    const localUrl = await resolveImageUrl(image.storageKey, "");
+    if (localUrl.startsWith("blob:")) return blobToDataUrl(await fetchImageBlob(localUrl, options));
+    const candidate = image.url || dataUrl;
+    if (candidate.startsWith("blob:")) return blobToDataUrl(await fetchImageBlob(candidate, options));
+    // OSS https 没有 CORS，浏览器 GET 会被 canvas.hinnflow.com 拦住；Seedance/Gemini 可直接用公网 URL。
+    if (/^https?:\/\//i.test(candidate)) return candidate;
+    if (!candidate) return "";
+    return blobToDataUrl(await fetchImageBlob(candidate, options));
+}
+
+export async function imageToFile(image: { url?: string; dataUrl?: string; storageKey?: string; name?: string; type?: string }, options?: ImageReadOptions) {
+    if (image.storageKey) {
+        const blob = await getImageBlob(image.storageKey);
+        if (blob) return new File([blob], image.name || "reference.png", { type: blob.type || image.type || "image/png" });
+    }
+    const dataUrl = await imageToDataUrl(image, options);
+    if (!dataUrl.startsWith("data:")) throw new Error(i18n.t("common.imageReadFailed"));
+    return dataUrlToFile({ id: "", name: image.name || "reference.png", type: image.type || "image/png", dataUrl });
 }
 
 export async function deleteStoredImages(keys: Iterable<string>) {

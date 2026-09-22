@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] 生成时不再用浏览器 GET OSS 参考图转 base64，避免 `canvas.hinnflow.com` 被阿里云 CORS 拦住；本地图走 IndexedDB，Seedance/Gemini 直接发 https。
 + [修复][Jackie] 本机 `/gw` 轮询 Seedance 任务时，Vite 代理碰到 EdgeOne TLS 偶发 500 不再把整次生成判失败，会继续查。
 + [调整][Jackie] 默认视频模型改为现网 `doubao-seedance-2-0-260128` / `doubao-seedance-2-0-fast-260128` / `doubao-seedance-2-0-mini-260615`，请求 `model` 不再发不带 `doubao-` 的短 ID。
 + [修复][Jackie] Seedance 视频参数改回现网合法档：时长 4–15 秒或智能 -1，比例用 16:9 等枚举；首尾帧发 `first_frame`/`last_frame`；fast/mini 不再发 1080p。
