@@ -216,7 +216,7 @@ async function createSeedanceTask(config: AiConfig, model: string, prompt: strin
     assertSeedanceAudioReferences(audioReferences);
     const cloudError = seedanceCloudAssetReferenceError(references, videoReferences, audioReferences);
     if (cloudError) throw new Error(cloudError);
-    const content = await buildSeedanceContent(prompt, references, videoReferences, audioReferences);
+    const content = await buildSeedanceContent(prompt, references, videoReferences, audioReferences, resolveVideoMode(config.videoMode, references.length));
     if (!content.length) throw new Error(apiText("videoPromptRequired"));
     const payload = {
         model: modelOptionName(model),
@@ -247,8 +247,15 @@ async function pollSeedanceTask(config: AiConfig, task: VideoGenerationTask, opt
         if (state.status === "failed" || state.status === "cancelled" || state.status === "expired") return { status: "failed", error: readApiErrorMessage(state.error?.message) || apiText(state.status === "expired" ? "seedanceVideoTimeout" : "seedanceVideoFailed") };
         return { status: "pending" };
     } catch (error) {
+        if (isTransientSeedancePollError(error)) return { status: "pending" };
         throw new Error(readAxiosError(error, apiText("seedanceTaskQueryFailed")));
     }
+}
+
+function isTransientSeedancePollError(error: unknown) {
+    if (!axios.isAxiosError(error) || axios.isCancel(error)) return false;
+    const status = error.response?.status;
+    return !status || status >= 500;
 }
 
 function assertSeedanceVideoReferences(videoReferences: ReferenceVideo[]) {
@@ -284,12 +291,15 @@ function seedanceTaskId(task: SeedanceTask) {
     return [task.id, task.task_id].find((value) => typeof value === "string" && value.trim())?.trim() || "";
 }
 
-async function buildSeedanceContent(prompt: string, references: ReferenceImage[], videoReferences: ReferenceVideo[], audioReferences: ReferenceAudio[]) {
+async function buildSeedanceContent(prompt: string, references: ReferenceImage[], videoReferences: ReferenceVideo[], audioReferences: ReferenceAudio[], mode: string) {
     const content: Array<Record<string, unknown>> = [];
     const text = buildSeedancePromptText(prompt, references, videoReferences, audioReferences);
     if (text) content.push({ type: "text", text });
-    for (const image of references.slice(0, SEEDANCE_REFERENCE_LIMITS.images)) {
-        content.push({ type: "image_url", image_url: { url: await resolveSeedanceImageUrl(image) }, role: "reference_image" });
+    const images = references.slice(0, SEEDANCE_REFERENCE_LIMITS.images);
+    const useReference = mode === "reference" || videoReferences.length > 0 || audioReferences.length > 0 || images.length > 2;
+    for (const [index, image] of images.entries()) {
+        const role = useReference ? "reference_image" : index === 0 ? "first_frame" : "last_frame";
+        content.push({ type: "image_url", image_url: { url: await resolveSeedanceImageUrl(image) }, role });
     }
     for (const video of videoReferences.slice(0, SEEDANCE_REFERENCE_LIMITS.videos)) {
         content.push({ type: "video_url", video_url: { url: await resolveSeedanceVideoUrl(video) }, role: "reference_video" });

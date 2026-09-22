@@ -28,6 +28,9 @@ export default {
         title: "NOVAWANDER AI",
         export: { defaultProjectName: "NOVAWANDER AI", defaultNodesName: "画布元素", item: "元素" },
     },
+    seedance: {
+        limited1080p: "fast / mini 不支持 1080p，会自动使用 720p。",
+    },
     config: {
         localStorage: {
             title: "IndexedDB 存储使用情况",

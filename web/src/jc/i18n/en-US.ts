@@ -25,6 +25,9 @@ export default {
         title: "NOVAWANDER AI",
         export: { defaultProjectName: "NOVAWANDER AI", defaultNodesName: "Canvas elements", item: "Element" },
     },
+    seedance: {
+        limited1080p: "fast / mini do not support 1080p and will use 720p.",
+    },
     config: {
         localStorage: {
             title: "IndexedDB storage usage",

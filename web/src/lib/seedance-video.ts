@@ -59,11 +59,12 @@ const seedancePixels = {
     },
 } as const;
 
-/** Jackie `/gw` 默认 OpenAI 格式；按模型名识别 Seedance，不能只依赖 apiFormat=ark。 */
+/** Jackie `/gw` 默认 OpenAI 格式；按模型名识别 Seedance，不能只依赖 apiFormat=ark。视频页 config.model 仍可能是生图模型，要同时看 videoModel。 */
 export function isSeedanceVideoConfig(config: AiConfig | Pick<AiConfig, "model" | "videoModel" | "baseUrl" | "apiFormat">) {
-    const selectedModel = "channels" in config ? config.model || config.videoModel : config.model || config.videoModel;
-    if (isSeedanceVideoModel(modelOptionName(selectedModel || ""))) return true;
-    const requestConfig = "channels" in config ? resolveModelRequestConfig(config, selectedModel || "") : config;
+    const names = [config.model, "videoModel" in config ? config.videoModel : ""].filter((value): value is string => Boolean(value?.trim()));
+    if (names.some((name) => isSeedanceVideoModel(modelOptionName(name)))) return true;
+    const selectedModel = names[0] || "";
+    const requestConfig = "channels" in config ? resolveModelRequestConfig(config, selectedModel) : config;
     return isSeedanceVideoModel(modelOptionName(requestConfig.model || requestConfig.videoModel || "")) || isArkPlanBaseUrl(requestConfig.baseUrl);
 }
 
@@ -77,9 +78,14 @@ export function isSeedanceFastModel(model: string) {
     return isSeedanceVideoModel(value) && value.includes("fast");
 }
 
+export function isSeedanceLimitedResolutionModel(model: string) {
+    const value = model.toLowerCase();
+    return isSeedanceFastModel(value) || (isSeedanceVideoModel(value) && value.includes("mini"));
+}
+
 export function normalizeSeedanceResolution(value: string, model = "") {
     const normalized = normalizeResolutionToken(value);
-    if (isSeedanceFastModel(model) && normalized === "1080p") return "720p";
+    if (isSeedanceLimitedResolutionModel(model) && normalized === "1080p") return "720p";
     return seedanceResolutionOptions.some((item) => item.value === normalized) ? normalized : "720p";
 }
 
