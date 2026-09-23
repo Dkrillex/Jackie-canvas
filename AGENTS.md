@@ -66,7 +66,7 @@
 
 ## 充值与钱包规范
 
-- 充值服务在 `server/`（Node + TypeScript + Hono + mysql2 + alipay-sdk），前端走同源 `/pay-api`。不要把支付宝私钥、验签或订单状态判断挪到浏览器里。hinnflow 注册也走这里：`POST /pay-api/api/auth/register` 由 Node 直写 nova-api `users`（备注固定 `Hinnflow`，并插一把 `group=auto` 初始令牌），不要再调用 nova-api 的 `POST /api/user/register`。钱包库 `hinnflow_database` 和 nova-api `novawander_api` 不是同一台，不要混用连接。`users.id` 是 BIGINT，读写都当字符串。
+- 充值服务在 `server/`（Node + TypeScript + Hono + mysql2 + alipay-sdk），前端走同源 `/pay-api`。不要把支付宝私钥、验签或订单状态判断挪到浏览器里。hinnflow 注册也走这里：`POST /pay-api/api/auth/register` 由 Node 直写 nova-api `users`（备注固定 `Hinnflow`，并插一把 `group=auto` 初始令牌），不要再调用 nova-api 的 `POST /api/user/register`。钱包库 `hinnflow_database` 和 nova-api `novawander_api` 不是同一台，不要混用连接。`users.id` 是 BIGINT，读写都当字符串。Vercel Root Directory 是 `web/`，`api/pay.js` 只带 `functions-pay/**`；`server/` 里新增的运行时依赖（如 `bcryptjs`）必须同时写进 `web/package.json`，否则线上会报「充值服务异常」。
 - **金额只认服务端**：下单接口只收 `packageId`，价目表写在 `server/src/packages.ts`。任何时候都不要新增「前端传金额」的参数，那等于让用户自己定价。
 - **能把订单改成已付的只有两处**：验过签的 `/api/pay/notify`，和主动查询支付宝的结果。查状态接口只读库，不接受前端写入。
 - 通知处理必须过四道关：验签 → `app_id` 一致 → 订单存在 → 金额一致；缺一道就是可以被伪造充值的洞。

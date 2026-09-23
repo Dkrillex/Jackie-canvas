@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] 线上 `/pay-api` 补上 `bcryptjs`，避免注册改动后函数找不到包报「充值服务异常」。
 + [调整][Jackie] hinnflow 注册改由 `/pay-api` 直写 nova-api `users` 表，备注固定为 Hinnflow；登录仍走 `/new-api`。
 + [修复][Jackie] Gemini 图生图不再因未定义的 `mask` 变量直接报错。
 + [修复][Jackie] 生成时不再用浏览器 GET OSS 参考图转 base64，避免 `canvas.hinnflow.com` 被阿里云 CORS 拦住；本地图走 IndexedDB，Seedance/Gemini 直接发 https。
