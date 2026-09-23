@@ -147,7 +147,7 @@ export default function WalletPage() {
 
                         <div className="space-y-4 rounded-2xl border border-stone-200 bg-white/60 px-5 py-4 dark:border-stone-800 dark:bg-white/[0.02]">
                             <div className="text-sm font-semibold">{t("wallet.pickPackage")}</div>
-                            <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="grid gap-3 sm:grid-cols-4">
                                 {visiblePackages.map((item) => {
                                     const active = item.id === selected;
                                     return (
