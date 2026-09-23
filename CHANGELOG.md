@@ -4,6 +4,8 @@
 
 ### Jackie（本分支定制）
 
++ [新增][Jackie] 充值增加 30 元 / 4 积分档。
++ [调整][Jackie] 商务联系邮箱改为 1658176374@qq.com。
 + [新增][Jackie] 积分兑换确认后调用 New API manage add_quota 发放额度；明确失败退积分，超时则留待发放避免重复加额度。
 + [调整][Jackie] 充值服务本地用 `.env.local`、线上 Docker 用 `.env`，支付宝回调地址分开配。
 + [新增][Jackie] 增加宿主机反代样例 `nginx-hinnflow.conf`，把域名 80 转到本机 Docker 5000。

@@ -28,6 +28,7 @@ export type RechargePackage = {
 };
 
 const DEFAULT_PACKAGES: RechargePackage[] = [
+    { id: "mini", amount: "30.00", credits: "4.00", bonus: "0.00", subject: "NOVAWANDER AI 积分充值 30 元" },
     { id: "starter", amount: "50.00", credits: "7.00", bonus: "0.00", subject: "NOVAWANDER AI 积分充值 50 元" },
     { id: "basic", amount: "200.00", credits: "29.00", bonus: "1.00", subject: "NOVAWANDER AI 积分充值 200 元" },
 ];
