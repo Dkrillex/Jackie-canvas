@@ -7,7 +7,8 @@ RUN --mount=type=cache,target=/root/.bun/install/cache bun install --cache-dir=/
 COPY VERSION /app/VERSION
 COPY CHANGELOG.md /app/CHANGELOG.md
 COPY web ./
-RUN bun run build
+# Docker 前端镜像不编 functions-pay：充值由 server/Dockerfile 单独起容器。
+RUN bun run build:web
 
 # 运行镜像：只启动静态前端，AI 请求由浏览器前台直连用户自己的接口。
 FROM nginx:1.27-alpine

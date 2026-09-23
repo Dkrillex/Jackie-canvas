@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [修复][Jackie] Docker 前端构建改为 `build:web`，不再因镜像里没有 `server/` 去编 Vercel 的 `functions-pay` 失败。
 + [调整][Jackie] hinnflow Docker 默认带上充值/注册服务（`pay` + `/pay-api`），前端对外端口改为 5000。
 + [调整][Jackie] 配置中心不再显示「JSON 文件包含 API Key 和 WebDAV 凭据」提示。
 + [新增][Jackie] 我的资产支持拖入或一次选择多张本地图片批量导入，仍可导入原来的 zip 资产包。
