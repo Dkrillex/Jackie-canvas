@@ -110,7 +110,7 @@ const SCHEMA = [
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='接单中心工单'`,
 
     // 积分 → API 额度的兑换。这是一张**中间表**：点「确认转换」时先把积分扣掉并落一条
-    // pending，等真正调 `/gw` 发放额度成功后再置 done；发放失败则置 failed 并把积分退回。
+    // pending，再调 New API manage add_quota，成功置 done；发放失败则置 failed 并把积分退回。
     // 分两步是因为扣积分（我们的库）和发额度（对方的服务）不可能在一个事务里，
     // 中间总有一刻会不一致 —— 这张表就是记录「这笔到底走到哪一步了」的地方。
     `CREATE TABLE IF NOT EXISTS credit_exchanges (
@@ -118,7 +118,7 @@ const SCHEMA = [
         user_id     VARCHAR(64)   NOT NULL,
         credits     DECIMAL(14,2) NOT NULL         COMMENT '消耗的积分，1 积分 = 1 美元',
         status      VARCHAR(16)   NOT NULL         COMMENT 'pending/done/failed',
-        gw_ref      VARCHAR(128)  NULL             COMMENT '网关侧回执，接入 /gw 后写入',
+        gw_ref      VARCHAR(128)  NULL             COMMENT 'New API 发放回执',
         note        VARCHAR(255)  NOT NULL DEFAULT '',
         created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
         settled_at  DATETIME      NULL,

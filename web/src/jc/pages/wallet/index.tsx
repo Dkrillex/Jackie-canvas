@@ -78,9 +78,9 @@ export default function WalletPage() {
         if (!exchangeCredits || exchangeCredits <= 0) return;
         setExchanging(true);
         try {
-            await createExchange(exchangeCredits);
+            const { exchange } = await createExchange(exchangeCredits);
             await reload();
-            message.success(t("wallet.exchangeSubmitted"));
+            message.success(exchange.status === "done" ? t("wallet.exchangeDone") : t("wallet.exchangeSubmitted"));
         } catch (err) {
             message.error(err instanceof Error ? err.message : t("wallet.exchangeFailed"));
         } finally {

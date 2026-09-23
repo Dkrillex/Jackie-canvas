@@ -11,10 +11,8 @@
  *
  * 卡在 pending 的记录就是需要人去对账的那些。宁可留着让人看见，也不要偷偷当成功。
  *
- * TODO(接入 /gw)：目前 create() 只到 pending 为止，没有真正调网关。拿到 /gw 的发放
- * 接口后，在路由层 create() 之后调用它，成功回 markDone()、失败回 markFailed()。
- * 不要把网关调用塞进 create() 的事务里 —— 一个跨网络的请求会把数据库事务拖到几秒，
- * 期间钱包行一直被锁着。
+ * 发放走 New API `POST /api/user/manage` add_quota，在路由层 create() 之后调用；
+ * 不要把网关调用塞进 create() 的事务里。超时或 5xx 不要 markFailed —— 额度可能已经加上。
  */
 import { randomUUID } from "node:crypto";
 
@@ -115,6 +113,12 @@ export async function markFailed(id: string, reason: string): Promise<boolean> {
         );
         return true;
     });
+}
+
+export async function getById(id: string): Promise<ExchangeRow | null> {
+    const pool = await getPool();
+    const [rows] = await pool.execute<RowDataPacket[]>(`SELECT ${COLUMNS} FROM credit_exchanges WHERE id = ?`, [id]);
+    return (rows[0] as ExchangeRow | undefined) ?? null;
 }
 
 export async function listByUser(userId: string, limit = 20): Promise<ExchangeRow[]> {

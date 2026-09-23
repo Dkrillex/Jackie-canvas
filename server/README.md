@@ -76,8 +76,16 @@ ngrok / frp 把它暴露出去；不填也能到账，只是只剩轮询和对�
 | `recharge_orders` | 充值订单。`credits` 在下单时从档位抄一份，之后调价不影响旧单 |
 | `user_wallets` | 用户积分余额。`frozen` 预留给接单托管，当前只读 |
 | `wallet_ledger` | 积分流水。`UNIQUE KEY (kind, ref_no)` 兜住重复入账 |
+| `credit_exchanges` | 积分兑换 API 额度。确认后先 pending，New API add_quota 成功后 done |
 
 金额和积分全部用 `DECIMAL`，读出来也保持字符串 —— 钱经不起二进制小数的舍入。
+
+## 积分兑换
+
+`POST /api/exchange` 扣积分后调用 New API `POST /api/user/manage`（`action=add_quota`）给当前用户加额度。
+需要在 `.env` / `.env.local`（或 Vercel 环境变量）里配 `NEW_API_ADMIN_TOKEN`，不要写进仓库。
+`/health` 的 `novaAdmin` 为 true 才说明令牌已加载。1 积分 = `$1` = `NEW_API_QUOTA_PER_UNIT`（默认 500000）。
+接口明确拒绝才退积分；超时或 5xx 留 pending，避免重复发放。
 
 ## 身份
 

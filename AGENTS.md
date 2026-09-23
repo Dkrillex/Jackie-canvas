@@ -77,6 +77,7 @@
 - 工单有三个时钟：`work_deadline_at`（交付）、`review_deadline_at`（验收）、`job_deadline_at`（整单）。到期处置在 `server/src/expire.ts`，扫描顺序必须是「验收 → 工时 → 整单」，且整单过期那一档**不能包含 submitted** —— 否则雇主拖着不验收就能把交付物白拿走再把钱要回去。
 - 接单押金冻结在接单人身上，罚没时按 `JOB_DEPOSIT_TO_CLIENT` 分给雇主、其余进 `platform_ledger`。平台的每一笔收入（抽成、罚没）都要写 `platform_ledger`，不要只写在工单的结算列里。
 - 谁能做什么一律由服务端按登录 userId 判定（发单人才能接受报价/打回/验收/取消，接单人才能交付）。前端的筛选和按钮显隐只是界面，不算权限。
+- 积分兑换 API 额度走 New API `POST /api/user/manage` `{action:"add_quota",mode:"add"}`，管理员令牌只放 gitignored 的 `NEW_API_ADMIN_TOKEN`，不要写进仓库或 `config.ts` 默认值。`users.id` 是 BIGINT，JSON `id` 必须拼成原始数字，不要 `Number()`。1 积分 = `NEW_API_QUOTA_PER_UNIT`（默认 500000）。发放 HTTP 放在 `create()` 事务外：成功 `markDone`，明确失败 `markFailed` 退积分；超时/5xx 或额度已发但没写成 done 时留 `pending`、接口仍 200，不要让前端当失败再点一次。令牌没配时要在扣积分前 503。
 
 ## 文档规范
 

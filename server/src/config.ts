@@ -88,6 +88,12 @@ export const settings = {
     ),
     /** token → userId 的缓存秒数。前端每 2 秒轮一次订单，不缓存会把鉴权上游打爆 */
     authCacheSec: Number(env("AUTH_CACHE_SEC", "60")),
+
+    // ---------- 积分兑换 API 额度（管理员调 New API /api/user/manage add_quota）----------
+    novaAdminToken: env("NEW_API_ADMIN_TOKEN"),
+    novaAdminUserId: env("NEW_API_ADMIN_USER_ID", "1"),
+    /** 1 积分 = $1 = 该内部 quota。与前端 NEW_API_QUOTA_PER_UNIT 对齐 */
+    novaQuotaPerUnit: Number(env("NEW_API_QUOTA_PER_UNIT", "500000")),
 };
 
 export const alipayConfigured = () => Boolean(settings.alipayAppId && settings.alipayPrivateKey && settings.alipayPublicKey);
@@ -96,3 +102,5 @@ export const mysqlConfigured = () => Boolean(settings.mysqlHost && settings.mysq
 
 export const novaApiMysqlConfigured = () =>
     Boolean(settings.novaApiMysqlHost && settings.novaApiMysqlUser && settings.novaApiMysqlPassword && settings.novaApiMysqlDatabase);
+
+export const novaAdminConfigured = () => Boolean(settings.novaAdminToken && settings.novaAdminUserId && settings.novaQuotaPerUnit > 0);

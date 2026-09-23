@@ -15,7 +15,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 本地代理：配置弹窗不出现「本地代理」页签。`LOCAL_PROXY_UI_ENABLED` 保持 false；旧配置即使开过代理，请求也不再走 canvas-proxy。
 - 默认主题：首次访问（或清空 `infinite-canvas:theme_store` 后）应进入亮色；只有用户手动切换后才保持暗色。
 - 顶栏与首页：薄玻璃顶栏、胶囊导航、品牌名 hinnflow 用站点无衬线；首页大标题 NOVAWANDER AI 用 Inter（NOVA / AI 900、WANDER 300），极光流动、首屏占满、丝绸背景可动；深浅色都要对。
-- 积分兑换（`/wallet`）：兑换应立即扣积分并出现 `pending` 记录；超额与冻结积分不可花。
+- 积分兑换（`/wallet`）：兑换应立即扣积分，记录为 `done`，且 New API 账号额度增加对应美元（1 积分 = $1 = 500000）。`/pay-api/health` 的 `novaAdmin` 应为 true。接口明确拒绝才是 `failed` 并退积分；超时应保持 `pending`，不要当失败提示。超额与冻结积分不可花。接入前留下的 `pending` 记录不会自动补发。
 - 工单时限与押金：交付超时罚没押金、验收超时自动通过、整单到期作废退款；`submitted` 不得被整单过期清掉。换更便宜接单人后再取消必须成功。
 - 接单中心：未登录只显示登录卡；列表为卡片+搜索分页；详情有进度条；交付说明按 Markdown 渲染图片/视频 URL；非当事双方看不到交付与结算。
 - 充值：只认 `packageId`、在线最高 200 元、通知验签与幂等入账；「更大额度」弹商务微信码。线上 `/pay-api/health` 应返回 JSON，`alipay`/`mysql` 均为 true，不能是「充值服务异常」。

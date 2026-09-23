@@ -1,6 +1,6 @@
 import { serve } from "@hono/node-server";
 
-import { alipayConfigured, mysqlConfigured, novaApiMysqlConfigured, settings } from "./config.js";
+import { alipayConfigured, mysqlConfigured, novaAdminConfigured, novaApiMysqlConfigured, settings } from "./config.js";
 import { app, startBackgroundJobsOnce } from "./app.js";
 
 startBackgroundJobsOnce();
@@ -10,6 +10,7 @@ serve({ fetch: app.fetch, hostname: settings.host, port: settings.port }, (info)
     if (!alipayConfigured()) console.warn("[pay] 支付宝未配置，/api/pay/orders 会回 503");
     if (!mysqlConfigured()) console.warn("[pay] MySQL 未配置，充值与钱包接口会回 503");
     if (!novaApiMysqlConfigured()) console.warn("[pay] nova-api 用户库未配置，/api/auth/register 会回 503");
+    if (!novaAdminConfigured()) console.warn("[pay] 未配置 NEW_API_ADMIN_TOKEN，积分兑换无法发放额度");
     if (alipayConfigured() && !settings.alipayNotifyUrl) {
         console.warn("[pay] 未配置 ALIPAY_NOTIFY_URL：支付宝不会推送通知，只能靠前端轮询和后台对账确认到账");
     }

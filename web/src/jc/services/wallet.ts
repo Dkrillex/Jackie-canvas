@@ -112,8 +112,7 @@ export type CreditExchange = {
 /**
  * 发起一笔积分兑换 API 额度。
  *
- * 服务端此刻只做到「扣积分 + 落一条 pending」，真正发额度的网关接口还没接。
- * 所以前端拿到 pending 是正常结果，不要显示成失败。
+ * 服务端扣积分后立刻调 New API add_quota；成功返回 done，失败退积分并抛错。
  */
 export async function createExchange(credits: number) {
     return payRequest<{ exchange: CreditExchange }>("/api/exchange", { method: "POST", body: JSON.stringify({ credits }) });
