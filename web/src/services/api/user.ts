@@ -2,6 +2,7 @@ import axios from "axios";
 
 import { AUTH_TOKEN_KEY, AUTH_USER_ID_KEY, getSessionHeaders } from "@/constant/auth";
 import { AUTH_API_BASE } from "@/constant/env";
+import { PAY_API_BASE } from "@/jc/config";
 import type { AiConfig } from "@/stores/use-config-store";
 import type { LocalUser } from "@/stores/use-user-store";
 
@@ -108,13 +109,13 @@ export async function loginWithTwoFactor(code: string): Promise<LocalUser> {
 
 export async function registerWithPassword(username: string, password: string): Promise<void> {
     clearAuthSession();
-    await request(
-        authClient.post<NewApiResponse>("/api/user/register", {
-            username: username.trim(),
-            password,
-        }),
-        "注册失败",
-    );
+    const response = await fetch(`${PAY_API_BASE}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password }),
+    });
+    const data = (await response.json().catch(() => null)) as NewApiResponse | null;
+    if (!response.ok || data?.success === false) throw new Error(data?.message || "注册失败");
 }
 
 export async function fetchCurrentUser(): Promise<LocalUser> {

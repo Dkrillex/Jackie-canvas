@@ -66,7 +66,7 @@
 
 ## 充值与钱包规范
 
-- 充值服务在 `server/`（Node + TypeScript + Hono + mysql2 + alipay-sdk），前端走同源 `/pay-api`。不要把支付宝私钥、验签或订单状态判断挪到浏览器里。
+- 充值服务在 `server/`（Node + TypeScript + Hono + mysql2 + alipay-sdk），前端走同源 `/pay-api`。不要把支付宝私钥、验签或订单状态判断挪到浏览器里。hinnflow 注册也走这里：`POST /pay-api/api/auth/register` 由 Node 直写 nova-api `users`（备注固定 `Hinnflow`，并插一把 `group=auto` 初始令牌），不要再调用 nova-api 的 `POST /api/user/register`。钱包库 `hinnflow_database` 和 nova-api `novawander_api` 不是同一台，不要混用连接。`users.id` 是 BIGINT，读写都当字符串。
 - **金额只认服务端**：下单接口只收 `packageId`，价目表写在 `server/src/packages.ts`。任何时候都不要新增「前端传金额」的参数，那等于让用户自己定价。
 - **能把订单改成已付的只有两处**：验过签的 `/api/pay/notify`，和主动查询支付宝的结果。查状态接口只读库，不接受前端写入。
 - 通知处理必须过四道关：验签 → `app_id` 一致 → 订单存在 → 金额一致；缺一道就是可以被伪造充值的洞。
@@ -125,7 +125,7 @@
 - 本地 Agent 入口暂时关闭：`AGENT_UI_ENABLED` 为 false，顶栏 Bot、画布 Agent 按钮和右侧面板都不要加回来。代码留着，单独开分支再打开。
 - 本地代理页签暂时关闭：`LOCAL_PROXY_UI_ENABLED` 为 false，配置里不要把「本地代理」加回来，请求也不要再走 canvas-proxy。代码留着，单独开分支再打开。
 - 「开始生成」等会发起 AI 请求的操作按钮，未登录时应提示并弹出登录，不真正发起生成。
-- 登录鉴权走同源 `/new-api`（New API：`POST /api/user/login` + access_token + `New-Api-User`）。不要再走 MaaS `/prod-api/auth/login` 的 AES/RSA。AI 请求仍走 `/gw`，上游是 `https://api.novawander.cn`，不要改回 gravitex。登录/注册请求发出前先清掉旧的 `access_token` 和 `New-Api-User`，否则换账号会把上一份头带给 nova-api。
+- 登录鉴权走同源 `/new-api`（New API：`POST /api/user/login` + access_token + `New-Api-User`）。不要再走 MaaS `/prod-api/auth/login` 的 AES/RSA。AI 请求仍走 `/gw`，上游是 `https://api.novawander.cn`，不要改回 gravitex。登录/注册请求发出前先清掉旧的 `access_token` 和 `New-Api-User`，否则换账号会把上一份头带给 nova-api。hinnflow 注册走 `/pay-api/api/auth/register` 直写 nova-api 用户表，备注固定 `Hinnflow`。
 - 企业管理仍挂 MaaS，入口已隐藏：顶栏不要再出现「企业」，登录后不要探测 `/prod-api`，`/enterprise` 深链回首页。页面代码留在 `web/src/jc/pages/enterprise/`，有 New API 身份映射之前不要接回去。
 - 登录成功与 hydrate 后，用 `/new-api/api/token/` 拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key（列表是脱敏的，要再 `POST /api/token/:id/key` 揭秘）写入默认渠道；退出时清空。不要再写死内置 API Key。
 - 本机 Vite 代理 `/gw`、`/new-api` 到 `api.novawander.cn` 时不要开 HTTPS keep-alive：EdgeOne 复用 TLS 会偶发 `decryption failed or bad record mac`，浏览器里就是 GET 任务查询 500。Seedance 轮询遇到 5xx/网络错误应继续 pending，不要把整次生成判失败。

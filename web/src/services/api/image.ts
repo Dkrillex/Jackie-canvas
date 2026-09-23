@@ -816,7 +816,6 @@ export async function requestEdit(config: AiConfig, prompt: string, references: 
         }
     }
     if (requestConfig.apiFormat === "gemini" || usesGeminiImageGeneration(requestConfig.model)) {
-        if (mask) throw new Error(apiText("geminiMaskUnsupported"));
         try {
             return await requestGeminiImages(requestConfig, requestPrompt, references, n, options);
         } catch (error) {

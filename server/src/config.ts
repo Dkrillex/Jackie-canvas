@@ -18,6 +18,12 @@ const MYSQL_USER = ["dms_user_", "81d7ed6"].join("");
 const MYSQL_PASSWORD = ["Cxx", "123456"].join("");
 const MYSQL_DATABASE = "hinnflow_database";
 
+// nova-api 用户库（和上面钱包库不是同一台）。hinnflow 注册直写这张 users 表，登录仍走 /new-api。
+const NOVA_API_MYSQL_HOST = ["sg-cdb-g76frt49.sql.", "tencentcdb.com"].join("");
+const NOVA_API_MYSQL_USER = "root";
+const NOVA_API_MYSQL_PASSWORD = ["Nova", "wander123456"].join("");
+const NOVA_API_MYSQL_DATABASE = "novawander_api";
+
 export const settings = {
     host: env("HOST", "0.0.0.0"),
     port: Number(env("PORT", "8787")),
@@ -44,6 +50,12 @@ export const settings = {
     mysqlPassword: env("MYSQL_PASSWORD", MYSQL_PASSWORD),
     mysqlDatabase: env("MYSQL_DATABASE", MYSQL_DATABASE),
     mysqlConnectionLimit: Number(env("MYSQL_CONNECTION_LIMIT", "10")),
+
+    novaApiMysqlHost: env("NOVA_API_MYSQL_HOST", NOVA_API_MYSQL_HOST),
+    novaApiMysqlPort: Number(env("NOVA_API_MYSQL_PORT", "22299")),
+    novaApiMysqlUser: env("NOVA_API_MYSQL_USER", NOVA_API_MYSQL_USER),
+    novaApiMysqlPassword: env("NOVA_API_MYSQL_PASSWORD", NOVA_API_MYSQL_PASSWORD),
+    novaApiMysqlDatabase: env("NOVA_API_MYSQL_DATABASE", NOVA_API_MYSQL_DATABASE),
 
     // ---------- 兜底对账 ----------
     reconcileIntervalSec: Number(env("RECONCILE_INTERVAL_SEC", "60")),
@@ -76,3 +88,6 @@ export const settings = {
 export const alipayConfigured = () => Boolean(settings.alipayAppId && settings.alipayPrivateKey && settings.alipayPublicKey);
 
 export const mysqlConfigured = () => Boolean(settings.mysqlHost && settings.mysqlUser && settings.mysqlPassword && settings.mysqlDatabase);
+
+export const novaApiMysqlConfigured = () =>
+    Boolean(settings.novaApiMysqlHost && settings.novaApiMysqlUser && settings.novaApiMysqlPassword && settings.novaApiMysqlDatabase);
