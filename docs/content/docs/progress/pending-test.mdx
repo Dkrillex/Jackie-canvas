@@ -7,6 +7,7 @@ description: Implemented changes that still need manual verification
 
 The current release needs manual verification in these areas:
 
+- hinnflow Docker: `docker compose -f docker-compose.hinnflow.yml up -d --build` starts `web` on host port 5000 and `pay` internally; register hits `/pay-api/api/auth/register`, wallet/jobs go through `/pay-api`. Without a public `ALIPAY_NOTIFY_URL`, Alipay async notify is skipped and settlement relies on polling plus reconcile.
 - My Assets: on `/assets`, dropping several local jpg/png files (or using Import to multi-select) should create image cards; the previous zip asset package should still import.
 - Redemption code: after signing in, open avatar → Config → Account; a redemption code input should appear at the bottom (hidden when signed out). Redeeming a valid code should send `POST /new-api/api/user/topup` with `{"key":"…"}`, show the added amount, and refresh the remaining balance; invalid or used codes only show a generic failure.
 - `/gw` generation: after New API login, `POST /gw/v1/images/generations` must hit `api.novawander.cn` (not gravitex) and succeed with the synced `auto` group key; a gravitex `Invalid token` is a regression. Console `auto` now maps `GPT_01` / `DeepSeek_01` / `Seedance` / `Gemini_01`, so all eleven default models should route with an `auto` key. Claude / Kimi / GLM / Qwen / Minimax are still outside `auto`.

@@ -5,6 +5,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 
 # 待测试
 
+- hinnflow Docker：`docker compose -f docker-compose.hinnflow.yml up -d --build` 后前端在宿主机 5000，充值/注册走内部 `pay` 容器的 `/pay-api`。没配公网 `ALIPAY_NOTIFY_URL` 时支付宝异步通知不会打过来，到账靠轮询和对账。
 - 我的资产：在 `/assets` 把多张本地 jpg/png 拖进页面，或点「导入资产」一次多选，应出现对应图片卡片；原来的 zip 资产包仍可导入。
 - 兑换码：登录后打开头像 → 配置中心「账户」页签，底部应出现兑换码输入框（未登录不显示）；输入有效码点「兑换」，Network 应为 `POST /new-api/api/user/topup`（body `{"key":"…"}`），成功提示到账金额且「剩余额度」自动刷新；无效或已用的码只提示「兑换失败」类通用信息。
 - `/gw` 生图：登录后 `POST /gw/v1/images/generations` 应打到 `api.novawander.cn`（不是 gravitex），用同步来的 `auto` 密钥能出图；再出现 gravitex 的 Invalid token 就是回退了。现网 `auto` 已覆盖 `GPT_01` / `DeepSeek_01` / `Seedance` / `Gemini_01`，默认 11 个模型都应能走 `auto` 密钥。Claude / Kimi / GLM / Qwen / Minimax 仍不在 `auto` 里。

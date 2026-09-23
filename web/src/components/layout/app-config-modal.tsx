@@ -287,8 +287,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
 
     return (
         <>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 pb-3 dark:border-stone-800">
-                <div className="text-xs text-stone-500">{t("config.fileSecurity")}</div>
+            <div className="flex flex-wrap items-center justify-end gap-3 border-b border-stone-200 pb-3 dark:border-stone-800">
                 <div className="flex gap-2">
                     <Button icon={<Upload className="size-4" />} onClick={() => configInputRef.current?.click()}>
                         {t("config.import")}
