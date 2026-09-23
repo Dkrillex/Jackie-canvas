@@ -46,6 +46,14 @@ export default {
             stores: { appState: "App state", images: "Image files", media: "Audio and video files", imageLogs: "Image history", videoLogs: "Video history", agentMessages: "Agent messages", promptCache: "Prompt cache" },
         },
     },
+    redeem: {
+        title: "Redemption code",
+        hint: "Enter a code to add quota straight to this account's balance.",
+        placeholder: "Enter redemption code",
+        submit: "Redeem",
+        success: "Redeemed, {{amount}} added",
+        failed: "Redemption failed",
+    },
     navigation: {
         wallet: "Credits",
         enterprise: "Enterprise",

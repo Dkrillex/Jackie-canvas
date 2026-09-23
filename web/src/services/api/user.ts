@@ -153,6 +153,12 @@ export async function fetchAutoUserApiKey(): Promise<string | null> {
     return key.startsWith("sk-") ? key : `sk-${key}`;
 }
 
+/** 兑换码充值 New API 额度，返回本次到账的 quota；失败原因 New API 故意不细分 */
+export async function redeemCode(key: string): Promise<number> {
+    const quota = await request(authClient.post<NewApiResponse<number>>("/api/user/topup", { key: key.trim() }), "兑换失败");
+    return Number(quota) || 0;
+}
+
 export async function logoutRemote(): Promise<void> {
     await authClient.get<NewApiResponse>("/api/user/logout").catch(() => undefined);
     clearAuthSession();

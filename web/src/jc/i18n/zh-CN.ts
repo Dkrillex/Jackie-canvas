@@ -49,6 +49,14 @@ export default {
             stores: { appState: "应用状态", images: "图片文件", media: "音视频文件", imageLogs: "生图记录", videoLogs: "视频记录", agentMessages: "Agent 消息", promptCache: "提示词缓存" },
         },
     },
+    redeem: {
+        title: "兑换码",
+        hint: "输入兑换码，额度直接充入当前账号余额。",
+        placeholder: "请输入兑换码",
+        submit: "兑换",
+        success: "兑换成功，已到账 {{amount}}",
+        failed: "兑换失败",
+    },
     navigation: {
         wallet: "积分充值",
         enterprise: "企业",

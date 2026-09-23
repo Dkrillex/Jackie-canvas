@@ -4,6 +4,7 @@
 
 ### Jackie（本分支定制）
 
++ [新增][Jackie] 配置中心账户页签可输入兑换码，额度直接充入 NovaWander（New API）账号余额。
 + [修复][Jackie] 线上 `/pay-api` 补上 `bcryptjs`，避免注册改动后函数找不到包报「充值服务异常」。
 + [调整][Jackie] hinnflow 注册改由 `/pay-api` 直写 nova-api `users` 表，备注固定为 Hinnflow；登录仍走 `/new-api`。
 + [修复][Jackie] Gemini 图生图不再因未定义的 `mask` 变量直接报错。

@@ -12,6 +12,7 @@ import { ConfigLocalStorage } from "@/components/layout/config-local-storage";
 import { useCopyText } from "@/hooks/use-copy-text";
 import type { AppLocale } from "@/i18n";
 import { LOCAL_PROXY_UI_ENABLED } from "@/jc/config";
+import { RedeemCode } from "@/jc/components/redeem-code";
 import { exportAppConfig, importAppConfig } from "@/services/config-file";
 import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
@@ -368,6 +369,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                             <div className="flex h-8 items-center text-sm text-stone-500">{loadingUserInfo ? t("config.account.loading") : t("config.account.apiKeyEmpty")}</div>
                                         )}
                                     </Form.Item>
+                                    {sessionUser ? <RedeemCode onRedeemed={() => void refreshUserInfo(true)} /> : null}
                                 </div>
                             </Form>
                         ),
