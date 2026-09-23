@@ -60,5 +60,5 @@ export async function grantUserQuota(userId: string, quota: number): Promise<str
         const uncertain = response.status >= 500;
         throw new QuotaGrantError(payload?.message || `发放额度失败（HTTP ${response.status}）`, uncertain ? 504 : 502, uncertain);
     }
-    return `add_quota:${quota}`;
+    return "granted";
 }

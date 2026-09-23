@@ -14,6 +14,11 @@ import { useRecharge } from "./use-recharge";
 const statusColor: Record<string, string> = { created: "gold", paid: "success", closed: "default" };
 const exchangeStatusColor: Record<string, string> = { pending: "processing", done: "success", failed: "error" };
 
+function exchangeNote(t: (key: string, opts?: { credits: string }) => string, value: string | null, note: string, credits: string) {
+    if (value === "granted" || (value && /^add_quota:\d+$/.test(value))) return t("wallet.exchangeGranted", { credits });
+    return value || note || "—";
+}
+
 export default function WalletPage() {
     const { t } = useTranslation();
     const { message } = App.useApp();
@@ -254,7 +259,7 @@ export default function WalletPage() {
                                                     { title: t("wallet.time"), dataIndex: "createdAt", width: 180 },
                                                     { title: t("wallet.exchangeCredits"), dataIndex: "credits", width: 120, align: "right", render: (value: string) => <span className="tabular-nums">{value}</span> },
                                                     { title: t("wallet.status"), dataIndex: "status", width: 130, render: (status: string) => <Tag color={exchangeStatusColor[status] || "default"}>{t(`wallet.exchange_${status}`, status)}</Tag> },
-                                                    { title: t("wallet.gwRef"), dataIndex: "gwRef", render: (value: string | null, row: CreditExchange) => value || row.note || "—" },
+                                                    { title: t("wallet.gwRef"), dataIndex: "gwRef", render: (value: string | null, row: CreditExchange) => exchangeNote(t, value, row.note, row.credits) },
                                                 ]}
                                             />
                                         ),
