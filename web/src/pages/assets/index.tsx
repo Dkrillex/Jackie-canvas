@@ -1,5 +1,5 @@
 import { Copy, Download, PencilLine, Search, Trash2, Upload } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { App, Button, Card, Drawer, Empty, Form, Image, Input, Modal, Pagination, Select, Space, Tag, Typography } from "antd";
 import { saveAs } from "file-saver";
 import { useTranslation } from "react-i18next";
@@ -26,6 +26,14 @@ type ImageDraft = ImageAsset["data"] | null;
 
 const kindOptions = ["all", "text", "image", "video"] as const;
 
+function isZipFile(file: File) {
+    return file.type === "application/zip" || file.type === "application/x-zip-compressed" || file.name.toLowerCase().endsWith(".zip");
+}
+
+function collectDroppedFiles(dataTransfer: DataTransfer) {
+    return Array.from(dataTransfer.files || []);
+}
+
 export default function AssetsPage() {
     const { message } = App.useApp();
     const { t } = useTranslation();
@@ -48,6 +56,10 @@ export default function AssetsPage() {
     const [deletingAsset, setDeletingAsset] = useState<Asset | null>(null);
     const [formKind, setFormKind] = useState<AssetKind>("text");
     const [imageDraft, setImageDraft] = useState<ImageDraft>(null);
+    const [dragging, setDragging] = useState(false);
+    const [importing, setImporting] = useState(false);
+    const dragDepth = useRef(0);
+    const importingRef = useRef(false);
     const coverUrl = Form.useWatch("coverUrl", form) || "";
     const title = Form.useWatch("title", form) || "";
     const tags = Form.useWatch("tags", form) || [];
@@ -167,23 +179,82 @@ export default function AssetsPage() {
         await exportAssets(validAssets, t("assets.packageName"));
     };
 
-    const importAssetZip = async (file?: File) => {
-        if (!file) return;
+    const importLocalFiles = async (fileList?: FileList | File[] | null) => {
+        const files = Array.from(fileList || []);
+        if (!files.length || importingRef.current) return;
+        const zips = files.filter(isZipFile);
+        const images = files.filter((file) => file.type.startsWith("image/"));
+        if (!zips.length && !images.length) {
+            message.warning(t("assets.noImagesInDrop"));
+            return;
+        }
+        importingRef.current = true;
+        setImporting(true);
+        const hide = message.loading(t("assets.importingImages"), 0);
+        let added = 0;
         try {
-            const importedAssets = await readAssetPackage(file);
-            importedAssets.forEach((asset) => {
-                const payload = { ...asset } as Record<string, unknown>;
-                delete payload.id;
-                delete payload.createdAt;
-                delete payload.updatedAt;
-                addAsset(payload as Parameters<typeof addAsset>[0]);
-            });
-            message.success(t("assets.imported", { count: importedAssets.length }));
+            for (const zip of zips) {
+                const importedAssets = await readAssetPackage(zip);
+                importedAssets.forEach((asset) => {
+                    const payload = { ...asset } as Record<string, unknown>;
+                    delete payload.id;
+                    delete payload.createdAt;
+                    delete payload.updatedAt;
+                    addAsset(payload as Parameters<typeof addAsset>[0]);
+                });
+                added += importedAssets.length;
+            }
+            for (const file of images) {
+                const image = await uploadImage(file);
+                addAsset({
+                    kind: "image",
+                    title: file.name || t("assets.kinds.image"),
+                    coverUrl: image.url,
+                    tags: [],
+                    source: t("assets.manual"),
+                    data: { dataUrl: image.url, storageKey: image.storageKey, width: image.width, height: image.height, bytes: image.bytes, mimeType: image.mimeType },
+                });
+                added += 1;
+            }
+            message.success(t("assets.imported", { count: added }));
         } catch {
             message.error(t("assets.importFailed"));
         } finally {
+            hide();
+            importingRef.current = false;
+            setImporting(false);
             if (assetInputRef.current) assetInputRef.current.value = "";
         }
+    };
+
+    const hasDragFiles = (event: DragEvent) => Boolean(event.dataTransfer?.types && Array.from(event.dataTransfer.types).includes("Files"));
+
+    const onDragEnter = (event: DragEvent) => {
+        if (!hasDragFiles(event)) return;
+        event.preventDefault();
+        dragDepth.current += 1;
+        setDragging(true);
+    };
+
+    const onDragLeave = (event: DragEvent) => {
+        if (!hasDragFiles(event)) return;
+        event.preventDefault();
+        dragDepth.current = Math.max(0, dragDepth.current - 1);
+        if (dragDepth.current === 0) setDragging(false);
+    };
+
+    const onDragOver = (event: DragEvent) => {
+        if (!hasDragFiles(event)) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+    };
+
+    const onDrop = (event: DragEvent) => {
+        if (!hasDragFiles(event)) return;
+        event.preventDefault();
+        dragDepth.current = 0;
+        setDragging(false);
+        void importLocalFiles(collectDroppedFiles(event.dataTransfer));
     };
 
     const confirmDelete = () => {
@@ -194,12 +265,24 @@ export default function AssetsPage() {
     };
 
     return (
-        <div className="flex h-full flex-col overflow-hidden bg-background text-stone-900 dark:text-stone-100">
+        <div
+            className="relative flex h-full flex-col overflow-hidden bg-background text-stone-900 dark:text-stone-100"
+            onDragEnter={onDragEnter}
+            onDragLeave={onDragLeave}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+        >
+            {dragging ? (
+                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/80">
+                    <div className="rounded-xl border border-dashed border-stone-400 px-8 py-6 text-sm font-medium text-stone-700 dark:border-stone-500 dark:text-stone-200">{t("assets.dropToImport")}</div>
+                </div>
+            ) : null}
             <main className="min-h-0 flex-1 overflow-y-auto bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] px-6 py-8 [background-size:16px_16px] dark:bg-[radial-gradient(rgba(245,245,244,.14)_1px,transparent_1px)]">
                 <div className="pb-8">
                     <div className="mx-auto max-w-5xl text-center">
                         <h1 className="text-4xl font-semibold tracking-tight text-stone-950 dark:text-stone-100">{t("assets.title")}</h1>
                         <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">{t("assets.description")}</p>
+                        <p className="mt-1 text-xs text-stone-400 dark:text-stone-500">{t("assets.dropHint")}</p>
                     </div>
 
                     <div className="mx-auto mt-8 w-full max-w-2xl">
@@ -251,7 +334,8 @@ export default function AssetsPage() {
                                 </button>
                                 <button
                                     type="button"
-                                    className="cursor-pointer text-sm font-medium text-stone-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:underline dark:text-stone-300"
+                                    disabled={importing}
+                                    className="cursor-pointer text-sm font-medium text-stone-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:underline disabled:cursor-not-allowed disabled:opacity-50 dark:text-stone-300"
                                     onClick={() => assetInputRef.current?.click()}
                                 >
                                     {t("assets.import")}
@@ -401,7 +485,7 @@ export default function AssetsPage() {
 
             <AssetDrawer asset={previewAsset} onClose={() => setPreviewAsset(null)} onCopy={copyAssetText} onDownload={downloadImage} />
 
-            <input ref={assetInputRef} type="file" accept="application/zip,.zip" className="hidden" onChange={(event) => void importAssetZip(event.target.files?.[0])} />
+            <input ref={assetInputRef} type="file" accept="image/*,application/zip,.zip" multiple className="hidden" onChange={(event) => void importLocalFiles(event.target.files)} />
 
             <Modal title={t("assets.deleteTitle")} open={Boolean(deletingAsset)} onCancel={() => setDeletingAsset(null)} onOk={confirmDelete} okText={t("common.delete")} okButtonProps={{ danger: true }} cancelText={t("common.cancel")}>
                 {t("assets.deleteConfirm", { name: deletingAsset?.title })}

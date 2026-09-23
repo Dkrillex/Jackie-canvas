@@ -54,6 +54,13 @@ export default {
         success: "Redeemed, {{amount}} added",
         failed: "Redemption failed",
     },
+    assets: {
+        dropHint: "You can also drop local images here, or click Import and select multiple files.",
+        dropToImport: "Drop to import images",
+        importingImages: "Importing…",
+        noImagesInDrop: "No images or asset packages to import",
+        importFailed: "Import failed. Choose images or a valid asset package.",
+    },
     navigation: {
         wallet: "Credits",
         enterprise: "Enterprise",

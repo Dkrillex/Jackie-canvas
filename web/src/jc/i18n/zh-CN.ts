@@ -57,6 +57,13 @@ export default {
         success: "兑换成功，已到账 {{amount}}",
         failed: "兑换失败",
     },
+    assets: {
+        dropHint: "也可将本地图片拖到本页，或点「导入资产」一次选多张。",
+        dropToImport: "松开即可导入图片",
+        importingImages: "正在导入…",
+        noImagesInDrop: "没有可导入的图片或资产包",
+        importFailed: "导入失败，请选择图片或有效的资产压缩包",
+    },
     navigation: {
         wallet: "积分充值",
         enterprise: "企业",
