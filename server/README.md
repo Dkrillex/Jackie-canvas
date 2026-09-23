@@ -43,7 +43,8 @@
 ```bash
 cd server
 npm install
-cp .env.example .env     # 填支付宝密钥和 MySQL
+cp .env.example .env.local   # 本地开发
+# 线上 Docker 用 .env，填公网 ALIPAY_NOTIFY_URL / ALIPAY_RETURN_URL
 npm run check:alipay     # 自检密钥有没有填反（最难查的错）
 npm run check:db         # 自检数据库，顺便把三张表建出来
 npm run dev

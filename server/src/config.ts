@@ -1,6 +1,11 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import { config as loadEnv } from "dotenv";
 
-loadEnv();
+const envDir = process.cwd();
+loadEnv({ path: resolve(envDir, ".env") });
+const localEnv = resolve(envDir, ".env.local");
+if (existsSync(localEnv)) loadEnv({ path: localEnv, override: true });
 
 const env = (key: string, fallback = "") => (process.env[key] ?? fallback).trim();
 

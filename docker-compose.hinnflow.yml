@@ -33,9 +33,9 @@ services:
 
   # 积分充值 / 注册 / 接单。8787 只给同网络 nginx 用，不要映射到公网。
   # 和 Vercel 不同：这里是常驻进程，兜底对账会真正跑起来。
-  # 可选：cp server/.env.example server/.env，用公网域名覆盖支付宝回调：
-  #   ALIPAY_NOTIFY_URL=https://你的域名/pay-api/api/pay/notify
-  #   ALIPAY_RETURN_URL=https://你的域名/wallet
+  # 线上读 server/.env（不要用 .env.local）。支付宝回调：
+  #   ALIPAY_NOTIFY_URL=https://canvas.hinnflow.com/pay-api/api/pay/notify
+  #   ALIPAY_RETURN_URL=https://canvas.hinnflow.com/wallet
   pay:
     build:
       context: .

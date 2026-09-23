@@ -4,6 +4,8 @@
 
 ### Jackie（本分支定制）
 
++ [调整][Jackie] 充值服务本地用 `.env.local`、线上 Docker 用 `.env`，支付宝回调地址分开配。
++ [新增][Jackie] 增加宿主机反代样例 `nginx-hinnflow.conf`，把域名 80 转到本机 Docker 5000。
 + [修复][Jackie] Docker 前端构建改为 `build:web`，不再因镜像里没有 `server/` 去编 Vercel 的 `functions-pay` 失败。
 + [调整][Jackie] hinnflow Docker 默认带上充值/注册服务（`pay` + `/pay-api`），前端对外端口改为 5000。
 + [调整][Jackie] 配置中心不再显示「JSON 文件包含 API Key 和 WebDAV 凭据」提示。
