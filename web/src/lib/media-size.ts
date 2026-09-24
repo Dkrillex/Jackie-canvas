@@ -149,3 +149,34 @@ export function readVideoDimensions(size: string, resolution: string, ratio: str
 function evenRound(value: number) {
     return Math.max(2, Math.round(value / 2) * 2);
 }
+
+/** 与 `services/api/image.ts` 的 /images 尺寸校验一致。 */
+const IMAGE_REQUEST_SIZE_STEP = 16;
+const IMAGE_REQUEST_MIN_PIXELS = 655360;
+const IMAGE_REQUEST_MAX_PIXELS = 8294400;
+const IMAGE_REQUEST_MAX_EDGE = 3840;
+const IMAGE_REQUEST_MAX_RATIO = 3;
+
+/** 按原图像素算出接口能接受的 WxH：对齐 16、夹边长和总像素，比例过宽则退回最接近的常用比。 */
+export function requestSizeFromPixels(width: number, height: number) {
+    if (!(width > 0) || !(height > 0) || !Number.isFinite(width) || !Number.isFinite(height)) return "";
+    const landscape = width >= height;
+    const longRatio = Math.max(width, height) / Math.min(width, height);
+    if (longRatio > IMAGE_REQUEST_MAX_RATIO) return inferMediaRatio(`${width}x${height}`);
+    const pixels = width * height;
+    let scale = 1;
+    if (pixels < IMAGE_REQUEST_MIN_PIXELS) scale = Math.sqrt(IMAGE_REQUEST_MIN_PIXELS / pixels);
+    scale = Math.min(scale, IMAGE_REQUEST_MAX_EDGE / Math.max(width, height), Math.sqrt(IMAGE_REQUEST_MAX_PIXELS / pixels));
+    let long = Math.max(IMAGE_REQUEST_SIZE_STEP, Math.round((Math.max(width, height) * scale) / IMAGE_REQUEST_SIZE_STEP) * IMAGE_REQUEST_SIZE_STEP);
+    let short = Math.max(IMAGE_REQUEST_SIZE_STEP, Math.round(long / longRatio / IMAGE_REQUEST_SIZE_STEP) * IMAGE_REQUEST_SIZE_STEP);
+    while (long * short < IMAGE_REQUEST_MIN_PIXELS) {
+        long += IMAGE_REQUEST_SIZE_STEP;
+        short = Math.max(IMAGE_REQUEST_SIZE_STEP, Math.round(long / longRatio / IMAGE_REQUEST_SIZE_STEP) * IMAGE_REQUEST_SIZE_STEP);
+    }
+    while (long > IMAGE_REQUEST_MAX_EDGE || long * short > IMAGE_REQUEST_MAX_PIXELS) {
+        long -= IMAGE_REQUEST_SIZE_STEP;
+        if (long < IMAGE_REQUEST_SIZE_STEP) return inferMediaRatio(`${width}x${height}`);
+        short = Math.max(IMAGE_REQUEST_SIZE_STEP, Math.round(long / longRatio / IMAGE_REQUEST_SIZE_STEP) * IMAGE_REQUEST_SIZE_STEP);
+    }
+    return landscape ? `${long}x${short}` : `${short}x${long}`;
+}
