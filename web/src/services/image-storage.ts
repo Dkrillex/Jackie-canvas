@@ -163,7 +163,7 @@ export async function imageToDataUrl(image: { url?: string; dataUrl?: string; st
     const localUrl = await resolveImageUrl(image.storageKey, "");
     if (localUrl.startsWith("blob:")) return blobToDataUrl(await fetchImageBlob(localUrl, options));
     const httpsUrl = [dataUrl, image.url].find((value) => value && /^https?:\/\//i.test(value));
-    // OSS https 没有 CORS，浏览器 GET 会被 canvas.hinnflow.com 拦住；对话/反推/Gemini 直接发公网 URL。
+    // 对话/反推/Gemini 直接发公网 URL，不在浏览器里下载转 base64；需要文件时由 imageToFile 再下载。
     if (httpsUrl) return httpsUrl;
     const blobUrl = [dataUrl, image.url].find((value) => value?.startsWith("blob:"));
     if (blobUrl) return blobToDataUrl(await fetchImageBlob(blobUrl, options));
@@ -179,6 +179,11 @@ export async function imageToFile(image: { url?: string; dataUrl?: string; stora
         if (blob) return new File([blob], image.name || "reference.png", { type: blob.type || image.type || "image/png" });
     }
     const dataUrl = await imageToDataUrl(image, options);
+    // multipart 必须拿到文件本身：https（如 Seedance 素材预览）在这里才真正下载，依赖 OSS 已开 CORS。
+    if (/^https?:\/\//i.test(dataUrl)) {
+        const blob = await fetchImageBlob(dataUrl, options);
+        return new File([blob], image.name || "reference.png", { type: blob.type || image.type || "image/png" });
+    }
     if (!dataUrl.startsWith("data:")) throw new Error(i18n.t("common.imageReadFailed"));
     return dataUrlToFile({ id: "", name: image.name || "reference.png", type: image.type || "image/png", dataUrl });
 }

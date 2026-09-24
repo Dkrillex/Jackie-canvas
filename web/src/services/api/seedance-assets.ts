@@ -224,7 +224,8 @@ function normalizeGroup(raw: Record<string, unknown>): SeedanceAssetGroup {
 function normalizeAsset(raw: Record<string, unknown>): SeedanceAsset {
     const fromUrl = stringField(raw, "asset_url");
     const virtualId = stringField(raw, "virtual_id", "Id") || (fromUrl.startsWith("asset://") ? fromUrl.slice("asset://".length) : "");
-    const preview = stringField(raw, "url", "URL");
+    // url 是 TOS 预签名（约 11.5 小时过期、无 CORS），优先用上传时的原始 OSS 地址：长期有效且已开跨域。
+    const preview = [stringField(raw, "gravitex_url"), stringField(raw, "url", "URL")].find(isHttpPreviewUrl) || "";
     return {
         virtual_id: virtualId,
         asset_url: fromUrl.startsWith("asset://") ? fromUrl : virtualId ? `asset://${virtualId}` : "",
