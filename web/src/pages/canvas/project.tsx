@@ -150,27 +150,27 @@ function applyGeneratedVideo(item: CanvasNodeData, video: UploadedFile, extra: C
     };
 }
 
-export default function CanvasPage() {
+export default function CanvasPage({ projectId: projectIdProp, active = true }: { projectId?: string; active?: boolean }) {
+    const params = useParams<{ id: string }>();
+    const projectId = projectIdProp || params.id || "";
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    if (!mounted) return <CanvasRefreshShell />;
+    if (!mounted || !projectId) return <CanvasRefreshShell />;
 
-    return <InfiniteCanvasPage />;
+    return <InfiniteCanvasPage projectId={projectId} active={active} />;
 }
 
-function InfiniteCanvasPage() {
+function InfiniteCanvasPage({ projectId, active }: { projectId: string; active: boolean }) {
     const { message, modal } = App.useApp();
     const { t } = useTranslation();
     // Subscribe to the registry version so plugin registration changes rerender the canvas.
     const nodeRegistryVersion = useNodeRegistryVersion((state) => state.version);
-    const params = useParams<{ id: string }>();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const projectId = params.id || "";
     const localAgentConnected = useAgentStore((state) => state.connected);
     const localAgentActivity = useAgentStore((state) => state.activity);
     const localAgentEnabled = useAgentStore((state) => state.enabled);
@@ -929,7 +929,7 @@ function InfiniteCanvasPage() {
     }, [referenceConnectedNodeIds, referencePickerNodeId]);
 
     useEffect(() => {
-        if (!referencePickerNodeId) return;
+        if (!active || !referencePickerNodeId) return;
         const exit = (event: KeyboardEvent) => {
             if (event.key !== "Escape") return;
             event.preventDefault();
@@ -938,7 +938,7 @@ function InfiniteCanvasPage() {
         };
         window.addEventListener("keydown", exit, true);
         return () => window.removeEventListener("keydown", exit, true);
-    }, [exitNodeReferenceSelection, referencePickerNodeId]);
+    }, [active, exitNodeReferenceSelection, referencePickerNodeId]);
 
     const deselectCanvas = useCallback(() => {
         cancelPendingConnectionCreate();
@@ -1420,6 +1420,7 @@ function InfiniteCanvasPage() {
     );
 
     useEffect(() => {
+        if (!active) return;
         const handlePointerUp = (event: PointerEvent) => finishNodeDrag(event.clientX, event.clientY);
         const cancelNodeDrag = () => finishNodeDrag();
         window.addEventListener("mousemove", handleGlobalMouseMove);
@@ -1436,7 +1437,7 @@ function InfiniteCanvasPage() {
             window.removeEventListener("blur", cancelNodeDrag);
             window.removeEventListener("pointermove", handleGlobalPointerMove);
         };
-    }, [finishNodeDrag, handleGlobalMouseMove, handleGlobalMouseUp, handleGlobalPointerMove]);
+    }, [active, finishNodeDrag, handleGlobalMouseMove, handleGlobalMouseUp, handleGlobalPointerMove]);
 
     const createImageFileNode = useCallback(async (file: File, position: Position) => {
         const image = await uploadImage(file);
@@ -1539,6 +1540,7 @@ function InfiniteCanvasPage() {
     }, [createImageFileNode, createTextNodeFromClipboard, getCanvasCenter, message, t]);
 
     useEffect(() => {
+        if (!active) return;
         const handleKeyDown = (event: KeyboardEvent) => {
             const target = event.target instanceof Element ? event.target : null;
             if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement || target?.closest("[contenteditable='true'],[data-canvas-no-zoom],[data-canvas-shortcuts-ignore]")) return;
@@ -1624,7 +1626,7 @@ function InfiniteCanvasPage() {
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [copySelectedNodes, deleteConnection, deleteNodes, groupSelection, pasteCopiedNodes, pasteSystemClipboard, redoCanvas, selectedConnectionId, setConnecting, undoCanvas, ungroupSelection]);
+    }, [active, copySelectedNodes, deleteConnection, deleteNodes, groupSelection, pasteCopiedNodes, pasteSystemClipboard, redoCanvas, selectedConnectionId, setConnecting, undoCanvas, ungroupSelection]);
 
     const handleConnectStart = useCallback(
         (event: ReactMouseEvent, nodeId: string, handleType: "source" | "target") => {
@@ -3205,6 +3207,7 @@ function InfiniteCanvasPage() {
                     agentOpen={agentPanelOpen}
                     compactAgentStatus={{ connected: localAgentConnected, enabled: localAgentEnabled, activity: localAgentActivity }}
                     onToggleAgent={toggleAgentPanel}
+                    active={active}
                 />
 
                 <InfiniteCanvas
@@ -3212,6 +3215,7 @@ function InfiniteCanvasPage() {
                     viewport={viewport}
                     tool={canvasTool}
                     backgroundMode={backgroundMode}
+                    active={active}
                     onViewportChange={(next) => {
                         setViewport(next);
                         setContextMenu(null);

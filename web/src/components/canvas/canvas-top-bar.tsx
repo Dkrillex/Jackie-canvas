@@ -31,6 +31,7 @@ export function CanvasTopBar({
     agentOpen,
     compactAgentStatus,
     onToggleAgent,
+    active = true,
 }: {
     title: string;
     titleDraft: string;
@@ -53,12 +54,14 @@ export function CanvasTopBar({
     agentOpen: boolean;
     compactAgentStatus: { connected: boolean; enabled: boolean; activity: string };
     onToggleAgent: () => void;
+    active?: boolean;
 }) {
     const colorTheme = useThemeStore((state) => state.theme);
     const { t } = useTranslation();
     const theme = canvasThemes[colorTheme];
     const titleRef = useRef<HTMLDivElement>(null);
     const [shortcutsOpen, setShortcutsOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
     const sidePanelOpen = useCanvasSidePanelStore((state) => state.panelOpen);
     const toggleSidePanel = useCanvasSidePanelStore((state) => state.togglePanel);
 
@@ -88,6 +91,8 @@ export function CanvasTopBar({
                     </Tooltip>
                     <Dropdown
                         trigger={["click"]}
+                        open={active && menuOpen}
+                        onOpenChange={setMenuOpen}
                         menu={{
                             items: [
                                 { key: "home", icon: <Home className="size-4" />, label: t("canvas.home"), onClick: onHome },

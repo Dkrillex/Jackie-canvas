@@ -27,6 +27,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - Seedream 5.0：选 1K 16:9 时 Network 里 `/images/generations` 的 `size` 应为 2560x1440 或更大（总像素 ≥ 3686400），不应再发 1536x864。
 - OSS 中文文件名：参考图如「白人.png」上传后公开 URL 应是百分号编码。用默认 `*.aliyuncs.com` 打开仍可能强制下载（阿里云 0048-00000113），那是要绑自定义域名，不是 PUT 失败。
 - OSS 参考图：在 `canvas.hinnflow.com` 用已上传到 OSS 的首尾帧（`https://*.aliyuncs.com/canvas/...`）再生成，浏览器 Network 里不应再出现对该 OSS 地址的 `fetch` CORS 报错（`No 'Access-Control-Allow-Origin'`）。Seedance 应直接把 https 发给任务接口；图生图应走本地 IndexedDB 图，不要跨域 GET OSS。
+- 画布后台生成：在画布里开始生图/生视频后点顶栏回首页（或去资产等其它页），节点应继续转圈；过一会儿再进同一张画布，结果应已经出来或仍在生成，不能变成「页面刷新后生成已中断」。首页空格、快捷键不应被后台画布抢走。整页刷新仍会中断（有视频任务 ID 的可续查）。从画布 A 直接进画布 B 会卸掉 A，A 上未完成的生成会中断。
 - 画布：选中配置节点或打开组装提示词时不显示悬浮工具栏；选中图片/文本/视频节点时，即使下方提示词面板开着，节点上方仍应出现悬浮工具栏，「反推提示词」在里面。`@` 菜单贴光标。组装提示词用中文输入法组字时，灰色占位文案应立刻消失；`@` 插入引用后继续打拼音应走输入法上屏，不能变成一串字母。
 - Jackie 登录：hydrate 会话走 `/new-api`；生成前校验登录；WebDAV 页签仅 `admin`（`role >= 10` 或用户名 admin）；Nano Banana / Gemini 在 `/gw` 走 `generateContent`。带参考图的 Gemini 图生图不应再报 `mask is not defined`。
 - 顶栏、浏览器标题、登录弹窗为 hinnflow；首页大标题为 NOVAWANDER AI。不出现 Jackie Canvas /「无限画布」/ Infinite Canvas 对外文案。
