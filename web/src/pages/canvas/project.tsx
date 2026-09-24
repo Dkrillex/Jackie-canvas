@@ -626,7 +626,10 @@ function InfiniteCanvasPage({ projectId, active }: { projectId: string; active: 
 
     const createConnectedNode = useCallback(
         (type: CanvasNodeType.Image | CanvasNodeType.Text | CanvasNodeType.Config | CanvasNodeType.Video | CanvasNodeType.Audio, pending: PendingConnectionCreate) => {
-            const metadata = type === CanvasNodeType.Config ? { model: effectiveConfig.imageModel || effectiveConfig.model, size: effectiveConfig.size, count: getGenerationCount(effectiveConfig.canvasImageCount || effectiveConfig.count) } : undefined;
+            // 从文本节点输出口拉出新图片节点时，把文本预填进图片提示词；生成时同一段上游文本会去重。
+            const source = nodesRef.current.find((node) => node.id === pending.connection.nodeId);
+            const sourceText = type === CanvasNodeType.Image && pending.connection.handleType === "source" && source?.type === CanvasNodeType.Text ? (source.metadata?.content || source.metadata?.prompt || "").trim() : "";
+            const metadata = type === CanvasNodeType.Config ? { model: effectiveConfig.imageModel || effectiveConfig.model, size: effectiveConfig.size, count: getGenerationCount(effectiveConfig.canvasImageCount || effectiveConfig.count) } : sourceText ? { prompt: sourceText } : undefined;
             const newNode = createCanvasNode(type, pending.position, metadata);
             const connection = normalizeConnection(pending.connection.nodeId, newNode.id, [...nodesRef.current, newNode], pending.connection.handleType);
             if (!connection) {

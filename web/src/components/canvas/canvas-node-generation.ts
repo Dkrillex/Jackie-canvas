@@ -46,7 +46,8 @@ export function buildNodeGenerationContext(nodeId: string, nodes: CanvasNodeData
 
     const resourceInputs = flattenGenerationInputs(inputs);
     let textIndex = 0;
-    const upstreamText = resourceInputs.flatMap((input) => (input.text ? [textBlock(generationLabel("text", textIndex++), input.text)] : [])).join("\n\n");
+    // 提示词里已经包含的上游文本（如从文本节点拉出时预填）不再重复拼接。
+    const upstreamText = resourceInputs.flatMap((input) => (input.text && !prompt.includes(input.text.trim()) ? [textBlock(generationLabel("text", textIndex++), input.text)] : [])).join("\n\n");
     const referenceImages = resourceInputs.map((input) => input.image).filter((image): image is ReferenceImage => Boolean(image));
     const referenceVideos = resourceInputs.map((input) => input.video).filter((video): video is ReferenceVideo => Boolean(video));
     const referenceAudios = resourceInputs.map((input) => input.audio).filter((audio): audio is ReferenceAudio => Boolean(audio));
