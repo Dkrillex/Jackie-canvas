@@ -213,6 +213,16 @@ export function InfiniteCanvas({ containerRef, viewport, tool, backgroundMode = 
         return () => container.removeEventListener("wheel", preventWheelScroll);
     }, [containerRef]);
 
+    useEffect(() => {
+        if (!active) return;
+        // 触控板双指捏合在 Chrome 里是 ctrl+wheel；落在工具栏、侧栏、节点面板等画布容器外时会放大整页（不改浏览器缩放比例），工具栏变大、顶栏被推出屏幕。
+        const preventPinchZoom = (event: WheelEvent) => {
+            if (event.ctrlKey) event.preventDefault();
+        };
+        window.addEventListener("wheel", preventPinchZoom, { passive: false });
+        return () => window.removeEventListener("wheel", preventPinchZoom);
+    }, [active]);
+
     const temporaryTool = isControlPressed || isSpacePressed;
     const activeTool = temporaryTool ? (tool === "select" ? "pan" : "select") : tool;
     const cursor = isPanning ? "grabbing" : activeTool === "pan" ? "grab" : undefined;
