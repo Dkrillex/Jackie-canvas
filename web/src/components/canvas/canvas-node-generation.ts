@@ -163,14 +163,15 @@ function readNodeGenerationResource(node: CanvasNodeData): NodeGenerationResourc
 }
 
 export function buildNodeResponseMessages(context: NodeGenerationContext): AiTextMessage[] {
-    if (!context.referenceImages.length) {
+    const images = context.referenceImages.filter((image) => isVisionImageUrl(image.dataUrl || image.url || ""));
+    if (!images.length) {
         return [{ role: "user", content: context.prompt }];
     }
 
     return [
         {
             role: "user",
-            content: [{ type: "text" as const, text: context.prompt }, ...context.referenceImages.map((image) => ({ type: "image_url" as const, image_url: { url: image.dataUrl } }))],
+            content: [{ type: "text" as const, text: context.prompt }, ...images.map((image) => ({ type: "image_url" as const, image_url: { url: image.dataUrl || image.url || "" } }))],
         },
     ];
 }
@@ -198,16 +199,21 @@ function generationLabel(type: NodeGenerationResourceInput["type"], index: numbe
     return i18n.t("canvas.composer.resources.text", { index: index + 1 });
 }
 
+function isVisionImageUrl(url: string) {
+    return url.startsWith("data:") || /^https?:\/\//i.test(url);
+}
+
 function readReferenceImage(node: CanvasNodeData): ReferenceImage | null {
     const assetUrl = node.metadata?.seedanceAssetUrl;
     const preview = node.metadata?.content || "";
-    // dataUrl keeps https preview for image gen; url holds asset:// for Seedance video refs
-    if (node.type !== CanvasNodeType.Image || (!assetUrl && !preview)) return null;
+    const dataUrl = preview.startsWith("asset://") ? "" : preview;
+    // dataUrl keeps https/data preview for vision and image gen; url holds asset:// for Seedance video refs
+    if (node.type !== CanvasNodeType.Image || (!assetUrl && !dataUrl)) return null;
     return {
         id: node.id,
         name: `${node.title || node.id}.png`,
         type: node.metadata?.mimeType || "image/png",
-        dataUrl: preview || assetUrl || "",
+        dataUrl: dataUrl || "",
         url: assetUrl || undefined,
         storageKey: node.metadata?.storageKey,
         seedanceGroupId: node.metadata?.seedanceGroupId,

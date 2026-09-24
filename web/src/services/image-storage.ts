@@ -156,19 +156,20 @@ export async function setImageBlob(storageKey: string, blob: Blob) {
 export async function imageToDataUrl(image: { url?: string; dataUrl?: string; storageKey?: string }, options?: ImageReadOptions) {
     const dataUrl = image.dataUrl || "";
     if (dataUrl.startsWith("data:")) return dataUrl;
-    const assetUrl = [image.url, dataUrl].find((value) => value?.startsWith("asset://"));
-    if (assetUrl) return assetUrl;
     if (image.storageKey) {
         const blob = await getImageBlob(image.storageKey);
         if (blob) return blobToDataUrl(blob);
     }
     const localUrl = await resolveImageUrl(image.storageKey, "");
     if (localUrl.startsWith("blob:")) return blobToDataUrl(await fetchImageBlob(localUrl, options));
+    const httpsUrl = [dataUrl, image.url].find((value) => value && /^https?:\/\//i.test(value));
+    // OSS https 没有 CORS，浏览器 GET 会被 canvas.hinnflow.com 拦住；对话/反推/Gemini 直接发公网 URL。
+    if (httpsUrl) return httpsUrl;
+    const blobUrl = [dataUrl, image.url].find((value) => value?.startsWith("blob:"));
+    if (blobUrl) return blobToDataUrl(await fetchImageBlob(blobUrl, options));
+    // asset:// 只给 Seedance 视频用，不能当 base64 塞进 chat/images。
     const candidate = image.url || dataUrl;
-    if (candidate.startsWith("blob:")) return blobToDataUrl(await fetchImageBlob(candidate, options));
-    // OSS https 没有 CORS，浏览器 GET 会被 canvas.hinnflow.com 拦住；Seedance/Gemini 可直接用公网 URL。
-    if (/^https?:\/\//i.test(candidate)) return candidate;
-    if (!candidate) return "";
+    if (!candidate || candidate.startsWith("asset://")) return "";
     return blobToDataUrl(await fetchImageBlob(candidate, options));
 }
 
