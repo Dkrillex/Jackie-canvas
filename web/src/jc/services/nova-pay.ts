@@ -73,11 +73,15 @@ export async function requestNovaEpay(amount: number, paymentMethod: string) {
     return { url, fields };
 }
 
-/** 易支付通常要 POST 表单到收银台；没有字段时退回打开 URL。 */
+/** 易支付按 HTTP_REFERER 校验支付域名，必须从当前站点发起；空白窗 / noreferrer 会被当成没过白。 */
 export function openNovaEpayCheckout(url: string, fields: Record<string, string>, targetName = "_blank") {
     const entries = Object.entries(fields).filter(([, value]) => value != null && value !== "");
     if (!entries.length) {
-        const cashier = window.open(url, targetName, "noopener,noreferrer");
+        if (targetName === "_self") {
+            window.location.href = url;
+            return;
+        }
+        const cashier = window.open(url, targetName);
         if (!cashier) window.location.href = url;
         return;
     }
@@ -85,6 +89,7 @@ export function openNovaEpayCheckout(url: string, fields: Record<string, string>
     form.method = "POST";
     form.action = url;
     form.target = targetName;
+    form.referrerPolicy = "origin";
     form.style.display = "none";
     for (const [name, value] of entries) {
         const input = document.createElement("input");

@@ -73,11 +73,9 @@ export default function WalletPage() {
 
     const payQuota = async () => {
         if (!requireLogin()) return;
-        const cashier = window.open("", "nova-epay-cashier");
         try {
-            await quotaPay.start("nova-epay-cashier");
+            await quotaPay.start("_self");
         } catch (err) {
-            cashier?.close();
             message.error(err instanceof Error ? err.message : t("wallet.createFailed"));
         }
     };
