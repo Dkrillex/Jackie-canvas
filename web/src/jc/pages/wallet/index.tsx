@@ -9,8 +9,6 @@ import { useUserStore } from "@/stores/use-user-store";
 import { useWalletStore } from "@/jc/stores/use-wallet-store";
 import { MAX_RECHARGE_YUAN } from "@/jc/config";
 import { BusinessContactModal } from "@/jc/components/business-contact-modal";
-import { formatQuotaCurrency } from "@/services/api/user";
-import { useQuotaPay } from "./use-quota-pay";
 import { useRecharge } from "./use-recharge";
 
 const statusColor: Record<string, string> = { created: "gold", paid: "success", closed: "default" };
@@ -58,27 +56,13 @@ export default function WalletPage() {
     }, [clear, reload, user]);
 
     const { packages, enabled, missing, loadError, order, creating, paid, pollError, start, reset } = useRecharge(reload);
-    const quotaPay = useQuotaPay();
     const visiblePackages = packages.filter((item) => Number(item.amount) <= MAX_RECHARGE_YUAN);
-
-    useEffect(() => {
-        if (quotaPay.paid) message.success(t("wallet.quotaPaid"));
-    }, [message, quotaPay.paid, t]);
 
     useEffect(() => {
         if (visiblePackages.length && !visiblePackages.some((item) => item.id === selected)) {
             setSelected(visiblePackages[0].id);
         }
     }, [visiblePackages, selected]);
-
-    const payQuota = async () => {
-        if (!requireLogin()) return;
-        try {
-            await quotaPay.start("_self");
-        } catch (err) {
-            message.error(err instanceof Error ? err.message : t("wallet.createFailed"));
-        }
-    };
 
     const pay = async () => {
         if (!requireLogin()) return;
@@ -144,7 +128,6 @@ export default function WalletPage() {
                     <>
                         {error ? <Alert type="warning" showIcon message={error} /> : null}
                         {loadError ? <Alert type="warning" showIcon message={loadError} /> : null}
-                        {quotaPay.loadError ? <Alert type="warning" showIcon message={quotaPay.loadError} /> : null}
                         {!loadError && !enabled && packages.length ? <Alert type="warning" showIcon message={t(missing.length === 1 ? `wallet.unavailable_${missing[0]}` : "wallet.unavailable")} /> : null}
 
                         {/* 三张大卡各放一个小数字，中间全是空白；收成一条，可用额仍然是最大的那个数 */}
@@ -160,55 +143,6 @@ export default function WalletPage() {
                                     <div className={`tabular-nums ${item.strong ? "text-2xl font-semibold" : "text-lg text-stone-500 dark:text-stone-400"}`}>{item.value}</div>
                                 </div>
                             ))}
-                        </div>
-
-                        <div className="space-y-4 rounded-2xl border border-stone-200 bg-white/60 px-5 py-4 dark:border-stone-800 dark:bg-white/[0.02]">
-                            <div className="text-sm font-semibold">{t("wallet.quotaTitle")}</div>
-                            <div className="text-xs leading-relaxed text-stone-500 dark:text-stone-400">{t("wallet.quotaHint")}</div>
-                            {quotaPay.enabled ? (
-                                <>
-                                    <div className="grid gap-3 sm:grid-cols-4">
-                                        {quotaPay.amounts.map((item) => {
-                                            const active = item === quotaPay.amount;
-                                            return (
-                                                <button
-                                                    key={item}
-                                                    type="button"
-                                                    onClick={() => quotaPay.setAmount(item)}
-                                                    className={`rounded-xl border px-4 py-3.5 text-left transition ${active ? "border-stone-900 bg-stone-50 dark:border-stone-100 dark:bg-white/[0.06]" : "border-stone-200 hover:border-stone-400 dark:border-stone-800 dark:hover:border-stone-600"}`}
-                                                >
-                                                    <div className="text-xl font-semibold tabular-nums">{formatQuotaCurrency(item * 500_000)}</div>
-                                                    <div className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{t("wallet.quotaAmount", { amount: item })}</div>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    {quotaPay.methods.length > 1 ? (
-                                        <div className="flex flex-wrap gap-2">
-                                            {quotaPay.methods.map((item) => (
-                                                <button
-                                                    key={item.type}
-                                                    type="button"
-                                                    onClick={() => quotaPay.setMethod(item.type)}
-                                                    className={`rounded-lg border px-3 py-1.5 text-xs transition ${item.type === quotaPay.method ? "border-stone-900 bg-stone-50 dark:border-stone-100 dark:bg-white/[0.06]" : "border-stone-200 hover:border-stone-400 dark:border-stone-800"}`}
-                                                >
-                                                    {item.name}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    ) : null}
-                                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4 dark:border-stone-800">
-                                        <span className="text-xs text-stone-400">
-                                            {quotaPay.waiting ? t("wallet.quotaWaiting") : quotaPay.money ? t("wallet.quotaNeed", { money: quotaPay.money }) : t("wallet.quotaPayHint")}
-                                        </span>
-                                        <Button type="primary" loading={quotaPay.creating} disabled={!quotaPay.amount || !quotaPay.method} onClick={() => void payQuota()}>
-                                            {t("wallet.quotaPay")}
-                                        </Button>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="text-xs text-stone-400">{t("wallet.quotaUnavailable")}</div>
-                            )}
                         </div>
 
                         <div className="space-y-4 rounded-2xl border border-stone-200 bg-white/60 px-5 py-4 dark:border-stone-800 dark:bg-white/[0.02]">
