@@ -45,8 +45,8 @@ export default function IndexPage() {
             <FlowBackdrop />
             <section className="relative mx-auto flex min-h-full max-w-7xl flex-col items-center justify-center px-6 text-center">
                 <h1 className="jc-hero-title ai-title-aurora max-w-6xl text-5xl sm:text-7xl lg:text-8xl" aria-label={t("home.heroTitle")}>
-                    <span className="jc-hero-heavy">NOVA</span>
-                    <span className="jc-hero-light">WANDER</span>
+                    <span className="jc-hero-heavy">HINN</span>
+                    <span className="jc-hero-light">FLOW</span>
                     <span className="jc-hero-heavy">&nbsp;AI</span>
                 </h1>
                 <p className="jc-hero-lead mt-8 max-w-3xl text-balance text-lg leading-8 text-stone-500 dark:text-stone-400">

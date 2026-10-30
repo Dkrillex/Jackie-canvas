@@ -14,7 +14,7 @@
 
 /*
  * 字重拆在子 span 上之后，aurora 必须裁到每个字上，不能裁父级盒子。
- * 父级先清掉上游 .ai-title-aurora 的 clip，再把同一套扫光铺到 NOVA / WANDER / AI。
+ * 父级先清掉上游 .ai-title-aurora 的 clip，再把同一套扫光铺到 HINN / FLOW / AI。
  */
 .jc-hero-title.ai-title-aurora {
     background: none;

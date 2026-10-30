@@ -14,7 +14,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 本地 Agent：顶栏 Bot、画布 Agent 按钮和右侧面板都不出现。`AGENT_UI_ENABLED` 保持 false，等单独分支再打开。
 - 本地代理：配置弹窗不出现「本地代理」页签。`LOCAL_PROXY_UI_ENABLED` 保持 false；旧配置即使开过代理，请求也不再走 canvas-proxy。
 - 默认主题：首次访问（或清空 `infinite-canvas:theme_store` 后）应进入亮色；只有用户手动切换后才保持暗色。
-- 顶栏与首页：薄玻璃顶栏、胶囊导航、品牌名 hinnflow 用站点无衬线；首页大标题 NOVAWANDER AI 用 Inter（NOVA / AI 900、WANDER 300），极光流动、首屏占满、丝绸背景可动；深浅色都要对。
+- 顶栏与首页：薄玻璃顶栏、胶囊导航、品牌名 hinnflow 用站点无衬线；首页大标题 HINNFLOW AI 用 Inter（HINN / AI 900、FLOW 300），极光流动、首屏占满、丝绸背景可动；深浅色都要对。
 - 积分兑换（`/wallet`）：兑换应立即扣积分，记录为 `done`，且 New API 账号额度增加对应美元（1 积分 = $1 = 500000）。`/pay-api/health` 的 `novaAdmin` 应为 true。接口明确拒绝才是 `failed` 并退积分；超时应保持 `pending`，不要当失败提示。超额与冻结积分不可花。接入前留下的 `pending` 记录不会自动补发。
 - 工单时限与押金：交付超时罚没押金、验收超时自动通过、整单到期作废退款；`submitted` 不得被整单过期清掉。换更便宜接单人后再取消必须成功。
 - 接单中心：未登录只显示登录卡；列表为卡片+搜索分页；详情有进度条；交付说明按 Markdown 渲染图片/视频 URL；非当事双方看不到交付与结算。
@@ -30,7 +30,7 @@ description: 当前版本已实现但仍需人工验证的变更项
 - 画布后台生成：在画布里开始生图/生视频后点顶栏回首页（或去资产等其它页），节点应继续转圈；过一会儿再进同一张画布，结果应已经出来或仍在生成，不能变成「页面刷新后生成已中断」。首页空格、快捷键不应被后台画布抢走。整页刷新仍会中断（有视频任务 ID 的可续查）。从画布 A 直接进画布 B 会卸掉 A，A 上未完成的生成会中断。
 - 画布：选中配置节点或打开组装提示词时不显示悬浮工具栏；选中图片/文本/视频节点时，即使下方提示词面板开着，节点上方仍应出现悬浮工具栏，「反推提示词」在里面。`@` 菜单贴光标。组装提示词用中文输入法组字时，灰色占位文案应立刻消失；`@` 插入引用后继续打拼音应走输入法上屏，不能变成一串字母。
 - Jackie 登录：hydrate 会话走 `/new-api`；生成前校验登录；WebDAV 页签仅 `admin`（`role >= 10` 或用户名 admin）；Nano Banana / Gemini 在 `/gw` 走 `generateContent`。带参考图的 Gemini 图生图不应再报 `mask is not defined`。
-- 顶栏、浏览器标题、登录弹窗为 hinnflow；首页大标题为 NOVAWANDER AI。不出现 Jackie Canvas /「无限画布」/ Infinite Canvas 对外文案。
+- 顶栏、浏览器标题、登录弹窗为 hinnflow；首页大标题为 HINNFLOW AI。画布默认名、导出名和存储说明也是 HINNFLOW AI。不出现 NOVAWANDER AI、Jackie Canvas /「无限画布」/ Infinite Canvas 对外文案。
 
 - 图像与视频尺寸设置：图像设置应将分辨率（`1k` / `2k` / `4k` / 自动）和宽高比（`1:1`、`2:3`、`3:2`、`4:3`、`3:4`、`16:9`、`9:16`、`21:9`、`9:21`、自动）拆成两项，并由二者计算 W/H。视频设置仍使用 `480p` / `720p` / `1080p`（以及自定义 p 值），比例为 `1:1`、`3:4`、`4:3`、`16:9`、`9:16`、`21:9`、自动，并由清晰度与比例计算 W/H。秒数应为 4–30 的滑杆，右侧显示当前秒数；比例为自动时应禁用 W/H。
 - 视频内置请求：未配置调用脚本时，OpenAI 格式应按模板发送 `mode`、`first_frame`/`last_frame` 或 `image[]`、`generate_audio`、`watermark` 以及参考视频/音频，不再使用 `input_reference[]`；Gemini 格式应走 `predictLongRunning`，按模式发送 `image`/`lastFrame` 或 `referenceImages`，不再提示不支持视频。刷新后应能继续查询 Gemini 任务状态。

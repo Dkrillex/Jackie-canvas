@@ -21,9 +21,9 @@ export default {
         twoFactorRequired: "Enter the two-factor code",
     },
     canvas: {
-        defaultTitle: "NOVAWANDER AI {{count}}",
-        title: "NOVAWANDER AI",
-        export: { defaultProjectName: "NOVAWANDER AI", defaultNodesName: "Canvas elements", item: "Element" },
+        defaultTitle: "HINNFLOW AI {{count}}",
+        title: "HINNFLOW AI",
+        export: { defaultProjectName: "HINNFLOW AI", defaultNodesName: "Canvas elements", item: "Element" },
     },
     seedance: {
         limited1080p: "fast / mini do not support 1080p and will use 720p.",
@@ -31,7 +31,7 @@ export default {
     config: {
         localStorage: {
             title: "IndexedDB storage usage",
-            description: "View browser data saved by NOVAWANDER AI, grouped by object store.",
+            description: "View browser data saved by HINNFLOW AI, grouped by object store.",
             indexedDbUsage: "IndexedDB usage",
             siteUsage: "Total site usage",
             quota: "Available quota",
@@ -39,7 +39,7 @@ export default {
             siteUsageHint: "Includes IndexedDB and other site data",
             quotaHint: "Allocated dynamically by the browser",
             quotaProgress: "Site quota usage",
-            mainDatabase: "NOVAWANDER AI data",
+            mainDatabase: "HINNFLOW AI data",
             records: "{{count}} records",
             refresh: "Refresh usage",
             readFailed: "Failed to read local storage",
@@ -154,8 +154,8 @@ export default {
         afterAllocate: "After: {{amount}}",
     },
     home: {
-        heroTitle: "NOVAWANDER AI",
-        description: "Generate, connect, and reshape <content>images, text, and graphics</content> in <canvas>NOVAWANDER AI</canvas>, turning one-off generations into a continuous creative process.",
+        heroTitle: "HINNFLOW AI",
+        description: "Generate, connect, and reshape <content>images, text, and graphics</content> in <canvas>HINNFLOW AI</canvas>, turning one-off generations into a continuous creative process.",
         showcaseEyebrow: "Prompt Library",
         showcaseTitle: "Keep every <serif>great result</serif>",
     },
