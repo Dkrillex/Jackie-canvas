@@ -24,9 +24,9 @@
 | 5 | **权限与入口收紧**：配置只走顶栏头像；渠道 Base URL / API Key 只对 admin 显示；WebDAV、提示词来源页签只对 admin 显示；关闭本地 Agent 入口和本地代理页签；画布菜单去掉文档入口 | `app-config-modal.tsx`、`user-status-actions.tsx`、`canvas-top-bar.tsx`、`jc/config.ts` | **大**：v20 在配置弹窗新增了默认生图 / 视频分辨率设置，要逐处合并 | 已移植（待测试）：同 hinnflow 一并去掉语言和主题切换；渠道页签对所有人隐藏；v20 的偏好设置全部保留 |
 | 6 | **默认渠道与模型**：只放 NovaWander 现网模型（图片 6 个、Seedance 3 档、对话 2 个），默认视频模型改为 Seedance 2.0；`VIDEO_KEYWORDS` 加 `seedance`；默认 Base URL 改为 `https://api.novawander.cn`（不再用 `/gw`） | `stores/use-config-store.ts` | 中：v20 的模型选择规则（模型被移除时阻止生成）要和登录后注入渠道一起验证 | 已移植（待测试）：画布一次生成数改为 1；全局默认模型不在列表里时回到默认值，节点上的选择仍按 v20 规则拦截 |
 | 7 | **Gemini 生图走 OpenAI 格式渠道**：OpenAI 格式渠道下，Nano Banana 等 Gemini 图片模型改走 `generateContent` | `services/api/image.ts` | 中：v20 改了 Gemini 的 `imageSize` 逻辑 | 已移植（待测试）：先确认 New API 的 OpenAI 生图接口对 Gemini 只支持 imagen；Bearer 头只在非 Google 地址时带 |
-| 8 | **Seedance 视频适配**：按模型名识别（hinnflow 里默认网关地址 `/gw` 要改成渠道 Base URL）；首尾帧和全能参考两种模式；参考图 / 视频 / 音频及校验；fast / mini 最高 720p；时长 4–15 秒或 -1 的专用面板；轮询遇到 5xx 继续等待 | `lib/seedance-video.ts`、`services/api/video.ts`、`components/video-settings-panel.tsx`、`pages/video/index.tsx`、`canvas-node-generation.ts`、`pages/canvas/project.tsx`、`types/*` | **大**：v20 的视频页、画布页、缩略图、原地重新生成都要合并 | 待确认 |
+| 8 | **Seedance 视频适配**：按模型名识别，走方舟原生任务接口（hinnflow 里默认网关地址 `/gw` 要改成渠道 Base URL；NovaWander 用 `/api/v3/...`，New API rc.45 用 `/doubao/api/v3/...`）；不带 `asset://` 云素材相关代码；首尾帧和全能参考两种模式；参考图 / 视频 / 音频及校验；fast / mini 最高 720p；时长 4–15 秒或 -1 的专用面板；轮询遇到 5xx 继续等待 | `lib/seedance-video.ts`、`services/api/video.ts`、`components/video-settings-panel.tsx`、`pages/video/index.tsx`、`canvas-node-generation.ts`、`pages/canvas/project.tsx`、`types/*` | **大**：v20 的视频页、画布页、缩略图、原地重新生成都要合并 | 待确认 |
 | 9 | **OSS 上传**：本地参考素材上传成公网 URL（bucket `super-jackie`） | `services/oss-upload.ts`、配置弹窗 OSS 设置 | 小 | 待确认 |
-| 10 | **Seedance 云素材库**：`asset-groups` / `assets` 接口、画布侧栏「云素材」子页签、`asset://` 节点、预览用 `gravitex_url`、反推提示词不再把 `asset://` 当 base64 | `services/api/seedance-assets.ts`、`seedance-assets-panel.tsx`、`seedance-assets-modal.tsx`、`canvas-side-panel.tsx`、`asset-picker-modal.tsx`、`canvas-node.tsx`、`canvas-resource-references.ts`、`image-storage.ts` | **大**：v20 的 WebP 缩略图也改了 `image-storage.ts` | 待确认 |
+| 10 | **Seedance 云素材库**：`asset-groups` / `assets` 接口、画布侧栏「云素材」子页签、`asset://` 节点、预览用 `gravitex_url`、反推提示词不再把 `asset://` 当 base64 | `services/api/seedance-assets.ts`、`seedance-assets-panel.tsx`、`seedance-assets-modal.tsx`、`canvas-side-panel.tsx`、`asset-picker-modal.tsx`、`canvas-node.tsx`、`canvas-resource-references.ts`、`image-storage.ts` | **大**：v20 的 WebP 缩略图也改了 `image-storage.ts` | 不需要：New API（含 v1.0.0-rc.45）没有素材库接口，只有 NovaWander 定制网关有 |
 | 11 | **Seedream 5.0 尺寸下限**：请求总像素不足 3686400 时按比例放大 | `jc/lib/seedream-image.ts`、`services/api/image.ts` | 中：v20 的 `resolveRequestSize` 已不再接收 quality，要按新签名改写 | 待确认 |
 | 12 | **提示词库**：Banana Prompt Quicker 默认关闭，过滤 NSFW / Unknown 条目 | `prompt-source-presets.ts`、`prompts.ts`、`jc/lib/prompt-visibility.ts` | 小 | 待确认 |
 | 13 | **画布离开页面时保活**：后台继续跑完生成 | `jc/components/persistent-canvas-host.tsx`、`router.tsx`、`user-layout.tsx`、`infinite-canvas.tsx`、`canvas-top-bar.tsx`、`pages/canvas/project.tsx` | **大**：v20 改了聚焦和视口测量，后台画布的测量要验证 | 待确认 |
@@ -54,6 +54,7 @@
 | Vercel 部署：`api/gw.js`、`api/pay.js`、`web/api/*`、`middleware.js`、`web/middleware.js`、两份 `vercel.json` 的改动，以及 `build:pay` 构建脚本 | 只用 Docker 部署 |
 | `/gw` AI 网关反代 | 上游 `api.novawander.cn` 允许跨域，浏览器直连即可；渠道地址只对 admin 显示 |
 | `/prod-api` MaaS 反代 | 企业管理不搬 |
+| Seedance 云素材库（`asset-groups` / `assets`、侧栏「云素材」、`asset://` 节点、`gravitex_url` 预览） | New API 不支持素材库接口，只有 NovaWander 定制网关有；移植第 8 项时一并不带相关代码 |
 
 ## 三、需要你决定
 
@@ -66,8 +67,8 @@
 
 这些是 v20 新增、又和 hinnflow 定制碰在一起的地方，移植完相应项后要实际测一遍：
 
-- v0.19 WebP 缩略图：OSS 图片、`asset://` 云素材节点能否正常显示缩略图（第 8、10 项）
-- v0.20 原地重新生成：Seedance 空节点重新生成时不丢 `asset://` 字段（第 8、10 项）
+- v0.19 WebP 缩略图：OSS 上传的参考图和 Seedance 生成的视频封面能否正常显示缩略图（第 8、9 项）
+- v0.20 原地重新生成：Seedance 节点原地重新生成时参考素材和参数不丢（第 8 项）
 - v0.20 已选模型被移除时阻止生成：登录后注入默认渠道、退出清空后的表现（第 4、6 项）
 - v0.20 选中自动居中、聚焦测量：画布保活时后台画布的测量是否正确（第 13 项）
 - v0.20 质量 5 档和默认分辨率：直连 `api.novawander.cn` 时 gpt-image-2.5 和 Gemini 是否正常（第 6、7 项）
