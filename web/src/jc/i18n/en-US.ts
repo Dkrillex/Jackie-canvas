@@ -154,6 +154,8 @@ export default {
         ossUploadFailed: "Object storage upload failed ({{status}}). The signed URL may have expired; try again.",
         ossUploadBlocked: "The browser blocked the object storage upload. Check that the bucket CORS rules allow PUT from this site.",
         seedanceLocalLabel: { image: "reference image", video: "reference video", audio: "reference audio" },
+        insufficientPoints: "Not enough credits. Please top up and try again.",
+        insufficientPointsWithBalance: "Not enough credits ({{balance}} left). Please top up and try again.",
     },
     seedance: {
         autoMatch: "Automatic",

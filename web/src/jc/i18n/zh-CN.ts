@@ -154,6 +154,8 @@ export default {
         ossUploadFailed: "对象存储上传失败（{{status}}），签名可能已过期，请重试",
         ossUploadBlocked: "对象存储上传被浏览器拦截，请检查 bucket 跨域设置是否允许本站 PUT",
         seedanceLocalLabel: { image: "参考图", video: "参考视频", audio: "参考音频" },
+        insufficientPoints: "积分不足，请先充值后再试",
+        insufficientPointsWithBalance: "积分不足（剩余 {{balance}}），请先充值后再试",
     },
     seedance: {
         autoMatch: "自动匹配",

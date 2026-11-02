@@ -93,7 +93,7 @@ const DEFAULT_CHANNEL_MODELS: ChannelModel[] = [
     { name: "doubao-seedance-2-0-fast-260128", capability: "video" },
     { name: "doubao-seedance-2-0-mini-260615", capability: "video" },
     { name: "gpt-5.6-sol", capability: "text" },
-    { name: "deepseek-v4-flash", capability: "text" },
+    { name: "deepseek-v4.1-flash-1017", capability: "text" },
 ];
 
 export const defaultConfig: AiConfig = {

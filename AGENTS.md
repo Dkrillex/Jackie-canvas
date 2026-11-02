@@ -73,7 +73,7 @@
 - **金额只认服务端**：下单接口只收 `packageId`，价目表写在 `server/src/packages.ts`。任何时候都不要新增「前端传金额」的参数，那等于让用户自己定价。
 - **能把订单改成已付的只有两处**：验过签的 `/api/pay/notify`，和主动查询支付宝的结果。查状态接口只读库，不接受前端写入。
 - 通知处理必须过四道关：验签 → `app_id` 一致 → 订单存在 → 金额一致；缺一道就是可以被伪造充值的洞。
-- **没有独立的积分钱包**：支付宝到账后直接给 New API 账号加调用额度（管理员令牌调 `POST /api/user/manage` 的 `add_quota`，令牌只放 `NEW_API_ADMIN_TOKEN`），余额就看 New API 账号本身。档位 `credits` 字段表示到账积分，1 积分 = $1 = `NEW_API_QUOTA_PER_UNIT`（默认 500000）。界面（充值页、用户中心、兑换码）一律用 `formatQuotaPoints` 显示成积分，不出现美元。不要再加回积分钱包表。
+- **没有独立的积分钱包**：支付宝到账后直接给 New API 账号加调用额度（管理员令牌调 `POST /api/user/manage` 的 `add_quota`，令牌只放 `NEW_API_ADMIN_TOKEN`），余额就看 New API 账号本身。档位 `credits` 字段表示到账积分，1 积分 = $1 = `NEW_API_QUOTA_PER_UNIT`（默认 500000）。界面（充值页、用户中心、兑换码）一律用 `formatQuotaPoints` 显示成积分，不出现美元；网关报错（如「用户额度不足, 剩余额度: ＄…」）在各 `readApiErrorMessage` 里过 `jc/lib/points-error.ts` 的 `toPointsMessage` 换成积分文案。不要再加回积分钱包表。
 - 入账必须幂等：`settle()` 里 `SELECT ... FOR UPDATE` + `UPDATE ... WHERE status <> 'paid'`，并在同一个事务里插一条 `quota_grants`（`ref_no` 唯一）。调 New API 放在事务外，用条件更新抢到记录（`pending → granting`）再调用。
 - 发放结果：成功 `done`；New API 明确拒绝记 `failed`；超时或 5xx 记 `unknown`（额度可能已经加上）。自动流程只处理 `pending`，`failed` / `unknown` 一律不自动重发，用 `npm run grants:retry` 人工处理，`unknown` 要先去 New API 后台核对。
 - 钱一律用 `DECIMAL` 存、字符串读，不要在 JS 里用浮点数做加减；美元额度换算 quota 按分计算。
@@ -130,7 +130,7 @@
 - 配置弹窗：「渠道」页签对所有人隐藏；WebDAV 同步、提示词来源页签仅 `admin` 账号可见（role ≥ 10 或用户名为 admin）。对外文案不要暴露底层服务品牌、域名或内置 API Key。
 - 本地 Agent 入口暂时关闭：`AGENT_UI_ENABLED` 为 false，顶栏 Bot、画布 Agent 按钮和右侧面板都不要加回来。代码留着，单独开分支再打开。
 - 本地代理页签暂时关闭：`LOCAL_PROXY_UI_ENABLED` 为 false，配置里不要把「本地代理」加回来，请求也不要再走 canvas-proxy。代码留着，单独开分支再打开。
-- 默认渠道地址是 `https://api.novawander.cn`，模型只放 NovaWander 现网这一批：图片 `gpt-image-2` / `gpt-image-2.5-sunburst` / `gpt-image-2.5-flare` / `gemini-2.5-flash-image` / `gemini-3-pro-image` / `gemini-3.1-flash-image`；视频 `doubao-seedance-2-0-260128` / `doubao-seedance-2-0-fast-260128` / `doubao-seedance-2-0-mini-260615`；对话 `gpt-5.6-sol` / `deepseek-v4-flash`。不要加回 Veo、wan2.7、seedream、gpt-5.5、gpt-4o-mini-tts 或 MiniMax H3。打开页面时默认渠道的地址和模型列表按代码刷新，不保留旧默认值。
+- 默认渠道地址是 `https://api.novawander.cn`，模型只放 NovaWander 现网这一批：图片 `gpt-image-2` / `gpt-image-2.5-sunburst` / `gpt-image-2.5-flare` / `gemini-2.5-flash-image` / `gemini-3-pro-image` / `gemini-3.1-flash-image`；视频 `doubao-seedance-2-0-260128` / `doubao-seedance-2-0-fast-260128` / `doubao-seedance-2-0-mini-260615`；对话 `gpt-5.6-sol` / `deepseek-v4.1-flash-1017`。不要加回 Veo、wan2.7、seedream、gpt-5.5、gpt-4o-mini-tts 或 MiniMax H3。打开页面时默认渠道的地址和模型列表按代码刷新，不保留旧默认值。
 - Gemini 图片模型（名字同时含 `gemini` 和 `image`）即使在 OpenAI 格式渠道下也走 `generateContent`：New API 的 `/v1/images/generations` 对 Gemini 渠道只支持 imagen。请求头在非 googleapis.com 地址时额外带 `Authorization: Bearer`，官方 Google 地址不要带。
 - Seedance 视频按模型名识别（含 `seedance`），不依赖渠道格式；走方舟原生任务接口 `POST {渠道地址}/api/v3/contents/generations/tasks` 再 `GET .../tasks/{id}`，路由 404 时自动改用 `/doubao/api/v3/...`（New API 1.0，如 v1.0.0-rc.45）并按渠道记住。不要走 `/v1/videos`：New API 的 Doubao 插件不收表单文件，比例、配音、水印也会被忽略。
 - Seedance 参数：时长 4–15 秒或 -1，界面用专用面板，不用 4–30 秒滑杆；fast / mini 最高 720p；首尾帧模式发 `first_frame` / `last_frame`，全能参考（或带参考视频、音频、超过 2 张图）才发 `reference_*`，两种不要混。参考素材只发公网 https，不发 data: / blob:，本地素材靠对象存储上传。轮询遇到 5xx 或网络错误继续等待，不判失败。不做 Seedance 云素材库（`asset://`）：New API 没有这套接口。

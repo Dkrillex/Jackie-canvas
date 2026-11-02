@@ -85,3 +85,19 @@
 .jc-top-nav .size-7.rounded-md {
     border-radius: 999px;
 }
+
+/* 宽屏时导航居中于整条顶栏（品牌在左、头像在右不动）；窄屏宽度不够，仍跟在品牌后面 */
+@media (min-width: 1024px) {
+    .jc-top-nav > div {
+        position: relative;
+    }
+
+    .jc-top-nav nav {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        max-width: calc(100% - 360px);
+        margin-left: 0;
+        transform: translateX(-50%);
+    }
+}

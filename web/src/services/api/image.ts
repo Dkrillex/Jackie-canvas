@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import i18n from "@/i18n";
+import { toPointsMessage } from "@/jc/lib/points-error";
 import { buildApiUrl, resolveModelRequestConfig, resolveModelScript, withLocalProxy, type AiConfig, type ModelChannel } from "@/stores/use-config-store";
 import { normalizePluginImages, runModelPlugin } from "./model-plugin";
 import { nanoid } from "nanoid";
@@ -259,7 +260,7 @@ function readApiErrorMessage(value: unknown): string {
         } catch {
             // Detect HTML error pages.
             if (/<[a-z][\s\S]*>/i.test(value)) return apiText("htmlError", { preview: `${value.slice(0, 80)}...` });
-            return value;
+            return toPointsMessage(value);
         }
     }
     if (typeof value !== "object") return "";

@@ -2,6 +2,7 @@ import axios from "axios";
 import { nanoid } from "nanoid";
 
 import i18n from "@/i18n";
+import { toPointsMessage } from "@/jc/lib/points-error";
 import { dataUrlToFile, readFileAsDataUrl } from "@/lib/image-utils";
 import { clampVideoSeconds, computeVideoSize, inferVideoRatio } from "@/lib/media-size";
 import { getMediaBlob, resolveMediaUrl, uploadMediaFile, type UploadedFile } from "@/services/file-storage";
@@ -527,7 +528,7 @@ function readApiErrorMessage(value: unknown): string {
             return inner;
         } catch {
             if (/<[a-z][\s\S]*>/i.test(value)) return apiText("htmlError", { preview: `${value.slice(0, 80)}...` });
-            return value;
+            return toPointsMessage(value);
         }
     }
     if (typeof value !== "object") return "";

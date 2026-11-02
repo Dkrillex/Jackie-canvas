@@ -1,6 +1,7 @@
 import axios from "axios";
 
 import i18n from "@/i18n";
+import { toPointsMessage } from "@/jc/lib/points-error";
 import { audioMimeType, normalizeAudioFormatValue, normalizeAudioSpeedValue, normalizeAudioVoiceValue } from "@/lib/audio-generation";
 import { uploadMediaFile, type UploadedFile } from "@/services/file-storage";
 import { buildApiUrl, resolveModelRequestConfig, resolveModelScript, withLocalProxy, type AiConfig } from "@/stores/use-config-store";
@@ -114,7 +115,7 @@ function readApiErrorMessage(value: unknown): string {
             return inner;
         } catch {
             if (/<[a-z][\s\S]*>/i.test(value)) return apiText("htmlError", { preview: `${value.slice(0, 80)}...` });
-            return value;
+            return toPointsMessage(value);
         }
     }
     if (typeof value !== "object") return "";
