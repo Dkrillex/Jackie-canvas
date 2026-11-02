@@ -1,5 +1,6 @@
 import axios from "axios";
 
+import i18n from "@/i18n";
 import { AUTH_TOKEN_KEY, AUTH_USER_ID_KEY, getSessionHeaders } from "@/constant/auth";
 import { AUTH_API_BASE, PAY_API_BASE } from "@/jc/config";
 import type { AiConfig } from "@/stores/use-config-store";
@@ -187,8 +188,9 @@ export async function fetchUserCenterInfo(config: Pick<AiConfig, "baseUrl" | "ap
     };
 }
 
-export function formatQuotaCurrency(quota: number) {
-    return `$${(Math.max(0, quota) / NEW_API_QUOTA_PER_UNIT).toFixed(2)}`;
+/** New API quota 换成积分展示（1 积分 = $1 = NEW_API_QUOTA_PER_UNIT），界面不出现美元 */
+export function formatQuotaPoints(quota: number) {
+    return i18n.t("wallet.points", { value: (Math.max(0, quota) / NEW_API_QUOTA_PER_UNIT).toFixed(2) });
 }
 
 async function completeSession(data: LoginUserData | undefined): Promise<LocalUser> {

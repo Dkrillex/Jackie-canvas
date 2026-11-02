@@ -73,7 +73,7 @@
 - **金额只认服务端**：下单接口只收 `packageId`，价目表写在 `server/src/packages.ts`。任何时候都不要新增「前端传金额」的参数，那等于让用户自己定价。
 - **能把订单改成已付的只有两处**：验过签的 `/api/pay/notify`，和主动查询支付宝的结果。查状态接口只读库，不接受前端写入。
 - 通知处理必须过四道关：验签 → `app_id` 一致 → 订单存在 → 金额一致；缺一道就是可以被伪造充值的洞。
-- **没有积分**：支付宝到账后直接给 New API 账号加调用额度（管理员令牌调 `POST /api/user/manage` 的 `add_quota`，令牌只放 `NEW_API_ADMIN_TOKEN`），余额就看 New API 账号本身。档位 `credits` 字段表示到账的美元额度，$1 = `NEW_API_QUOTA_PER_UNIT`（默认 500000）。不要再加回积分钱包。
+- **没有独立的积分钱包**：支付宝到账后直接给 New API 账号加调用额度（管理员令牌调 `POST /api/user/manage` 的 `add_quota`，令牌只放 `NEW_API_ADMIN_TOKEN`），余额就看 New API 账号本身。档位 `credits` 字段表示到账积分，1 积分 = $1 = `NEW_API_QUOTA_PER_UNIT`（默认 500000）。界面（充值页、用户中心、兑换码）一律用 `formatQuotaPoints` 显示成积分，不出现美元。不要再加回积分钱包表。
 - 入账必须幂等：`settle()` 里 `SELECT ... FOR UPDATE` + `UPDATE ... WHERE status <> 'paid'`，并在同一个事务里插一条 `quota_grants`（`ref_no` 唯一）。调 New API 放在事务外，用条件更新抢到记录（`pending → granting`）再调用。
 - 发放结果：成功 `done`；New API 明确拒绝记 `failed`；超时或 5xx 记 `unknown`（额度可能已经加上）。自动流程只处理 `pending`，`failed` / `unknown` 一律不自动重发，用 `npm run grants:retry` 人工处理，`unknown` 要先去 New API 后台核对。
 - 钱一律用 `DECIMAL` 存、字符串读，不要在 JS 里用浮点数做加减；美元额度换算 quota 按分计算。

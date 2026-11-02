@@ -15,7 +15,7 @@ import type { AppLocale } from "@/i18n";
 import { LOCAL_PROXY_UI_ENABLED } from "@/jc/config";
 import { RedeemCode } from "@/jc/components/redeem-code";
 import { exportAppConfig, importAppConfig } from "@/services/config-file";
-import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
+import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaPoints, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
@@ -351,7 +351,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: 
                                                 : userInfo
                                                   ? userInfo.unlimitedQuota
                                                       ? t("config.account.unlimited")
-                                                      : formatQuotaCurrency(userInfo.totalAvailable)
+                                                      : formatQuotaPoints(userInfo.totalAvailable)
                                                   : t("config.account.empty")}
                                         </div>
                                     </Form.Item>

@@ -3,7 +3,7 @@ import { Ticket } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { formatQuotaCurrency, redeemCode } from "@/services/api/user";
+import { formatQuotaPoints, redeemCode } from "@/services/api/user";
 
 /** 账户页签里的兑换码输入：走 New API `POST /api/user/topup`，到账后让外层刷新余额。 */
 export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
@@ -18,7 +18,7 @@ export function RedeemCode({ onRedeemed }: { onRedeemed: () => void }) {
         setLoading(true);
         try {
             const quota = await redeemCode(code);
-            message.success(t("redeem.success", { amount: formatQuotaCurrency(quota) }));
+            message.success(t("redeem.success", { amount: formatQuotaPoints(quota) }));
             setCode("");
             onRedeemed();
         } catch (error) {

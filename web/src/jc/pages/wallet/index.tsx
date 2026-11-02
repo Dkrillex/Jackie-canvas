@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { useRequireLogin } from "@/hooks/use-require-login";
 import { listRechargeOrders, type RechargeRecord } from "@/jc/services/wallet";
-import { fetchCurrentUser, formatQuotaCurrency } from "@/services/api/user";
+import { fetchCurrentUser, formatQuotaPoints } from "@/services/api/user";
 import { useUserStore } from "@/stores/use-user-store";
 import { MAX_RECHARGE_YUAN } from "@/jc/config";
 import { BusinessContactModal } from "@/jc/components/business-contact-modal";
@@ -112,8 +112,8 @@ export default function WalletPage() {
                         <div className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl border border-stone-200 bg-white/60 px-5 py-4 dark:border-stone-800 dark:bg-white/[0.02]">
                             <Wallet className="size-4 shrink-0 text-stone-400" />
                             {[
-                                { label: t("wallet.available"), value: formatQuotaCurrency(user.quota), strong: true },
-                                { label: t("wallet.used"), value: formatQuotaCurrency(user.usedQuota), strong: false },
+                                { label: t("wallet.available"), value: formatQuotaPoints(user.quota), strong: true },
+                                { label: t("wallet.used"), value: formatQuotaPoints(user.usedQuota), strong: false },
                             ].map((item, index) => (
                                 <div key={item.label} className={index ? "border-stone-200 pl-6 sm:border-l dark:border-stone-800" : ""}>
                                     <div className="text-[11px] text-stone-400">{item.label}</div>
@@ -177,7 +177,7 @@ export default function WalletPage() {
                                     { title: t("wallet.time"), dataIndex: "createdAt", width: 180 },
                                     { title: t("wallet.orderNo"), dataIndex: "outTradeNo", width: 240 },
                                     { title: t("wallet.payAmount"), dataIndex: "amount", width: 110, align: "right", render: (amount: string) => <span className="tabular-nums">¥{amount}</span> },
-                                    { title: t("wallet.willCredit"), dataIndex: "credits", width: 110, align: "right", render: (value: string) => <span className="tabular-nums">${value}</span> },
+                                    { title: t("wallet.willCredit"), dataIndex: "credits", width: 110, align: "right", render: (value: string) => <span className="tabular-nums">{value}</span> },
                                     { title: t("wallet.status"), dataIndex: "status", width: 100, render: (status: string) => <Tag color={statusColor[status] || "default"}>{t(`wallet.status_${status}`, status)}</Tag> },
                                     { title: t("wallet.grant"), dataIndex: "grantStatus", width: 110, render: (status: string | null) => (status ? <Tag color={grantColor[status] || "default"}>{t(`wallet.grant_${status}`, status)}</Tag> : "—") },
                                 ]}
@@ -214,7 +214,7 @@ export default function WalletPage() {
                                 </div>
                                 <div className="flex justify-between gap-4">
                                     <span className="text-stone-500">{t("wallet.willCredit")}</span>
-                                    <span className="tabular-nums">${order?.credits}</span>
+                                    <span className="tabular-nums">{order?.credits}</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 rounded-lg border border-stone-200 px-3 py-3 text-sm dark:border-stone-800">
