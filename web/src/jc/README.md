@@ -21,6 +21,9 @@ Git 冲突是按文件按 hunk 算的：只有你改、上游不改的文件，�
 | `src/components/layout/mobile-nav-drawer.tsx` | 导航项同上                                           |
 | `src/pages/home/index.tsx`                    | 挂 `<FlowBackdrop />` + `hero-title.css` / `home-page.css`（HINNFLOW AI 大标题、胶囊按钮、玻璃展示卡） |
 
+仓库根部的 `docker-compose.hinnflow.yml`、`hinnflow-docker.conf`（`/new-api` 反代）、`nginx-hinnflow.conf`（宿主机 HTTPS 示例）
+和 `web/vite.config.ts` 的 `/new-api` 开发代理也属于二开范围，都是新增文件或几行基础设施配置。
+
 `web/index.html`（标题、Inter 字体、首屏默认亮色）、`public/logo.svg`、`use-theme-store.ts` 的默认主题、
 `globals.css` 的标题动画时长也改过，都是品牌相关的单行改动。
 

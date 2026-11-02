@@ -1,10 +1,14 @@
 import { readdirSync, readFileSync } from "node:fs";
+import { Agent as HttpsAgent } from "node:https";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 
 import { parseChangelog } from "./src/lib/release";
+
+/** EdgeOne 上 keep-alive 复用 TLS 会偶发 decryption failed / 500。 */
+const novaHttpsAgent = new HttpsAgent({ keepAlive: false });
 
 const webDir = dirname(fileURLToPath(import.meta.url));
 const localVersion = readFileSync(resolve(webDir, "../VERSION"), "utf8").trim() || "dev";
@@ -49,5 +53,18 @@ export default defineConfig({
     define: {
         __APP_VERSION__: JSON.stringify(localVersion),
         __APP_RELEASES__: JSON.stringify(parseChangelog(localChangelog)),
+    },
+    server: {
+        proxy: {
+            // 本机开发时的登录同源代理，对应 Docker 里 hinnflow-docker.conf 的 /new-api。
+            "/new-api": {
+                target: "https://api.novawander.cn",
+                changeOrigin: true,
+                secure: true,
+                agent: novaHttpsAgent,
+                cookieDomainRewrite: "",
+                rewrite: (path) => path.replace(/^\/new-api/, "") || "/",
+            },
+        },
     },
 });

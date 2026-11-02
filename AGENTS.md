@@ -105,4 +105,7 @@
 - Agent 通信协议版本与消息存储版本必须独立管理；消息存储格式升级时必须先备份再迁移，遇到未知版本、损坏清单或冲突备份时拒绝覆盖原文件，不得按记录数量或文件大小静默裁剪历史元数据。
 - 本地启动或浏览器验收时不要关闭用户已经打开的浏览器窗口或标签页；需要自动化验证时使用独立测试页面，避免打断用户当前页面和对话状态。
 - 对外产品展示：顶栏品牌、浏览器标题、登录弹窗用 hinnflow；首页大标题为 HINNFLOW AI（Inter：HINN / AI 为 900，FLOW 为 300）。不要再写 NOVAWANDER AI、Jackie Canvas、「无限画布」或 Infinite Canvas（存储键、npm 包名等技术标识可继续用 `infinite-canvas`）。
+- 部署只用 Docker（`docker-compose.hinnflow.yml` + `hinnflow-docker.conf`），不再维护 Vercel 配置。上游的 `Dockerfile`、`nginx.conf`、`docker-compose.yml` 保持原样，hinnflow 的 nginx 配置通过 volume 挂载覆盖。
+- AI 请求不走同源代理：浏览器直连 `https://api.novawander.cn`（上游允许跨域），不要再加回 `/gw`。登录必须走同源 `/new-api`：New API 登录靠会话 Cookie，而上游跨域返回 `allow-origin: *`，浏览器不允许带 Cookie。nginx 反代上游时用变量 + `resolver` 定期重新解析域名（上游在 CDN 后面），并用 `proxy_cookie_domain` 改写 Cookie 域名。
+- 本机 Vite 代理 `/new-api` 到 `api.novawander.cn` 时不要开 HTTPS keep-alive：EdgeOne 复用 TLS 会偶发 `decryption failed or bad record mac`。
 - 首次访问默认亮色主题：`web/index.html` 的首屏脚本和 `use-theme-store.ts` 的默认值要一起改，只改一处会闪一下深色。
