@@ -187,6 +187,11 @@ export default {
         success: "Redeemed, {{amount}} added",
         failed: "Redemption failed",
     },
+    canvas: {
+        defaultTitle: "HINNFLOW AI {{count}}",
+        title: "HINNFLOW AI",
+        export: { defaultProjectName: "HINNFLOW AI", defaultNodesName: "Canvas elements", item: "Element" },
+    },
     home: {
         heroTitle: "HINNFLOW AI",
         description: "Generate, connect, and reshape <content>images, text, and graphics</content> in <canvas>HINNFLOW AI</canvas>, turning one-off generations into a continuous creative process.",

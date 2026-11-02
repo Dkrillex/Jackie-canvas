@@ -187,6 +187,11 @@ export default {
         success: "兑换成功，已到账 {{amount}}",
         failed: "兑换失败",
     },
+    canvas: {
+        defaultTitle: "HINNFLOW AI {{count}}",
+        title: "HINNFLOW AI",
+        export: { defaultProjectName: "HINNFLOW AI", defaultNodesName: "画布元素", item: "元素" },
+    },
     home: {
         heroTitle: "HINNFLOW AI",
         description: "在 <canvas>HINNFLOW AI</canvas> 中生成、连接和重组 <content>图片、文字与图形</content>，让创作从单次生成变成连续推演。",
