@@ -152,7 +152,10 @@ export default {
         seedanceTaskQueryFailed: "Seedance 任务查询失败",
         seedanceAudioDuration: "Seedance 参考音频单个时长需要在 2-15 秒之间",
         seedanceAudioTotalDuration: "Seedance 参考音频总时长不能超过 15 秒",
-        seedanceNeedsPublicOrOss: "Seedance {{label}}必须使用公网 https 地址；本地文件需先在配置中填写对象存储，生成时会自动上传",
+        seedanceNeedsPublicOrOss: "Seedance {{label}}读取失败：需要公网 https 地址或本地已保存的文件，请重新上传",
+        ossSignFailed: "对象存储签名失败（{{status}}），请确认已登录且服务端已配置对象存储",
+        ossUploadFailed: "对象存储上传失败（{{status}}），签名可能已过期，请重试",
+        ossUploadBlocked: "对象存储上传被浏览器拦截，请检查 bucket 跨域设置是否允许本站 PUT",
         seedanceLocalLabel: { image: "参考图", video: "参考视频", audio: "参考音频" },
     },
     seedance: {
@@ -160,7 +163,7 @@ export default {
         separator: "、",
         references: { image: "图片{{index}}", video: "视频{{index}}", audio: "音频{{index}}" },
         promptPrefix: "参考资产编号：{{labels}}。请按这些编号理解提示词中的图片、视频和音频引用。\n\n{{prompt}}",
-        referenceHint: "参考视频需为 mp4/mov，H.264/H.265，FPS 24-60；可用公网 https 地址；本地文件需先在配置中填写对象存储，生成时会自动上传。",
+        referenceHint: "参考视频需为 mp4/mov，H.264/H.265，FPS 24-60；可用公网 https 地址；本地文件会在生成时自动上传到对象存储。",
         limited1080p: "fast / mini 不支持 1080p，会自动使用 720p。",
         errors: {
             format: "{{label}} 仅支持 mp4/mov 格式",

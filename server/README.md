@@ -92,3 +92,9 @@ nova-api `GET /api/user/self`「你是谁」，认它返回的用户 id。所以
 
 `POST /api/auth/register` 由本服务直接写 nova-api 的 `users` 表（备注固定 `Hinnflow`，并插一把 `group=auto` 的初始令牌），
 不调用 nova-api 公开的 `POST /api/user/register`。需要在 `.env` 里配 `NOVA_API_MYSQL_*`，这和钱包库不是同一台。
+
+## 对象存储上传
+
+`POST /api/oss/sign`（需要登录）给 Seedance 的本地参考素材签发单文件预签名 PUT 地址，默认 10 分钟有效；
+浏览器直接把文件传到 OSS，再把公网地址交给 Seedance。AccessKey 只放 `.env` 的 `OSS_*`，不下发到前端。
+预签名地址限制不了文件大小，大小只在前端校验；bucket 请用只读写这一个 bucket 的 RAM 子账号。

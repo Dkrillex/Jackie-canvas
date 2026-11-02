@@ -46,6 +46,18 @@ export const settings = {
     novaApiMysqlPassword: env("NOVA_API_MYSQL_PASSWORD"),
     novaApiMysqlDatabase: env("NOVA_API_MYSQL_DATABASE"),
 
+    // ---------- 对象存储（阿里云 OSS，Seedance 参考素材上传）----------
+    // AccessKey 只在服务端用来签发预签名上传地址，浏览器拿不到。Bucket 需公共读，并允许站点来源跨域 PUT。
+    ossRegion: env("OSS_REGION"),
+    ossBucket: env("OSS_BUCKET"),
+    ossAccessKeyId: env("OSS_ACCESS_KEY_ID"),
+    ossAccessKeySecret: env("OSS_ACCESS_KEY_SECRET"),
+    ossPrefix: env("OSS_PREFIX", "canvas/"),
+    /** 公网访问地址，留空用 https://{bucket}.{region}.aliyuncs.com */
+    ossPublicBaseUrl: env("OSS_PUBLIC_BASE_URL"),
+    /** 预签名上传地址有效期（秒），过期后上传失败、需要重新签发 */
+    ossSignExpiresSec: Number(env("OSS_SIGN_EXPIRES_SEC", "600")),
+
     // ---------- 兜底对账 ----------
     reconcileIntervalSec: Number(env("RECONCILE_INTERVAL_SEC", "60")),
     reconcileWindowMin: Number(env("RECONCILE_WINDOW_MIN", "1440")),
@@ -61,6 +73,8 @@ export const settings = {
 export const alipayConfigured = () => Boolean(settings.alipayAppId && settings.alipayPrivateKey && settings.alipayPublicKey);
 
 export const mysqlConfigured = () => Boolean(settings.mysqlHost && settings.mysqlUser && settings.mysqlPassword && settings.mysqlDatabase);
+
+export const ossConfigured = () => Boolean(settings.ossRegion && settings.ossBucket && settings.ossAccessKeyId && settings.ossAccessKeySecret);
 
 export const novaApiMysqlConfigured = () =>
     Boolean(settings.novaApiMysqlHost && settings.novaApiMysqlUser && settings.novaApiMysqlPassword && settings.novaApiMysqlDatabase);

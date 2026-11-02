@@ -152,7 +152,10 @@ export default {
         seedanceTaskQueryFailed: "Failed to query Seedance task",
         seedanceAudioDuration: "Each Seedance reference audio file must be 2–15 seconds",
         seedanceAudioTotalDuration: "Seedance reference audio cannot exceed 15 seconds in total",
-        seedanceNeedsPublicOrOss: "Seedance {{label}} must use a public https URL; configure object storage to upload local files automatically",
+        seedanceNeedsPublicOrOss: "Could not read the Seedance {{label}}: it needs a public https URL or a locally saved file. Upload it again.",
+        ossSignFailed: "Object storage signing failed ({{status}}). Make sure you are signed in and the server has object storage configured.",
+        ossUploadFailed: "Object storage upload failed ({{status}}). The signed URL may have expired; try again.",
+        ossUploadBlocked: "The browser blocked the object storage upload. Check that the bucket CORS rules allow PUT from this site.",
         seedanceLocalLabel: { image: "reference image", video: "reference video", audio: "reference audio" },
     },
     seedance: {
@@ -160,7 +163,7 @@ export default {
         separator: ", ",
         references: { image: "Image {{index}}", video: "Video {{index}}", audio: "Audio {{index}}" },
         promptPrefix: "Reference asset labels: {{labels}}. Use these labels to interpret image, video, and audio references in the prompt.\n\n{{prompt}}",
-        referenceHint: "Reference videos must be mp4/mov, H.264/H.265, and 24–60 FPS. Public https URLs are accepted; local files are uploaded automatically once object storage is configured.",
+        referenceHint: "Reference videos must be mp4/mov, H.264/H.265, and 24–60 FPS. Public https URLs are accepted; local files are uploaded to object storage automatically at generation time.",
         limited1080p: "fast / mini do not support 1080p and will use 720p.",
         errors: {
             format: "{{label}} supports mp4/mov only",

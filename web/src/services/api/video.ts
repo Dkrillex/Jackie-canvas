@@ -5,7 +5,8 @@ import i18n from "@/i18n";
 import { dataUrlToFile, readFileAsDataUrl } from "@/lib/image-utils";
 import { clampVideoSeconds, computeVideoSize, inferVideoRatio } from "@/lib/media-size";
 import { getMediaBlob, resolveMediaUrl, uploadMediaFile, type UploadedFile } from "@/services/file-storage";
-import { imageToDataUrl } from "@/services/image-storage";
+import { getImageBlob, imageToDataUrl } from "@/services/image-storage";
+import { uploadBlobToOss } from "@/services/oss-upload";
 import { boolConfig, buildApiUrl, modelOptionName, resolveModelRequestConfig, resolveModelScript, withLocalProxy, type AiConfig } from "@/stores/use-config-store";
 import { buildSeedancePromptText, isSeedanceRemoteMediaUrl, isSeedanceVideoConfig, normalizeSeedanceDuration, normalizeSeedanceRatio, normalizeSeedanceResolution, SEEDANCE_PATH_PREFIXES, SEEDANCE_REFERENCE_LIMITS, seedanceGatewayOrigin, seedanceTaskApiUrl, seedanceVideoReferenceError } from "@/lib/seedance-video";
 import { runModelPlugin } from "./model-plugin";
@@ -247,7 +248,7 @@ async function createSeedanceTask(config: AiConfig, model: string, prompt: strin
     }
     assertSeedanceVideoReferences(videoReferences);
     assertSeedanceAudioReferences(audioReferences);
-    const content = buildSeedanceContent(prompt, references, videoReferences, audioReferences, resolveVideoMode(config.videoMode, references.length));
+    const content = await buildSeedanceContent(prompt, references, videoReferences, audioReferences, resolveVideoMode(config.videoMode, references.length));
     if (!content.length) throw new Error(apiText("videoPromptRequired"));
     const payload = {
         model: modelOptionName(model),
@@ -310,30 +311,48 @@ function seedanceTaskId(task: SeedanceTask) {
 }
 
 /** 首尾帧模式发 first_frame / last_frame；全能参考（或带参考视频、音频、超过 2 张图）才发 reference_*。 */
-function buildSeedanceContent(prompt: string, references: ReferenceImage[], videoReferences: ReferenceVideo[], audioReferences: ReferenceAudio[], mode: string) {
+async function buildSeedanceContent(prompt: string, references: ReferenceImage[], videoReferences: ReferenceVideo[], audioReferences: ReferenceAudio[], mode: string) {
     const content: Array<Record<string, unknown>> = [];
     const text = buildSeedancePromptText(prompt, references, videoReferences, audioReferences);
     if (text) content.push({ type: "text", text });
     const images = references.slice(0, SEEDANCE_REFERENCE_LIMITS.images);
     const useReference = mode === "reference" || videoReferences.length > 0 || audioReferences.length > 0 || images.length > 2;
-    images.forEach((image, index) => {
+    for (const [index, image] of images.entries()) {
         const role = useReference ? "reference_image" : index === 0 ? "first_frame" : "last_frame";
-        content.push({ type: "image_url", image_url: { url: seedanceMediaUrl([image.url, image.dataUrl], "image") }, role });
-    });
+        content.push({ type: "image_url", image_url: { url: await seedanceMediaUrl([image.url, image.dataUrl], image.storageKey, image.name || "reference.png", image.type, "image") }, role });
+    }
     for (const video of videoReferences.slice(0, SEEDANCE_REFERENCE_LIMITS.videos)) {
-        content.push({ type: "video_url", video_url: { url: seedanceMediaUrl([video.url], "video") }, role: "reference_video" });
+        content.push({ type: "video_url", video_url: { url: await seedanceMediaUrl([video.url], video.storageKey, video.name || "reference.mp4", video.type, "video") }, role: "reference_video" });
     }
     for (const audio of audioReferences.slice(0, SEEDANCE_REFERENCE_LIMITS.audios)) {
-        content.push({ type: "audio_url", audio_url: { url: seedanceMediaUrl([audio.url], "audio") }, role: "reference_audio" });
+        content.push({ type: "audio_url", audio_url: { url: await seedanceMediaUrl([audio.url], audio.storageKey, audio.name || "reference.mp3", audio.type, "audio") }, role: "reference_audio" });
     }
     return content;
 }
 
-/** Seedance 只收公网 https 素材，不发 data: / blob:（请求体过大会被网关 413）。本地素材要先上传成公网地址。 */
-function seedanceMediaUrl(candidates: Array<string | undefined>, kind: "image" | "video" | "audio") {
+/** 本地素材 → 已上传的公网地址，同一页面里重试不重复上传 */
+const uploadedSeedanceMedia = new Map<string, string>();
+
+/** Seedance 只收公网 https 素材，不发 data: / blob:（请求体过大会被网关 413）。本地素材先经 server 签名上传到对象存储。 */
+async function seedanceMediaUrl(candidates: Array<string | undefined>, storageKey: string | undefined, fileName: string, mimeType: string, kind: "image" | "video" | "audio") {
     const url = candidates.find((value) => isSeedanceRemoteMediaUrl(value));
     if (url) return url;
-    throw new Error(apiText("seedanceNeedsPublicOrOss", { label: apiText(`seedanceLocalLabel.${kind}`) }));
+    const local = candidates.find((value) => value?.trim());
+    const cacheKey = storageKey || local || "";
+    const cached = uploadedSeedanceMedia.get(cacheKey);
+    if (cached) return cached;
+    const blob = storageKey ? await (kind === "image" ? getImageBlob(storageKey) : getMediaBlob(storageKey)) : local ? await (await fetch(local)).blob() : null;
+    if (!blob) throw new Error(apiText("seedanceNeedsPublicOrOss", { label: apiText(`seedanceLocalLabel.${kind}`) }));
+    const uploaded = await uploadBlobToOss(blob, fileName, blob.type || mimeType || guessMediaType(fileName, kind));
+    uploadedSeedanceMedia.set(cacheKey, uploaded);
+    return uploaded;
+}
+
+function guessMediaType(fileName: string, kind: "image" | "video" | "audio") {
+    const name = fileName.toLowerCase();
+    if (kind === "audio") return name.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
+    if (kind === "video") return name.endsWith(".mov") ? "video/quicktime" : "video/mp4";
+    return name.endsWith(".png") ? "image/png" : name.endsWith(".webp") ? "image/webp" : "image/jpeg";
 }
 
 function unwrapSeedanceTask(payload: ApiEnvelope<SeedanceTask>) {
