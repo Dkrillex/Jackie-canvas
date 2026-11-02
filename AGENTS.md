@@ -132,4 +132,5 @@
 - Seedance 视频按模型名识别（含 `seedance`），不依赖渠道格式；走方舟原生任务接口 `POST {渠道地址}/api/v3/contents/generations/tasks` 再 `GET .../tasks/{id}`，路由 404 时自动改用 `/doubao/api/v3/...`（New API 1.0，如 v1.0.0-rc.45）并按渠道记住。不要走 `/v1/videos`：New API 的 Doubao 插件不收表单文件，比例、配音、水印也会被忽略。
 - Seedance 参数：时长 4–15 秒或 -1，界面用专用面板，不用 4–30 秒滑杆；fast / mini 最高 720p；首尾帧模式发 `first_frame` / `last_frame`，全能参考（或带参考视频、音频、超过 2 张图）才发 `reference_*`，两种不要混。参考素材只发公网 https，不发 data: / blob:，本地素材靠对象存储上传。轮询遇到 5xx 或网络错误继续等待，不判失败。不做 Seedance 云素材库（`asset://`）：New API 没有这套接口。
 - 对象存储（阿里云 OSS）的 AccessKey 只放 `server/.env` 的 `OSS_*`，前端和配置弹窗里都不放。本地素材上传走「`POST /pay-api/api/oss/sign`（需登录）签发单文件预签名 PUT 地址 → 浏览器直传 OSS → 用公网地址」，不要再在浏览器里用 `ali-oss` 拿 AccessKey 直传。
+- Seedream 5.0 lite 生图请求的 `size` 总像素至少 3686400（16:9 至少 2560×1440）；界面仍可选 1K，发请求时由 `resolveRequestSize(size, model)` 按比例抬上去。5.0 pro / flash 下限是 921600，不要放大。
 - 首次访问默认亮色主题：`web/index.html` 的首屏脚本和 `use-theme-store.ts` 的默认值要一起改，只改一处会闪一下深色。
