@@ -169,7 +169,9 @@ export function buildNodeResponseMessages(context: NodeGenerationContext): AiTex
     ];
 }
 
-export async function hydrateNodeGenerationContext(context: NodeGenerationContext) {
+export async function hydrateNodeGenerationContext(context: NodeGenerationContext, options?: { skipImageDataUrl?: boolean }) {
+    // 视频生成前不要把参考图转成 base64：Seedance 要公网地址，OpenAI / Gemini 视频请求会在发送时自行转换
+    if (options?.skipImageDataUrl) return context;
     const { imageToDataUrl } = await import("@/services/image-storage");
     return { ...context, referenceImages: await Promise.all(context.referenceImages.map(async (image) => ({ ...image, dataUrl: await imageToDataUrl(image) }))) };
 }

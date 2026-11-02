@@ -7,6 +7,7 @@ import { clampVideoSeconds, computeVideoSize, inferVideoRatio } from "@/lib/medi
 import { getMediaBlob, resolveMediaUrl, uploadMediaFile, type UploadedFile } from "@/services/file-storage";
 import { imageToDataUrl } from "@/services/image-storage";
 import { boolConfig, buildApiUrl, modelOptionName, resolveModelRequestConfig, resolveModelScript, withLocalProxy, type AiConfig } from "@/stores/use-config-store";
+import { buildSeedancePromptText, isSeedanceRemoteMediaUrl, isSeedanceVideoConfig, normalizeSeedanceDuration, normalizeSeedanceRatio, normalizeSeedanceResolution, SEEDANCE_PATH_PREFIXES, SEEDANCE_REFERENCE_LIMITS, seedanceGatewayOrigin, seedanceTaskApiUrl, seedanceVideoReferenceError } from "@/lib/seedance-video";
 import { runModelPlugin } from "./model-plugin";
 import type { ReferenceImage } from "@/types/image";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
@@ -16,10 +17,20 @@ type ApiVideoResponse = VideoResponse | { code?: number | string; data?: VideoRe
 type ApiEnvelope<T> = T | { code?: number | string; data?: T | null; msg?: string; message?: string; error?: { message?: string } };
 type RequestOptions = { signal?: AbortSignal };
 type VideoMediaOptions = RequestOptions & { videos?: ReferenceVideo[]; audios?: ReferenceAudio[] };
+type SeedanceTask = {
+    id?: string;
+    task_id?: string;
+    status?: "queued" | "running" | "in_progress" | "succeeded" | "completed" | "failed" | "cancelled" | "expired";
+    error?: { code?: string; message?: string } | null;
+    content?: { video_url?: string; url?: string; last_frame_url?: string } | null;
+    url?: string;
+    result_url?: string;
+    video_url?: string;
+};
 const apiText = (key: string, options?: Record<string, unknown>) => i18n.t(`apiErrors.${key}`, options);
 
 export type VideoGenerationResult = { blob?: Blob; url?: string; mimeType?: string };
-export type VideoGenerationTask = { id: string; provider: "openai" | "gemini" | "plugin"; model: string };
+export type VideoGenerationTask = { id: string; provider: "openai" | "gemini" | "plugin" | "seedance"; model: string };
 type GeminiInlineData = { bytesBase64Encoded: string; mimeType: string };
 type GeminiVideoOperation = {
     name?: string;
@@ -75,6 +86,7 @@ export async function createVideoGenerationTask(config: AiConfig, prompt: string
     const script = resolveModelScript(config, selectedModel);
     if (script) return createPluginVideoTask(requestConfig, selectedModel, script, prompt, references, options);
     assertVideoConfig(requestConfig, requestConfig.model);
+    if (isSeedanceVideoConfig(requestConfig)) return createSeedanceTask(requestConfig, selectedModel, prompt, references, options?.videos || [], options?.audios || [], options);
     if (requestConfig.apiFormat === "gemini") return createGeminiVideoTask(requestConfig, selectedModel, prompt, references, options);
     return createOpenAIVideoTask(requestConfig, selectedModel, prompt, references, options);
 }
@@ -86,6 +98,7 @@ export async function pollVideoGenerationTask(config: AiConfig, task: VideoGener
     }
     const requestConfig = resolveModelRequestConfig(config, task.model);
     assertVideoConfig(requestConfig, requestConfig.model);
+    if (task.provider === "seedance") return pollSeedanceTask(requestConfig, task, options);
     if (task.provider === "gemini") return pollGeminiVideoTask(requestConfig, task, options);
     return pollOpenAIVideoTask(requestConfig, task, options);
 }
@@ -205,6 +218,126 @@ async function pollOpenAIVideoTask(config: AiConfig, task: VideoGenerationTask, 
     } catch (error) {
         throw new Error(readAxiosError(error, apiText("videoTaskQueryFailed")));
     }
+}
+
+/** 渠道 Base URL → 可用的方舟路径前缀（"" 或 "/doubao"），见 SEEDANCE_PATH_PREFIXES。 */
+const seedancePrefixByOrigin = new Map<string, string>();
+
+/** 依次尝试方舟原生路径前缀，路由不存在（404）时换下一个，成功后记住这个渠道用哪个。 */
+async function sendSeedanceRequest<T>(config: AiConfig, taskId: string | undefined, send: (url: string) => Promise<T>) {
+    const origin = seedanceGatewayOrigin(config.baseUrl);
+    const known = seedancePrefixByOrigin.get(origin);
+    const prefixes = known === undefined ? SEEDANCE_PATH_PREFIXES : [known];
+    for (const [index, prefix] of prefixes.entries()) {
+        try {
+            const result = await send(seedanceTaskApiUrl(origin, prefix, taskId));
+            seedancePrefixByOrigin.set(origin, prefix);
+            return result;
+        } catch (error) {
+            if (index < prefixes.length - 1 && axios.isAxiosError(error) && error.response?.status === 404) continue;
+            throw error;
+        }
+    }
+    throw new Error(apiText("seedanceTaskCreateFailed"));
+}
+
+async function createSeedanceTask(config: AiConfig, model: string, prompt: string, references: ReferenceImage[], videoReferences: ReferenceVideo[], audioReferences: ReferenceAudio[], options?: RequestOptions): Promise<VideoGenerationTask> {
+    if (audioReferences.length && !references.length && !videoReferences.length) {
+        throw new Error(apiText("seedanceAudioRequiresVisual"));
+    }
+    assertSeedanceVideoReferences(videoReferences);
+    assertSeedanceAudioReferences(audioReferences);
+    const content = buildSeedanceContent(prompt, references, videoReferences, audioReferences, resolveVideoMode(config.videoMode, references.length));
+    if (!content.length) throw new Error(apiText("videoPromptRequired"));
+    const payload = {
+        model: modelOptionName(model),
+        content,
+        ratio: normalizeSeedanceRatio(config.size),
+        resolution: normalizeSeedanceResolution(config.vquality, model),
+        duration: normalizeSeedanceDuration(config.videoSeconds),
+        generate_audio: boolConfig(config.videoGenerateAudio, true),
+        watermark: boolConfig(config.videoWatermark, false),
+    };
+
+    try {
+        const created = unwrapSeedanceTask(await sendSeedanceRequest(config, undefined, async (url) => (await axios.post<ApiEnvelope<SeedanceTask>>(url, payload, { headers: aiHeaders(config, "application/json"), signal: options?.signal })).data));
+        const taskId = seedanceTaskId(created);
+        if (!taskId) throw new Error(apiText("seedanceNoTaskId"));
+        return { id: taskId, provider: "seedance", model };
+    } catch (error) {
+        throw new Error(readAxiosError(error, apiText("seedanceTaskCreateFailed")));
+    }
+}
+
+async function pollSeedanceTask(config: AiConfig, task: VideoGenerationTask, options?: RequestOptions): Promise<VideoGenerationTaskState> {
+    try {
+        const state = unwrapSeedanceTask(await sendSeedanceRequest(config, task.id, async (url) => (await axios.get<ApiEnvelope<SeedanceTask>>(url, { headers: aiHeaders(config), signal: options?.signal })).data));
+        const url = videoResultUrl(state);
+        if (url) return { status: "completed", result: await videoResultFromUrl(url, options) };
+        if (state.status === "succeeded" || state.status === "completed") return { status: "failed", error: apiText("seedanceNoVideoUrl") };
+        if (state.status === "failed" || state.status === "cancelled" || state.status === "expired") return { status: "failed", error: readApiErrorMessage(state.error?.message) || apiText(state.status === "expired" ? "seedanceVideoTimeout" : "seedanceVideoFailed") };
+        return { status: "pending" };
+    } catch (error) {
+        // 网关偶发 5xx / 断网时任务还在跑，继续等，不要把整次生成判失败
+        if (isTransientSeedancePollError(error)) return { status: "pending" };
+        throw new Error(readAxiosError(error, apiText("seedanceTaskQueryFailed")));
+    }
+}
+
+function isTransientSeedancePollError(error: unknown) {
+    if (!axios.isAxiosError(error) || axios.isCancel(error)) return false;
+    const status = error.response?.status;
+    return !status || status >= 500;
+}
+
+function assertSeedanceVideoReferences(videoReferences: ReferenceVideo[]) {
+    const error = seedanceVideoReferenceError(videoReferences);
+    if (error) throw new Error(error);
+}
+
+function assertSeedanceAudioReferences(audioReferences: ReferenceAudio[]) {
+    let total = 0;
+    for (const audio of audioReferences) {
+        if (!audio.durationMs) continue;
+        if (audio.durationMs < 2000 || audio.durationMs > 15000) throw new Error(apiText("seedanceAudioDuration"));
+        total += audio.durationMs;
+    }
+    if (total > 15000) throw new Error(apiText("seedanceAudioTotalDuration"));
+}
+
+function seedanceTaskId(task: SeedanceTask) {
+    return [task.id, task.task_id].find((value) => typeof value === "string" && value.trim())?.trim() || "";
+}
+
+/** 首尾帧模式发 first_frame / last_frame；全能参考（或带参考视频、音频、超过 2 张图）才发 reference_*。 */
+function buildSeedanceContent(prompt: string, references: ReferenceImage[], videoReferences: ReferenceVideo[], audioReferences: ReferenceAudio[], mode: string) {
+    const content: Array<Record<string, unknown>> = [];
+    const text = buildSeedancePromptText(prompt, references, videoReferences, audioReferences);
+    if (text) content.push({ type: "text", text });
+    const images = references.slice(0, SEEDANCE_REFERENCE_LIMITS.images);
+    const useReference = mode === "reference" || videoReferences.length > 0 || audioReferences.length > 0 || images.length > 2;
+    images.forEach((image, index) => {
+        const role = useReference ? "reference_image" : index === 0 ? "first_frame" : "last_frame";
+        content.push({ type: "image_url", image_url: { url: seedanceMediaUrl([image.url, image.dataUrl], "image") }, role });
+    });
+    for (const video of videoReferences.slice(0, SEEDANCE_REFERENCE_LIMITS.videos)) {
+        content.push({ type: "video_url", video_url: { url: seedanceMediaUrl([video.url], "video") }, role: "reference_video" });
+    }
+    for (const audio of audioReferences.slice(0, SEEDANCE_REFERENCE_LIMITS.audios)) {
+        content.push({ type: "audio_url", audio_url: { url: seedanceMediaUrl([audio.url], "audio") }, role: "reference_audio" });
+    }
+    return content;
+}
+
+/** Seedance 只收公网 https 素材，不发 data: / blob:（请求体过大会被网关 413）。本地素材要先上传成公网地址。 */
+function seedanceMediaUrl(candidates: Array<string | undefined>, kind: "image" | "video" | "audio") {
+    const url = candidates.find((value) => isSeedanceRemoteMediaUrl(value));
+    if (url) return url;
+    throw new Error(apiText("seedanceNeedsPublicOrOss", { label: apiText(`seedanceLocalLabel.${kind}`) }));
+}
+
+function unwrapSeedanceTask(payload: ApiEnvelope<SeedanceTask>) {
+    return unwrapEnvelope(payload, apiText("noVideoTask"));
 }
 
 async function videoResultFromUrl(url: string, options?: RequestOptions): Promise<VideoGenerationResult> {
@@ -349,14 +482,19 @@ function unwrapVideoResponse(payload: ApiVideoResponse) {
 function unwrapEnvelope<T>(payload: ApiEnvelope<T>, emptyMessage: string): T {
     if (!payload) throw new Error(emptyMessage);
     if (typeof payload === "object" && "code" in payload && payload.code !== undefined) {
-        if (payload.code !== 0 && payload.code !== "0") throw new Error(readApiErrorMessage(payload) || apiText("requestFailed"));
+        if (!isApiSuccessCode(payload.code)) throw new Error(readApiErrorMessage(payload) || apiText("requestFailed"));
         if (!payload.data) throw new Error(emptyMessage);
         return payload.data;
     }
     return payload as T;
 }
 
-function videoResultUrl(payload: VideoResponse) {
+function isApiSuccessCode(code: number | string) {
+    if (code === 0 || code === "0") return true;
+    return String(code).toLowerCase() === "success";
+}
+
+function videoResultUrl(payload: VideoResponse | SeedanceTask) {
     return [payload.video_url, payload.result_url, payload.url, payload.content?.video_url, payload.content?.url].find((url) => typeof url === "string" && (isPublicMediaUrl(url) || /\.mp4(\?|#|$)/i.test(url)));
 }
 
@@ -374,7 +512,8 @@ function readApiErrorMessage(value: unknown): string {
         }
     }
     if (typeof value !== "object") return "";
-    const payload = value as { msg?: unknown; message?: unknown; error?: unknown; detail?: unknown };
+    const payload = value as { msg?: unknown; message?: unknown; error?: unknown; detail?: unknown; ResponseMetadata?: { Error?: { Message?: unknown; Code?: unknown } } };
+    const arkError = payload.ResponseMetadata?.Error;
     // error may be a string or an object containing a message.
     const errorMsg =
         typeof payload.error === "string"
@@ -385,6 +524,8 @@ function readApiErrorMessage(value: unknown): string {
         readApiErrorMessage(payload.message) ||
         readApiErrorMessage(errorMsg) ||
         readApiErrorMessage(payload.detail) ||
+        readApiErrorMessage(arkError?.Message) ||
+        (typeof arkError?.Code === "string" ? arkError.Code : "") ||
         ""
     );
 }
