@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { Button, Image } from "antd";
 import { FileText, Group, Image as ImageIcon, Music2, Video, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import i18n from "@/i18n";
 import { canvasThemes } from "@/lib/canvas-theme";
+import { isImeComposing } from "@/lib/keyboard-event";
 import { useThemeStore } from "@/stores/use-theme-store";
 import type { NodeGenerationInput } from "./canvas-node-generation";
 import { CanvasNodeReferenceBar } from "./canvas-node-reference-bar";
@@ -29,6 +31,7 @@ type Token =
 
 type MentionState = {
     query: string;
+    rect: DOMRect | null;
 };
 
 export const CONFIG_REFERENCE_PATTERN = /@\[node:([^\]]+)\]/g;
@@ -37,6 +40,7 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
     const { t } = useTranslation();
     const theme = canvasThemes[useThemeStore((state) => state.theme)];
     const editorRef = useRef<HTMLDivElement>(null);
+    const placeholderRef = useRef<HTMLDivElement>(null);
     const composingRef = useRef(false);
     const [mention, setMention] = useState<MentionState | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -80,7 +84,7 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
             closeMention();
             return;
         }
-        setMention({ query: match[1] || "" });
+        setMention({ query: match[1] || "", rect: caretRect() });
         setActiveIndex(0);
     };
 
@@ -97,16 +101,13 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
         const space = document.createTextNode(" ");
         const selection = window.getSelection();
         const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-        if (range) {
+        if (range && selection) {
             range.insertNode(space);
             range.insertNode(chip);
-            range.setStartAfter(space);
-            range.collapse(true);
-            selection?.removeAllRanges();
-            selection?.addRange(range);
+            placeCaretInTextNode(selection, space, space.length);
         } else {
             editor.append(chip, space);
-            placeCaretAtEnd(editor);
+            placeCaretInTextNode(window.getSelection(), space, space.length);
         }
         closeMention();
         onChange(serializeEditor(editor));
@@ -132,7 +133,7 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
             </div>
             <CanvasNodeReferenceBar nodeId={nodeId} nodes={nodes} connectedNodes={connectedNodes} onDisconnect={onDisconnectReference} onStartSelection={onStartReferenceSelection} />
             <div className="relative rounded-xl">
-                {!value.trim() ? <div className="pointer-events-none absolute left-3 top-2 text-sm leading-7" style={{ color: theme.node.placeholder }}>{t("canvas.composer.placeholder")}</div> : null}
+                {!value.trim() ? <div ref={placeholderRef} className="pointer-events-none absolute left-3 top-2 text-sm leading-7" style={{ color: theme.node.placeholder }}>{t("canvas.composer.placeholder")}</div> : null}
                 <div
                     ref={editorRef}
                     contentEditable
@@ -144,13 +145,16 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
                     }}
                     onCompositionStart={() => {
                         composingRef.current = true;
+                        placeholderRef.current?.classList.add("hidden");
                     }}
                     onCompositionEnd={() => {
                         composingRef.current = false;
+                        placeholderRef.current?.classList.remove("hidden");
                         syncFromEditor();
                     }}
                     onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
                         event.stopPropagation();
+                        if (isImeComposing(event)) return;
                         if (mention && candidates.length) {
                             if (event.key === "ArrowDown") {
                                 event.preventDefault();
@@ -182,7 +186,7 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
                     }}
                     onBlur={() => window.setTimeout(closeMention, 120)}
                 />
-                {mention && candidates.length ? <MentionMenu inputs={candidates} allInputs={inputs} activeIndex={Math.min(activeIndex, candidates.length - 1)} theme={theme} onSelect={insertReference} /> : null}
+                {mention && candidates.length ? <MentionMenu rect={mention.rect} inputs={candidates} allInputs={inputs} activeIndex={Math.min(activeIndex, candidates.length - 1)} theme={theme} onSelect={insertReference} /> : null}
             </div>
             {imagePreview ? <Image src={imagePreview} alt={t("canvas.composer.imagePreview")} style={{ display: "none" }} preview={{ visible: true, src: imagePreview, onVisibleChange: (visible) => !visible && setImagePreview(null) }} /> : null}
         </div>
@@ -190,7 +194,7 @@ export function CanvasConfigComposer({ nodeId, nodes, value, inputs, connectedNo
 
 }
 
-function MentionMenu({ inputs, allInputs, activeIndex, theme, onSelect }: { inputs: NodeGenerationInput[]; allInputs: NodeGenerationInput[]; activeIndex: number; theme: (typeof canvasThemes)[keyof typeof canvasThemes]; onSelect: (input: NodeGenerationInput) => void }) {
+function MentionMenu({ rect, inputs, allInputs, activeIndex, theme, onSelect }: { rect: DOMRect | null; inputs: NodeGenerationInput[]; allInputs: NodeGenerationInput[]; activeIndex: number; theme: (typeof canvasThemes)[keyof typeof canvasThemes]; onSelect: (input: NodeGenerationInput) => void }) {
     const selectedRef = useRef(false);
     const activeItemRef = useRef<HTMLButtonElement | null>(null);
 
@@ -204,8 +208,25 @@ function MentionMenu({ inputs, allInputs, activeIndex, theme, onSelect }: { inpu
         onSelect(input);
     };
 
-    return (
-        <div className="absolute left-2 top-[calc(100%+6px)] z-[90] max-h-56 w-64 overflow-y-auto rounded-xl border p-1 shadow-2xl" style={{ background: theme.toolbar.panel, borderColor: theme.toolbar.border }}>
+    const stopCanvasInteraction = (event: PointerEvent | MouseEvent) => event.stopPropagation();
+
+    const menuWidth = 256;
+    const maxMenuHeight = 224;
+    const gap = 6;
+    const anchor = rect || new DOMRect(16, 16, 0, 0);
+    const left = clamp(anchor.left, 8, window.innerWidth - menuWidth - 8);
+    const showAbove = anchor.bottom + gap + maxMenuHeight > window.innerHeight && anchor.top - gap - maxMenuHeight >= 0;
+    const top = showAbove ? anchor.top - gap - maxMenuHeight : anchor.bottom + gap;
+
+    return createPortal(
+        <div
+            data-canvas-resource-mention-menu="true"
+            className="fixed z-[1100] max-h-56 w-64 overflow-y-auto rounded-xl border p-1 shadow-2xl backdrop-blur-md"
+            style={{ left, top, background: theme.toolbar.panel, borderColor: theme.toolbar.border, color: theme.node.text }}
+            onPointerDown={stopCanvasInteraction}
+            onMouseDown={stopCanvasInteraction}
+            onClick={(event) => event.stopPropagation()}
+        >
             {inputs.map((input, index) => (
                 <button
                     key={input.nodeId}
@@ -213,6 +234,11 @@ function MentionMenu({ inputs, allInputs, activeIndex, theme, onSelect }: { inpu
                     type="button"
                     className="flex w-full min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition"
                     style={{ background: index === activeIndex ? theme.toolbar.activeBg : "transparent", color: index === activeIndex ? theme.toolbar.activeText : theme.node.text }}
+                    onPointerDown={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        selectInput(input);
+                    }}
                     onMouseDown={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
@@ -226,7 +252,8 @@ function MentionMenu({ inputs, allInputs, activeIndex, theme, onSelect }: { inpu
                     </span>
                 </button>
             ))}
-        </div>
+        </div>,
+        document.body,
     );
 }
 
@@ -271,7 +298,7 @@ function createReferenceChip(input: NodeGenerationInput, inputs: NodeGenerationI
 }
 
 function serializeEditor(editor: HTMLElement) {
-    return serializeNodes(editor.childNodes).replace(/\uFEFF/g, "");
+    return serializeNodes(editor.childNodes).replace(/[\uFEFF\u200B]/g, "");
 }
 
 function serializeNodes(nodes: NodeListOf<ChildNode>) {
@@ -304,12 +331,9 @@ function deleteAdjacentReference(key: string) {
     const range = selection.getRangeAt(0);
     const target = adjacentReferenceNode(range, key);
     if (!target) return false;
-    const nextCaretNode = document.createTextNode("");
+    const nextCaretNode = document.createTextNode("\u200B");
     target.replaceWith(nextCaretNode);
-    range.setStart(nextCaretNode, 0);
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
+    placeCaretInTextNode(selection, nextCaretNode, 1);
     return true;
 }
 
@@ -342,18 +366,34 @@ function textBeforeCaret() {
     return range.toString();
 }
 
+function caretRect(): DOMRect | null {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return null;
+    const range = selection.getRangeAt(0).cloneRange();
+    range.collapse(true);
+    const rect = range.getBoundingClientRect();
+    if (rect.width || rect.height || rect.left || rect.top) return rect;
+    const editor = closestEditor(range.startContainer);
+    return editor ? editor.getBoundingClientRect() : null;
+}
+
 function closestEditor(node: Node) {
     const element = node instanceof Element ? node : node.parentElement;
     return element?.closest("[contenteditable='true']") || null;
 }
 
-function placeCaretAtEnd(element: HTMLElement) {
+function clamp(value: number, min: number, max: number) {
+    if (max < min) return min;
+    return Math.min(Math.max(value, min), max);
+}
+
+function placeCaretInTextNode(selection: Selection | null, textNode: Text, offset: number) {
+    if (!selection) return;
     const range = document.createRange();
-    range.selectNodeContents(element);
-    range.collapse(false);
-    const selection = window.getSelection();
-    selection?.removeAllRanges();
-    selection?.addRange(range);
+    range.setStart(textNode, Math.min(offset, textNode.length));
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
 }
 
 function parseComposerTokens(value: string): Token[] {

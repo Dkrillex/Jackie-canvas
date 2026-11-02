@@ -46,7 +46,8 @@ export function buildNodeGenerationContext(nodeId: string, nodes: CanvasNodeData
 
     const resourceInputs = flattenGenerationInputs(inputs);
     let textIndex = 0;
-    const upstreamText = resourceInputs.flatMap((input) => (input.text ? [textBlock(generationLabel("text", textIndex++), input.text)] : [])).join("\n\n");
+    // 提示词里已经包含的上游文本（如从文本节点拉出时预填）不再重复拼接。
+    const upstreamText = resourceInputs.flatMap((input) => (input.text && !prompt.includes(input.text.trim()) ? [textBlock(generationLabel("text", textIndex++), input.text)] : [])).join("\n\n");
     const referenceImages = resourceInputs.map((input) => input.image).filter((image): image is ReferenceImage => Boolean(image));
     const referenceVideos = resourceInputs.map((input) => input.video).filter((video): video is ReferenceVideo => Boolean(video));
     const referenceAudios = resourceInputs.map((input) => input.audio).filter((audio): audio is ReferenceAudio => Boolean(audio));
@@ -96,22 +97,28 @@ function buildComposerGenerationContext(inputs: NodeGenerationInput[], prompt: s
 
     nextPrompt += prompt.slice(lastIndex);
     if (textBlocks.length) nextPrompt = `${nextPrompt.trim()}\n\n${textBlocks.join("\n\n")}`;
+
+    // 没有 @[node:…] 引用：保留输入的提示词，但仍带上所有连着的参考（含组内素材），否则只打纯文字会把参考全部丢掉
+    if (!hasToken) {
+        const resources = flattenGenerationInputs(inputs);
+        const images = resources.map((input) => input.image).filter((image): image is ReferenceImage => Boolean(image));
+        const videos = resources.map((input) => input.video).filter((video): video is ReferenceVideo => Boolean(video));
+        const audios = resources.map((input) => input.audio).filter((audio): audio is ReferenceAudio => Boolean(audio));
+        return {
+            prompt,
+            referenceImages: images,
+            referenceVideos: videos,
+            referenceAudios: audios,
+            textCount: resources.filter((input) => input.type === "text").length,
+            imageCount: images.length,
+            videoCount: videos.length,
+            audioCount: audios.length,
+        };
+    }
+
     const referenceImages = selectedInputs.map((input) => input.image).filter((image): image is ReferenceImage => Boolean(image));
     const referenceVideos = selectedInputs.map((input) => input.video).filter((video): video is ReferenceVideo => Boolean(video));
     const referenceAudios = selectedInputs.map((input) => input.audio).filter((audio): audio is ReferenceAudio => Boolean(audio));
-
-    if (!hasToken) {
-        return {
-            prompt,
-            referenceImages: [],
-            referenceVideos: [],
-            referenceAudios: [],
-            textCount: 0,
-            imageCount: 0,
-            videoCount: 0,
-            audioCount: 0,
-        };
-    }
 
     return {
         prompt: nextPrompt,
