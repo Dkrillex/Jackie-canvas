@@ -75,10 +75,26 @@ export type ChannelCredentialsImportResult = {
 
 export const CONFIG_STORE_KEY = "infinite-canvas:ai_config_store";
 const CHANNEL_MODEL_SEPARATOR = "::";
-const OPENAI_BASE_URL = "https://api.openai.com";
+/** hinnflow 默认渠道：浏览器直连 NovaWander 网关（上游允许跨域，不走同源代理）。 */
+const OPENAI_BASE_URL = "https://api.novawander.cn";
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
 export const LOCAL_PROXY_PACKAGE = "@basketikun/canvas-proxy";
 export const DEFAULT_LOCAL_PROXY_URL = "http://127.0.0.1:23210";
+
+/** 默认渠道只放 NovaWander 现网模型；打开页面时会按这份列表刷新默认渠道。 */
+const DEFAULT_CHANNEL_MODELS: ChannelModel[] = [
+    { name: "gpt-image-2", capability: "image" },
+    { name: "gpt-image-2.5-sunburst", capability: "image" },
+    { name: "gpt-image-2.5-flare", capability: "image" },
+    { name: "gemini-2.5-flash-image", capability: "image" },
+    { name: "gemini-3-pro-image", capability: "image" },
+    { name: "gemini-3.1-flash-image", capability: "image" },
+    { name: "doubao-seedance-2-0-260128", capability: "video" },
+    { name: "doubao-seedance-2-0-fast-260128", capability: "video" },
+    { name: "doubao-seedance-2-0-mini-260615", capability: "video" },
+    { name: "gpt-5.6-sol", capability: "text" },
+    { name: "deepseek-v4-flash", capability: "text" },
+];
 
 export const defaultConfig: AiConfig = {
     channelMode: "local",
@@ -92,19 +108,14 @@ export const defaultConfig: AiConfig = {
             baseUrl: OPENAI_BASE_URL,
             apiKey: "",
             apiFormat: "openai",
-            models: [
-                { name: "gpt-image-2", capability: "image" },
-                { name: "grok-imagine-video", capability: "video" },
-                { name: "gpt-5.5", capability: "text" },
-                { name: "gpt-4o-mini-tts", capability: "audio" },
-            ],
+            models: DEFAULT_CHANNEL_MODELS.map((model) => ({ ...model })),
         },
     ],
     model: "default::gpt-image-2",
     imageModel: "default::gpt-image-2",
-    videoModel: "default::grok-imagine-video",
-    textModel: "default::gpt-5.5",
-    audioModel: "default::gpt-4o-mini-tts",
+    videoModel: "default::doubao-seedance-2-0-260128",
+    textModel: "default::gpt-5.6-sol",
+    audioModel: "",
     audioVoice: "alloy",
     audioFormat: "mp3",
     audioSpeed: "1",
@@ -116,12 +127,12 @@ export const defaultConfig: AiConfig = {
     videoMode: "frames",
     systemPrompt: "",
     reasoningEffort: "auto",
-    models: ["default::gpt-image-2", "default::grok-imagine-video", "default::gpt-5.5", "default::gpt-4o-mini-tts"],
+    models: DEFAULT_CHANNEL_MODELS.map((model) => encodeChannelModel("default", model.name)),
     quality: "auto",
     size: "1:1",
     background: "",
     count: "1",
-    canvasImageCount: "3",
+    canvasImageCount: "1",
     proxyEnabled: false,
     proxyUrl: DEFAULT_LOCAL_PROXY_URL,
     nodeRegenerateBehavior: "new-node",
@@ -153,7 +164,7 @@ type ConfigStore = {
     clearPromptContinue: () => void;
 };
 
-const VIDEO_KEYWORDS = ["video", "sora", "veo", "kling", "wan", "hailuo"];
+const VIDEO_KEYWORDS = ["video", "sora", "veo", "kling", "wan", "hailuo", "seedance"];
 
 export function boolConfig(value: string, fallback: boolean) {
     return value ? value === "true" : fallback;
@@ -221,7 +232,7 @@ export const useConfigStore = create<ConfigStore>()(
             config: defaultConfig,
             webdav: defaultWebdavSyncConfig,
             isConfigOpen: false,
-            configTab: "channels",
+            configTab: "user",
             shouldPromptContinue: false,
             updateConfig: (key, value) =>
                 set((state) => ({
@@ -263,8 +274,19 @@ export const useConfigStore = create<ConfigStore>()(
                 const persistedWebdav = (persistedState.webdav || {}) as Partial<WebdavSyncConfig>;
                 const config = { ...defaultConfig, ...persistedConfig };
                 if (!Array.isArray(persistedConfig.channels)) config.channels = [];
-                const channels = normalizeChannels(config);
+                // 默认渠道的地址和模型列表随代码更新（项目未上线，不保留旧默认值）；登录后再写入会话密钥
+                const channels = normalizeChannels(config).map((channel) =>
+                    channel.id === "default" ? { ...channel, baseUrl: OPENAI_BASE_URL, apiFormat: "openai" as const, models: DEFAULT_CHANNEL_MODELS.map((model) => ({ ...model })) } : channel,
+                );
                 const models = modelOptionsFromChannels(channels);
+                // 全局默认模型不在列表里时回到默认值；节点上的选择仍按 v20 规则在生成时拦截
+                const pickModel = (value: string | undefined, fallback: string, capability: ModelCapability) => {
+                    const options = channels.flatMap((channel) => channel.models.filter((model) => model.capability === capability).map((model) => encodeChannelModel(channel.id, model.name)));
+                    const normalized = normalizeModelOptionValue(value, channels);
+                    if (options.includes(normalized)) return normalized;
+                    const next = normalizeModelOptionValue(fallback, channels);
+                    return options.includes(next) ? next : options[0] || "";
+                };
                 return {
                     ...current,
                     webdav: { ...defaultWebdavSyncConfig, ...persistedWebdav },
@@ -274,10 +296,11 @@ export const useConfigStore = create<ConfigStore>()(
                         apiFormat: normalizeApiFormat(config.apiFormat),
                         channels,
                         models,
-                        imageModel: normalizeModelOptionValue(config.imageModel || config.model, channels),
-                        videoModel: normalizeModelOptionValue(config.videoModel, channels),
-                        textModel: normalizeModelOptionValue(config.textModel || config.model, channels),
-                        audioModel: normalizeModelOptionValue(config.audioModel || defaultConfig.audioModel, channels),
+                        baseUrl: OPENAI_BASE_URL,
+                        imageModel: pickModel(config.imageModel || config.model, defaultConfig.imageModel, "image"),
+                        videoModel: pickModel(config.videoModel, defaultConfig.videoModel, "video"),
+                        textModel: pickModel(config.textModel, defaultConfig.textModel, "text"),
+                        audioModel: pickModel(config.audioModel, defaultConfig.audioModel, "audio"),
                         audioVoice: config.audioVoice || defaultConfig.audioVoice,
                         audioFormat: config.audioFormat || defaultConfig.audioFormat,
                         audioSpeed: config.audioSpeed || defaultConfig.audioSpeed,
@@ -288,7 +311,7 @@ export const useConfigStore = create<ConfigStore>()(
                         videoGenerateAudio: config.videoGenerateAudio || "true",
                         videoWatermark: config.videoWatermark || "false",
                         videoMode: config.videoMode === "reference" ? "reference" : "frames",
-                        canvasImageCount: config.canvasImageCount || "3",
+                        canvasImageCount: config.canvasImageCount || "1",
                         proxyEnabled: Boolean(config.proxyEnabled),
                         proxyUrl: config.proxyUrl || DEFAULT_LOCAL_PROXY_URL,
                         nodeRegenerateBehavior: config.nodeRegenerateBehavior === "overwrite" ? "overwrite" : "new-node",
