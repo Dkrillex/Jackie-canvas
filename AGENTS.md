@@ -123,4 +123,8 @@
 - 「开始生成」等会发起 AI 请求的操作按钮，未登录时用 `useRequireLogin()` 提示并弹出登录，不真正发起生成。
 - 登录鉴权走同源 `/new-api`（New API：`POST /api/user/login` + `/api/user/token` 换 access_token，请求头带 `Authorization` 与 `New-Api-User`）。不要再走 MaaS `/prod-api/auth/login` 的 AES/RSA，前端不放任何 RSA 密钥。登录/注册请求发出前先清掉旧的 access_token 和 `New-Api-User`，否则换账号会把上一份头带给 nova-api。
 - 登录成功与 hydrate 后，用 `/new-api/api/token/` 拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key（列表是脱敏的，要再 `POST /api/token/:id/key` 揭秘）写入默认渠道；退出时清空。不要写死内置 API Key。
+- 配置只走顶栏头像按钮（登录后打开配置的「用户中心」，未登录弹登录）。导航不再放「配置」，也不再放齿轮；顶栏右侧不放文档、语言切换、主题切换、版本号和 GitHub 链接。
+- 配置弹窗：「渠道」页签对所有人隐藏；WebDAV 同步、提示词来源页签仅 `admin` 账号可见（role ≥ 10 或用户名为 admin）。对外文案不要暴露底层服务品牌、域名或内置 API Key。
+- 本地 Agent 入口暂时关闭：`AGENT_UI_ENABLED` 为 false，顶栏 Bot、画布 Agent 按钮和右侧面板都不要加回来。代码留着，单独开分支再打开。
+- 本地代理页签暂时关闭：`LOCAL_PROXY_UI_ENABLED` 为 false，配置里不要把「本地代理」加回来，请求也不要再走 canvas-proxy。代码留着，单独开分支再打开。
 - 首次访问默认亮色主题：`web/index.html` 的首屏脚本和 `use-theme-store.ts` 的默认值要一起改，只改一处会闪一下深色。

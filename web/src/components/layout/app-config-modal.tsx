@@ -12,6 +12,7 @@ import { ConfigPromptSources } from "@/components/layout/config-prompt-sources";
 import { ConfigLocalStorage } from "@/components/layout/config-local-storage";
 import { useCopyText } from "@/hooks/use-copy-text";
 import type { AppLocale } from "@/i18n";
+import { LOCAL_PROXY_UI_ENABLED } from "@/jc/config";
 import { exportAppConfig, importAppConfig } from "@/services/config-file";
 import { fetchCurrentUser, fetchUserCenterInfo, formatQuotaCurrency, type UserCenterInfo } from "@/services/api/user";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
@@ -26,6 +27,23 @@ function maskApiKey(key: string) {
     if (!value) return "";
     if (value.length <= 12) return `${value.slice(0, 4)}${"*".repeat(Math.max(0, value.length - 4))}`;
     return `${value.slice(0, 7)}${"*".repeat(Math.min(18, value.length - 11))}${value.slice(-4)}`;
+}
+
+/** hinnflow 限制：渠道对所有人隐藏；提示词来源、WebDAV 仅 `admin` 可见 */
+const HIDDEN_CONFIG_TABS: ConfigTabKey[] = ["channels"];
+/** 仅 `admin` 账号可见 */
+const ADMIN_ONLY_CONFIG_TABS: ConfigTabKey[] = ["webdav", "prompt-sources"];
+
+function isAdminUser(user?: { username?: string | null; role?: number } | null) {
+    if ((user?.role ?? 0) >= 10) return true;
+    return (user?.username || "").trim().toLowerCase() === "admin";
+}
+
+function isConfigTabVisible(tab: ConfigTabKey, isAdmin: boolean) {
+    if (HIDDEN_CONFIG_TABS.includes(tab)) return false;
+    if (tab === "local-proxy" && !LOCAL_PROXY_UI_ENABLED) return false;
+    if (!isAdmin && ADMIN_ONLY_CONFIG_TABS.includes(tab)) return false;
+    return true;
 }
 
 type ModelGroup = {
@@ -59,11 +77,14 @@ function createWebdavDomainProgress(): Record<AppSyncDomainKey, WebdavDomainProg
     );
 }
 
-export function AppConfigPanel({ showDoneButton = false, initialTab = "channels" }: { showDoneButton?: boolean; initialTab?: ConfigTabKey }) {
+export function AppConfigPanel({ showDoneButton = false, initialTab = "user" }: { showDoneButton?: boolean; initialTab?: ConfigTabKey }) {
     const { message } = App.useApp();
     const { i18n, t } = useTranslation();
     const configInputRef = useRef<HTMLInputElement>(null);
-    const [activeTab, setActiveTab] = useState<ConfigTabKey>(initialTab);
+    const sessionUser = useUserStore((state) => state.user);
+    const isAdmin = isAdminUser(sessionUser);
+    const resolveTab = (tab: ConfigTabKey) => (isConfigTabVisible(tab, isAdmin) ? tab : "user");
+    const [activeTab, setActiveTab] = useState<ConfigTabKey>(() => resolveTab(initialTab));
     const [editingChannelId, setEditingChannelId] = useState("");
     const [testingWebdav, setTestingWebdav] = useState(false);
     const [syncingWebdav, setSyncingWebdav] = useState(false);
@@ -75,7 +96,6 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const [loggingOut, setLoggingOut] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
     const copyText = useCopyText();
-    const sessionUser = useUserStore((state) => state.user);
     const setUser = useUserStore((state) => state.setUser);
     const logout = useUserStore((state) => state.logout);
     const openLoginModal = useUserStore((state) => state.openLoginModal);
@@ -93,7 +113,11 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
     const editingChannel = config.channels.find((channel) => channel.id === editingChannelId) || null;
     const locale = i18n.resolvedLanguage as AppLocale;
     const imageResolutionOptions = mediaScaleOptions.map((value) => ({ value, label: value === "auto" ? t("settingsPanels.common.auto") : value.toUpperCase() }));
-    useEffect(() => setActiveTab(initialTab), [initialTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- resolveTab 只依赖 isAdmin
+    useEffect(() => setActiveTab(resolveTab(initialTab)), [initialTab, isAdmin]);
+    useEffect(() => {
+        if (!isConfigTabVisible(activeTab, isAdmin)) setActiveTab("user");
+    }, [activeTab, isAdmin]);
 
     const saveConfig = (nextConfig: AiConfig) => {
         (Object.keys(nextConfig) as Array<keyof AiConfig>).forEach((key) => updateConfig(key, nextConfig[key]));
@@ -266,8 +290,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
 
     return (
         <>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200 pb-3 dark:border-stone-800">
-                <div className="text-xs text-stone-500">{t("config.fileSecurity")}</div>
+            <div className="flex flex-wrap items-center justify-end gap-3 border-b border-stone-200 pb-3 dark:border-stone-800">
                 <div className="flex gap-2">
                     <Button icon={<Upload className="size-4" />} onClick={() => configInputRef.current?.click()}>
                         {t("config.import")}
@@ -519,7 +542,7 @@ export function AppConfigPanel({ showDoneButton = false, initialTab = "channels"
                         label: t("config.tabs.localStorage"),
                         children: <ConfigLocalStorage active={activeTab === "local-storage"} />,
                     },
-                ]}
+                ].filter((item) => isConfigTabVisible(item.key as ConfigTabKey, isAdmin))}
             />
             {showDoneButton ? (
                 <div className="mt-4 flex justify-end">

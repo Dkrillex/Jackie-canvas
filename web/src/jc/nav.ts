@@ -12,8 +12,8 @@ const jcNavTools: { slug: string; icon: LucideIcon }[] = [{ slug: "wallet", icon
 /** 未登录时不出现在导航里的页面：账户、余额这类只对本人有意义的东西。 */
 const LOGIN_ONLY = new Set<string>(["wallet"]);
 
-/** 不在导航里出现的页面。 */
-const HIDDEN = new Set<string>();
+/** 配置只走顶栏头像，不在导航里出现。 */
+const HIDDEN = new Set<string>(["config"]);
 
 /** 顶栏和移动端抽屉共用。两处各调一次，逻辑只有这一份。 */
 export function useVisibleNavTools() {
