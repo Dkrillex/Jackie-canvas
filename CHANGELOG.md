@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### hinnflow（本分支定制）
+
++ [新增][hinnflow] 品牌改为 hinnflow，首页大标题 HINNFLOW AI 与蓝紫流体背景，首次访问默认亮色。
++ [新增][hinnflow] New API 登录、两步验证与注册，登录后自动同步 auto 分组密钥到默认渠道；未登录点生成先弹登录；配置新增「用户中心」页签。
++ [新增][hinnflow] 支付宝额度充值，到账后直接加到 New API 账号的调用额度（30 元→$4、50 元→$7、200 元→$29）；用户中心支持兑换码充值。
++ [新增][hinnflow] Seedance 视频走方舟原生任务接口，兼容 NovaWander 与 New API 1.0 的 `/doubao` 路径；支持首尾帧、全能参考与参考视频 / 音频。
++ [新增][hinnflow] 本地参考素材经服务端签发的预签名地址上传对象存储，AccessKey 只留在服务端。
++ [新增][hinnflow] Docker 部署：同源反代 New API 登录与充值服务，AI 请求由浏览器直连网关。
++ [新增][hinnflow] 我的资产支持拖入本地图片批量导入。
++ [调整][hinnflow] 默认渠道只放 NovaWander 现网模型；Gemini 图片模型在 OpenAI 格式渠道下改走 generateContent；Seedream 5.0 lite 请求尺寸不足时按比例放大。
++ [调整][hinnflow] 顶栏只保留插件、头像与快捷键，渠道页签隐藏，WebDAV 与提示词来源仅管理员可见，关闭本地 Agent 与本地代理入口。
++ [调整][hinnflow] 提示词库过滤 NSFW / Unknown 条目，Banana Prompt Quicker 默认关闭。
++ [优化][hinnflow] 画布拦截触控板捏合整页放大；文本节点拉出图片节点时预填提示词；局部遮罩按原图尺寸生成；组装提示词 @ 菜单跟随光标，只打纯文字时不丢连着的参考；配置节点打开时隐藏悬浮工具栏。
+
 ## v0.20.0 - 2026-10-10
 
 + [修复] 已选模型或所属渠道被移除时保留原选择并阻止生成及视频任务查询，避免静默切换到默认模型或其他渠道。

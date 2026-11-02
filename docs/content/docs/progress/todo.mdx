@@ -7,3 +7,7 @@ description: Planned follow-up work
 
 - Replace the Claude Code CLI adapter with a Claude Agent SDK adapter and improve the tool queue, following the [Local Agent Integration Plan](/docs/progress/local-agent-integration-plan).
 - Add Skill installation from web search, Skill resource-file management, and controlled local-memory persistence.
+- hinnflow canvas keep-alive: keep generating in the background after leaving the canvas page (deferred during migration because `project.tsx` conflicts heavily with v20; skip size updates when hidden at 0×0).
+- hinnflow business WeChat QR: the top-up page's "Larger amount" still uses a placeholder image; replace `BUSINESS_WECHAT_QR` in `web/src/jc/config.ts`.
+- hinnflow object-storage upload size limit: presigned PUT URLs cannot cap file size; switch to PostObject form uploads with a size policy if needed.
+- hinnflow open decisions: whether README / SECURITY contacts change for this branch; whether to port the WorkBuddy / CodeBuddy plugins and Canvas Agent publishing docs; whether to add Seedance 2.5 to the default video models.

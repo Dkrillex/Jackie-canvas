@@ -9,3 +9,7 @@ description: 当前项目后续值得处理的事项
 
 - 本地 Agent 接入后续：按[本地 Agent 接入规划](/zh-CN/docs/progress/local-agent-integration-plan)把 Claude Code CLI Adapter 升级为 Claude Agent SDK Adapter，并完善工具队列体验。
 - Agent Skill 后续：补充网络检索安装、Skill 资源文件管理和可控的本地记忆沉淀。
+- hinnflow 画布保活：离开画布页面时后台继续跑完生成（迁移时暂缓，`project.tsx` 与 v20 冲突大；隐藏时测到 0×0 尺寸要跳过更新）。
+- hinnflow 商务微信二维码：充值页「更大额度」目前用占位图，换成真二维码（`web/src/jc/config.ts` 的 `BUSINESS_WECHAT_QR`）。
+- hinnflow 对象存储上传大小限制：预签名 PUT 限制不了文件大小，需要时改用 PostObject 表单上传在签名里限制大小。
+- hinnflow 待定事项：README / SECURITY 联系方式是否改为本分支；WorkBuddy / CodeBuddy 插件与 Canvas Agent 发布文档是否移植；默认视频模型是否加入 Seedance 2.5。

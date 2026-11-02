@@ -36,7 +36,7 @@
 | 17 | **兑换码充值**：配置中心账户页签 | `jc/components/redeem-code.tsx`、`app-config-modal.tsx` | 小 | 已移植（待测试）：走 New API `/api/user/topup`，直接充入账号额度 |
 | 18 | **积分兑换 API 额度** | `server/src/exchange.ts`、`routes/exchange.ts`、钱包页 | 小 | 不需要：去掉积分后，充值直接发放额度，并入第 16 项 |
 | 19 | **接单中心**：发单、报价、交付验收、佣金结算、押金、三个有效期、平台账，Markdown 交付说明 | `server/src/jobs.ts` 等、`jc/pages/jobs/`、`jc/services/jobs.ts`、`jc/stores/use-job-store.ts` | 小：基本是新增文件 | 不需要：依赖积分钱包的冻结与结算，去掉积分后先不做 |
-| 20 | **文档与 CHANGELOG**：`pending-test`、`todo`、`features` 里的 hinnflow 条目，CHANGELOG 加 `[Jackie]` 小节 | `docs/content/docs/progress/*`、`CHANGELOG.md` | 小 | 待确认 |
+| 20 | **文档与 CHANGELOG**：`pending-test`、`todo`、`features` 里的 hinnflow 条目，CHANGELOG 加 `[hinnflow]` 小节 | `docs/content/docs/progress/*`、`CHANGELOG.md` | 小 | 已完成：CHANGELOG `hinnflow（本分支定制）` 小节、pending-test 与 todo 中英两份；features 等测试通过后再写 |
 
 ## 二、不需要，跟随 v20
 
@@ -59,10 +59,12 @@
 
 ## 三、需要你决定
 
+- [x] 企业管理（MaaS）：不要，页面代码和 MaaS 的 RSA 常量都没搬。
 - [ ] README、`SECURITY.md`、赞助和授权文档里的联系方式（hinnflow 改成了 1658176374）是否要改？上游要求二次开发保留原作者信息。
 - [ ] WorkBuddy / CodeBuddy 插件市场配置和 Canvas Agent 发布文档：本地 Agent 入口目前关闭，是现在移植还是以后单独开分支？
-- [ ] 默认视频模型是否加入 Seedance 2.5（`doubao-seedance-2-5-260628`）？hinnflow 现在只有 2.0 三档；加入的话时长和素材上限要按 2.5 放宽，并且要确认网关已经支持。
-- [ ] 企业管理（MaaS）是否确定以后也不要？如果不要，可以连同页面代码一起不搬。
+- [ ] 默认视频模型是否加入 Seedance 2.5（`doubao-seedance-2-5-260628`）？加入的话时长和素材上限要按 2.5 放宽，并确认网关已经支持。
+
+以上未定事项也记在 `docs/content/docs/progress/todo.mdx`。
 
 ## 四、移植后要回归的 v20 功能
 

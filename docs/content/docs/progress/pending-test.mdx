@@ -62,6 +62,25 @@ The current release needs manual verification in these areas:
 
 The Chinese version contains the complete item-by-item acceptance checklist.
 
+## hinnflow customizations
+
+Customizations migrated onto v20 on the hinnflow-v20 branch. See `docs/hinnflow-v20-migration.md` in the repository for the item-by-item list.
+
+- Branding and home page: the browser title and top bar show hinnflow; the home hero reads HINNFLOW AI over a blue-purple flowing background; a first visit with cleared storage opens in light mode.
+- Docker deployment: after `docker compose -f docker-compose.hinnflow.yml up -d --build` the app is reachable on local port 5000; `/pay-api/health` reports `alipay`, `mysql`, `novaApi`, `novaAdmin` and `oss` as true.
+- Sign-in and sign-up: the avatar opens sign-in when signed out; a new account can register and is signed in automatically; two-factor accounts are asked for a code; the session survives a refresh; the Account tab shows the username, balance and an `sk-` key; signing out clears the key.
+- Signed-out gating: generating on the image page, video page, and canvas (generate, retry, mask edit, angles, text-to-image) only opens sign-in and sends no request.
+- Permissions and entry points: the top bar shows only plugins, avatar and shortcuts; regular accounts see no Providers, WebDAV, Prompt sources or Local proxy tabs; admin sees WebDAV and Prompt sources; the canvas has no Agent button.
+- Default models: after sign-in GPT Image 2 / 2.5 and Nano Banana (Gemini image models) generate images; Seedance 2.0 is the default video model.
+- Seedance: text-to-video works; first frame, first/last frame and general reference modes generate; fast / mini cannot pick 1080p; local reference images, videos and audio are uploaded to object storage first; tasks can be created and queried through a New API 1.0 gateway.
+- Object storage: the signing endpoint returns 401 when signed out; uploaded files appear under `canvas/<year-month>/<user id>/` in the bucket and are publicly readable.
+- Seedream 5.0 lite: choosing 1K raises the request to about 2560×1440 pixels; 5.0 pro / flash are not enlarged.
+- Prompt library: Banana Prompt Quicker is off by default; the library, home page and canvas side panel show no NSFW / Unknown items.
+- Canvas: pinching outside the canvas does not zoom the page; dragging an image node out of a text node pre-fills its prompt; mask edits on non-square images keep the original ratio; the composer @ menu opens at the caret and plain text keeps connected references; the floating toolbar hides while a config node is open.
+- My assets: dropping several local images or an asset package imports them; Import accepts multiple images.
+- Quota top-up: the Top up nav item appears only when signed in; paying a 30 / 50 / 200 CNY package shows "added", the account quota grows by the matching USD amount, and the record's Quota column reads Added; without an admin token the record shows Failed and `npm run grants:retry` re-sends it after configuration.
+- Redemption codes: entering a New API code in the Account tab reports the amount added and the balance increases.
+
 ## 图片分辨率尺寸表
 
 选择分辨率和宽高比后，W/H 按下表填写，单位为像素。预设尺寸不受「16 倍数对齐」开关影响；该开关只控制手动输入尺寸时的对齐。最终生成尺寸以所选模型的实际输出为准。
