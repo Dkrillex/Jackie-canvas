@@ -65,6 +65,12 @@ export default defineConfig({
                 cookieDomainRewrite: "",
                 rewrite: (path) => path.replace(/^\/new-api/, "") || "/",
             },
+            // 本机开发时转到 server/（cd server && npm run dev），对应 Docker 里的 /pay-api。
+            "/pay-api": {
+                target: "http://127.0.0.1:8787",
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/pay-api/, "") || "/",
+            },
         },
     },
 });

@@ -12,3 +12,7 @@ web/out
 *.log
 .env*
 !.env.example
+server/node_modules
+server/dist
+server/.env*
+!server/.env.example
