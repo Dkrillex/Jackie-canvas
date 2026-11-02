@@ -2,6 +2,9 @@ import type { LucideIcon } from "lucide-react";
 
 import { navigationTools } from "@/constant/navigation-tools";
 import { useUserStore } from "@/stores/use-user-store";
+import "@/jc/styles/top-nav.css";
+
+export { BrandName } from "@/jc/components/brand-name";
 
 /** 二开新增的导航项。上游的 navigationTools 保持原样，这里只做追加。 */
 const jcNavTools: { slug: string; icon: LucideIcon }[] = [];

@@ -1,0 +1,41 @@
+/*
+ * 首页流动背景。舞台结构对齐 hinnflow.com：
+ *   .shader-stage 固定铺满 → .shader-layer-a 不透明 + .shader-layer-b opacity .5
+ * 真正的丝绸体由 Paper MeshGradient 画；这张表只负责叠层和 WebGL 兜底。
+ */
+
+.jc-flow-backdrop,
+.jc-flow-fallback {
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.jc-flow-layer-a,
+.jc-flow-layer-b {
+    position: absolute;
+    inset: 0;
+}
+
+.jc-flow-layer-b {
+    opacity: 0.5;
+}
+
+/* 母站 .shader-fallback 的三团结构，配色跟着 shader 走：蓝底 + 一团紫 */
+.jc-flow-fallback {
+    background:
+        radial-gradient(60% 50% at 18% 28%, rgba(110, 80, 250, 0.45), transparent 70%),
+        radial-gradient(50% 45% at 82% 22%, rgba(255, 255, 255, 0.7), transparent 70%),
+        radial-gradient(55% 50% at 68% 82%, rgba(91, 153, 247, 0.7), transparent 72%),
+        #dbe7fd;
+}
+
+.dark .jc-flow-fallback {
+    background:
+        radial-gradient(60% 50% at 18% 28%, rgba(59, 46, 158, 0.7), transparent 70%),
+        radial-gradient(50% 45% at 82% 22%, rgba(91, 153, 247, 0.3), transparent 70%),
+        radial-gradient(55% 50% at 68% 82%, rgba(10, 13, 24, 0.85), transparent 72%),
+        #0a0d18;
+}

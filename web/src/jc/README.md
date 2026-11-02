@@ -17,8 +17,12 @@ Git 冲突是按文件按 hunk 算的：只有你改、上游不改的文件，�
 | --------------------------------------------- | ---------------------------------------------------- |
 | `src/router.tsx`                              | `...jcRoutes` —— 路由全在 `jc/routes.tsx`            |
 | `src/i18n/index.ts`                           | `mergeJcLocale(zhCN, jcZhCN)` —— 文案全在 `jc/i18n/` |
-| `src/components/layout/app-top-nav.tsx`       | 导航项来自 `jc/nav.ts` 的 `useVisibleNavTools()`     |
-| `src/components/layout/mobile-nav-drawer.tsx` | 同上                                                 |
+| `src/components/layout/app-top-nav.tsx`       | 导航项来自 `jc/nav.ts` 的 `useVisibleNavTools()`，顶栏视觉是 `jc-top-nav` + `<BrandName />` |
+| `src/components/layout/mobile-nav-drawer.tsx` | 导航项同上                                           |
+| `src/pages/home/index.tsx`                    | 挂 `<FlowBackdrop />` + `hero-title.css` / `home-page.css`（HINNFLOW AI 大标题、胶囊按钮、玻璃展示卡） |
+
+`web/index.html`（标题、Inter 字体、首屏默认亮色）、`public/logo.svg`、`use-theme-store.ts` 的默认主题、
+`globals.css` 的标题动画时长也改过，都是品牌相关的单行改动。
 
 ## 目录
 
@@ -28,4 +32,11 @@ jc/
   nav.ts          顶栏 / 移动端导航项，以及需要登录才显示、需要隐藏的 slug
   config.ts       前端开关与常量（如 AGENT_UI_ENABLED、LOCAL_PROXY_UI_ENABLED）
   i18n/           中英文案 + 与上游 locale 的合并函数
+  components/     二开组件（品牌名、首页流体背景）
+  styles/         组件私有 CSS（Vite 支持组件级 import，不进 globals.css）
 ```
+
+## 和上游首页装饰的关系
+
+上游的 `components/home/ascii-ring.tsx`（字符莫比乌斯环）本分支不用，首页背景换成
+Paper `MeshGradient`（`FlowBackdrop`，蓝底紫色流体）。上游那个文件**原样留着没动**，只是首页不再引用它。
