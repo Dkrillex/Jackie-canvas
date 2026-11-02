@@ -13,6 +13,7 @@ import { canvasThemes } from "@/lib/canvas-theme";
 import { imageReferenceLabel } from "@/lib/image-reference-prompt";
 import { modelOptionLabel, useConfigStore, useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
 import { useThemeStore } from "@/stores/use-theme-store";
+import { useRequireLogin } from "@/hooks/use-require-login";
 import { nanoid } from "nanoid";
 import { formatBytes, formatDuration } from "@/lib/image-utils";
 import { requestEdit, requestGeneration } from "@/services/api/image";
@@ -71,6 +72,7 @@ export default function ImagePage() {
     const { message } = App.useApp();
     const { t } = useTranslation();
     useSyncExternalStore(subscribeImagePreviews, getImagePreviewRevision);
+    const requireLogin = useRequireLogin();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dragDepthRef = useRef(0);
     const config = useConfigStore((state) => state.config);
@@ -150,6 +152,10 @@ export default function ImagePage() {
     const generate = async () => {
         const agentTaskId = agentTaskIdRef.current;
         agentTaskIdRef.current = undefined;
+        if (!requireLogin("/image")) {
+            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: t("login.actionRequired") });
+            return;
+        }
         const text = prompt.trim();
         if (!text) {
             message.error(t("imageWorkbench.promptRequired"));

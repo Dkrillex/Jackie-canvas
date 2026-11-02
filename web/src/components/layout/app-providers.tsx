@@ -13,6 +13,7 @@ import { ClientRootInit } from "@/components/layout/client-root-init";
 import type { AppLocale } from "@/i18n";
 import { getAntThemeConfig } from "@/lib/app-theme";
 import { useThemeStore } from "@/stores/use-theme-store";
+import { useUserStore } from "@/stores/use-user-store";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -29,6 +30,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
     const theme = useThemeStore((state) => state.theme);
     const dark = theme === "dark";
     const locale = i18n.resolvedLanguage as AppLocale;
+    const hydrateFromServer = useUserStore((state) => state.hydrateFromServer);
+
+    useEffect(() => {
+        void hydrateFromServer();
+    }, [hydrateFromServer]);
 
     useEffect(() => {
         document.documentElement.classList.toggle("dark", dark);

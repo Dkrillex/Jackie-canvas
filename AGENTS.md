@@ -120,4 +120,7 @@
 - 部署只用 Docker（`docker-compose.hinnflow.yml` + `hinnflow-docker.conf`），不再维护 Vercel 配置。上游的 `Dockerfile`、`nginx.conf`、`docker-compose.yml` 保持原样，hinnflow 的 nginx 配置通过 volume 挂载覆盖。
 - AI 请求不走同源代理：浏览器直连 `https://api.novawander.cn`（上游允许跨域），不要再加回 `/gw`。登录必须走同源 `/new-api`：New API 登录靠会话 Cookie，而上游跨域返回 `allow-origin: *`，浏览器不允许带 Cookie。nginx 反代上游时用变量 + `resolver` 定期重新解析域名（上游在 CDN 后面），并用 `proxy_cookie_domain` 改写 Cookie 域名。
 - 本机 Vite 代理 `/new-api` 到 `api.novawander.cn` 时不要开 HTTPS keep-alive：EdgeOne 复用 TLS 会偶发 `decryption failed or bad record mac`。
+- 「开始生成」等会发起 AI 请求的操作按钮，未登录时用 `useRequireLogin()` 提示并弹出登录，不真正发起生成。
+- 登录鉴权走同源 `/new-api`（New API：`POST /api/user/login` + `/api/user/token` 换 access_token，请求头带 `Authorization` 与 `New-Api-User`）。不要再走 MaaS `/prod-api/auth/login` 的 AES/RSA，前端不放任何 RSA 密钥。登录/注册请求发出前先清掉旧的 access_token 和 `New-Api-User`，否则换账号会把上一份头带给 nova-api。
+- 登录成功与 hydrate 后，用 `/new-api/api/token/` 拉取当前账号密钥，取第一把启用且分组为 `auto` 的 Key（列表是脱敏的，要再 `POST /api/token/:id/key` 揭秘）写入默认渠道；退出时清空。不要写死内置 API Key。
 - 首次访问默认亮色主题：`web/index.html` 的首屏脚本和 `use-theme-store.ts` 的默认值要一起改，只改一处会闪一下深色。

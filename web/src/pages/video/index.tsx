@@ -20,6 +20,7 @@ import { useAssetStore } from "@/stores/use-asset-store";
 import { useWorkbenchAgentStore } from "@/stores/use-workbench-agent-store";
 import { boolConfig, modelOptionLabel, useConfigStore, useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
 import { useThemeStore } from "@/stores/use-theme-store";
+import { useRequireLogin } from "@/hooks/use-require-login";
 import type { ReferenceImage } from "@/types/image";
 import i18n from "@/i18n";
 
@@ -71,6 +72,7 @@ export default function VideoPage() {
     const { message } = App.useApp();
     const { t } = useTranslation();
     useSyncExternalStore(subscribeImagePreviews, getImagePreviewRevision);
+    const requireLogin = useRequireLogin();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const dragDepthRef = useRef(0);
     const activeLogIdsRef = useRef<Set<string>>(new Set());
@@ -171,6 +173,10 @@ export default function VideoPage() {
     const generate = async () => {
         const agentTaskId = agentTaskIdRef.current;
         agentTaskIdRef.current = undefined;
+        if (!requireLogin("/video")) {
+            if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: t("login.actionRequired") });
+            return;
+        }
         const snapshot = buildRequestSnapshot();
         if (!snapshot) {
             if (agentTaskId) updateAgentTask(agentTaskId, { status: "failed", error: t("videoWorkbench.invalidParams") });
