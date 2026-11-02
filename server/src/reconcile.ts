@@ -1,5 +1,5 @@
 /**
- * 兜底对账：定期把还没付的单拿去问支付宝，付了就入账。
+ * 兜底对账：定期把还没付的单拿去问支付宝，付了就入账并发放额度；顺带补发 pending 的额度。
  *
  * 为什么必须有这个 —— 异步通知会丢。回调地址被挡、本地开发的隧道断掉、服务重启的那
  * 几秒，通知就没了，而用户的钱是真扣了。前端轮询能兜住一部分，但它只在用户开着页面时
@@ -11,6 +11,7 @@
  */
 import { tradeQuery } from "./alipay.js";
 import { alipayConfigured, mysqlConfigured, settings } from "./config.js";
+import { listPendingGrants, processGrant } from "./grants.js";
 import { listPending, settle, type OrderRow } from "./orders.js";
 
 const PAID_STATUS = ["TRADE_SUCCESS", "TRADE_FINISHED"];
@@ -35,6 +36,7 @@ export async function settleFromQuery(order: OrderRow): Promise<boolean> {
     }
 
     const { credited } = await settle(order.out_trade_no, { tradeNo: String(result.trade_no || ""), payload: result });
+    if (credited) await processGrant(order.out_trade_no);
     return credited;
 }
 
@@ -47,7 +49,10 @@ export function startReconcileLoop(): void {
     console.log(`[pay] 兜底对账已启动，每 ${interval}s 扫一次近 ${settings.reconcileWindowMin} 分钟的待付单`);
 
     const tick = async () => {
-        if (!alipayConfigured() || !mysqlConfigured()) return;
+        if (!mysqlConfigured()) return;
+        // settle 提交后进程挂了、还没来得及调 New API 的那些
+        for (const refNo of await listPendingGrants()) await processGrant(refNo);
+        if (!alipayConfigured()) return;
         const pending = await listPending(settings.reconcileWindowMin);
         if (!pending.length) return;
         let settled = 0;

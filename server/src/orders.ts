@@ -1,7 +1,7 @@
 /**
- * 充值订单，以及「确认到账 → 加积分」这一步。
+ * 充值订单，以及「确认到账 → 记一条待发放额度」这一步。
  *
- * 整个模块只有一个地方能把钱变多：settle()。异步通知、前端轮询时的主动查询、后台兜底
+ * 整个模块只有一个地方能确认到账：settle()。异步通知、前端轮询时的主动查询、后台兜底
  * 对账，三条腿走的都是它，而它是幂等的 —— 无论被调用多少次，一笔订单只会入账一次。
  */
 import { randomUUID } from "node:crypto";
@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import type { PoolConnection, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 
 import { getPool, withTransaction } from "./db.js";
+import { createGrant } from "./grants.js";
 
 export const STATUS_CREATED = "created";
 export const STATUS_PAID = "paid";
@@ -101,23 +102,23 @@ export async function listPending(withinMinutes: number, limit = 100): Promise<O
 }
 
 export type SettleResult = {
-    /** 这次调用是否真的把钱加上去了。false 表示订单不存在，或之前已经入过账 */
+    /** 这次调用是否真的确认了到账。false 表示订单不存在，或之前已经入过账 */
     credited: boolean;
     order: OrderRow | null;
 };
 
 /**
- * 确认一笔单已付，并把积分加到用户钱包。**必须幂等**。
+ * 确认一笔单已付，并插一条待发放的额度记录（真正调 New API 在事务外，见 grants.ts）。**必须幂等**。
  *
  * 支付宝在没收到 success 之前会按 4m/10m/10m/1h… 反复重发同一条通知，同时前端轮询和
  * 后台对账也可能同时命中同一笔单。三件事保证一笔订单只入账一次：
  *
  *   1. 先 `SELECT ... FOR UPDATE` 锁住订单行，把并发的几路串起来；
  *   2. `UPDATE ... WHERE status <> 'paid'`，第二次进来影响行数是 0，据此直接返回；
- *   3. 流水表上的 `UNIQUE KEY (kind, ref_no)` 兜最后一道底，重复入账会直接撞唯一键。
+ *   3. 发放表上的 `ref_no` 唯一键兜最后一道底，重复记录会直接撞唯一键。
  *
- * 状态判断和加钱、记流水在同一个事务里 —— 分开写的话，进程在两步之间挂掉就会出现
- * 「订单已付、积分没到」，而重发的通知因为状态已是 paid 再也不会补上。
+ * 状态判断和插入发放记录在同一个事务里 —— 分开写的话，进程在两步之间挂掉就会出现
+ * 「订单已付、额度没发」，而重发的通知因为状态已是 paid 再也不会补上。
  */
 export async function settle(outTradeNo: string, input: { tradeNo: string; payload: unknown }): Promise<SettleResult> {
     return withTransaction(async (conn: PoolConnection) => {
@@ -131,18 +132,11 @@ export async function settle(outTradeNo: string, input: { tradeNo: string; paylo
             [STATUS_PAID, input.tradeNo, JSON.stringify(input.payload), outTradeNo, STATUS_PAID],
         );
         // 影响行数为 0 说明这条之前已经处理过了（支付宝重发 / 轮询和对账撞在一起）。
-        // 照样算成功返回，但绝不能再走一遍加钱。
+        // 照样算成功返回，但绝不能再记一次发放。
         if (updated.affectedRows === 0) return { credited: false, order };
 
-        await conn.execute("INSERT INTO user_wallets (user_id, balance) VALUES (?, 0) ON DUPLICATE KEY UPDATE user_id = user_id", [order.user_id]);
-        // 加法交给数据库做：读出来在 JS 里加再写回去，两路并发就会丢掉一笔
-        await conn.execute("UPDATE user_wallets SET balance = balance + ? WHERE user_id = ?", [order.credits, order.user_id]);
-        const [wallet] = await conn.execute<RowDataPacket[]>("SELECT balance FROM user_wallets WHERE user_id = ?", [order.user_id]);
-        await conn.execute(
-            `INSERT INTO wallet_ledger (user_id, kind, amount, balance_after, ref_no, note)
-             VALUES (?, 'recharge', ?, ?, ?, ?)`,
-            [order.user_id, order.credits, wallet[0].balance, outTradeNo, order.subject],
-        );
+        // 和「标为已付」同一个事务：进程在两步之间挂掉也不会出现「已付但没有发放记录」
+        await createGrant(conn, { refNo: outTradeNo, userId: order.user_id, usd: order.credits });
 
         return { credited: true, order: { ...order, status: STATUS_PAID, trade_no: input.tradeNo } };
     });

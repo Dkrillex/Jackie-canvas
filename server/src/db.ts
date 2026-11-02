@@ -5,7 +5,7 @@
  * 订单状态必须落在扛得住重启、且多实例能看到同一份的地方。本地文件做不到 ——
  * 下单写进 A 实例、通知打到 B 实例，B 会说「查无此单」，然后支付宝一直重发。
  *
- * 池子懒建：没配数据库时服务照常起，只有 /api/pay/* 和 /api/wallet/* 回 503。
+ * 池子懒建：没配数据库时服务照常起，只有 /api/pay/* 回 503。
  */
 import mysql, { type Pool } from "mysql2/promise";
 
@@ -22,7 +22,7 @@ const SCHEMA = [
         package_id    VARCHAR(64)   NOT NULL         COMMENT '充值档位 id',
         subject       VARCHAR(255)  NOT NULL,
         amount        DECIMAL(12,2) NOT NULL         COMMENT '应付人民币',
-        credits       DECIMAL(12,2) NOT NULL         COMMENT '付款成功后到账的积分，下单时从档位抄一份，调价不影响旧单',
+        credits       DECIMAL(12,2) NOT NULL         COMMENT '付款成功后到账的美元调用额度（列名沿用旧的 credits），下单时从档位抄一份，调价不影响旧单',
         status        VARCHAR(16)   NOT NULL         COMMENT 'created/paid/closed',
         trade_no      VARCHAR(64)   NULL             COMMENT '支付宝交易号，退款和对账要用',
         notify_raw    TEXT          NULL             COMMENT '原样存一份通知报文，日后有争议时这是唯一凭据',
@@ -31,37 +31,25 @@ const SCHEMA = [
         updated_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_user_created (user_id, created_at),
         INDEX idx_status_created (status, created_at)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='积分充值订单'`,
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='充值订单'`,
 
-    `CREATE TABLE IF NOT EXISTS user_wallets (
-        user_id     VARCHAR(64)   NOT NULL PRIMARY KEY,
-        balance     DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT '积分余额',
-        frozen      DECIMAL(14,2) NOT NULL DEFAULT 0 COMMENT '冻结中的积分，接单托管用，当前只读',
+    // 额度发放记录：充值到账后给 New API 账号加调用额度。加额度是外部 HTTP，进不了订单的事务，
+    // 所以把「要发多少、发到哪一步」显式落库：settle() 在同一个事务里插入 pending，之后再去调用。
+    // ref_no 唯一：一笔充值单（或一个老钱包的迁移）只会有一条，重复触发只会撞唯一键。
+    `CREATE TABLE IF NOT EXISTS quota_grants (
+        id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+        ref_no      VARCHAR(64)   NOT NULL UNIQUE  COMMENT '充值单号 out_trade_no；老钱包迁移为 wallet:<user_id>',
+        user_id     VARCHAR(64)   NOT NULL         COMMENT 'New API user id，BIGINT 当字符串存',
+        usd         DECIMAL(14,2) NOT NULL         COMMENT '发放的美元额度',
+        quota       BIGINT        NOT NULL         COMMENT 'New API 内部 quota = usd × NEW_API_QUOTA_PER_UNIT',
+        status      VARCHAR(16)   NOT NULL         COMMENT 'pending/granting/done/failed/unknown',
+        attempts    INT           NOT NULL DEFAULT 0,
+        last_error  VARCHAR(255)  NOT NULL DEFAULT '',
         created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户积分钱包'`,
-
-    // ref_no 是「这条流水属于哪一次动作」的键，配合 UNIQUE(kind, ref_no) 兜重复写入：
-    //   充值   → out_trade_no      兑换/退回 → exchange id
-    //   结算   → job id（一个单只结算一次）
-    //   冻结/解冻/押金/罚没 → job_deposits.id，也就是「这一次接单」的 id
-    // 最后一类不能用 job id：单子超时会回到市场被别人再接，同一个 job 会有多次冻结和押金，
-    // 用 job id 当键第二次就撞唯一约束了。job_id 另开一列，方便按单查全部资金流水。
-    `CREATE TABLE IF NOT EXISTS wallet_ledger (
-        id            BIGINT AUTO_INCREMENT PRIMARY KEY,
-        user_id       VARCHAR(64)   NOT NULL,
-        kind          VARCHAR(16)   NOT NULL         COMMENT 'recharge/freeze/unfreeze/charge/payout/deposit/deposit_back/forfeit/compensate/exchange/refund/adjust',
-        amount        DECIMAL(14,2) NOT NULL         COMMENT '正负即方向；freeze/unfreeze/deposit 记的是冻结变动量',
-        balance_after DECIMAL(14,2) NOT NULL,
-        frozen_after  DECIMAL(14,2) NOT NULL DEFAULT 0,
-        ref_no        VARCHAR(64)   NULL             COMMENT '见上方说明',
-        job_id        VARCHAR(32)   NULL             COMMENT '工单相关流水的所属工单',
-        note          VARCHAR(255)  NOT NULL DEFAULT '',
-        created_at    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE KEY uk_kind_ref (kind, ref_no),
+        updated_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_user_created (user_id, created_at),
-        INDEX idx_job (job_id)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='积分流水'`,
+        INDEX idx_status (status, updated_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='New API 额度发放记录'`,
 ];
 
 let pool: Pool | null = null;

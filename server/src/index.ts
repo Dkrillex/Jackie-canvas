@@ -1,6 +1,6 @@
 import { serve } from "@hono/node-server";
 
-import { alipayConfigured, mysqlConfigured, novaApiMysqlConfigured, ossConfigured, settings } from "./config.js";
+import { alipayConfigured, mysqlConfigured, novaAdminConfigured, novaApiMysqlConfigured, ossConfigured, settings } from "./config.js";
 import { app, startBackgroundJobsOnce } from "./app.js";
 
 startBackgroundJobsOnce();
@@ -8,7 +8,8 @@ startBackgroundJobsOnce();
 serve({ fetch: app.fetch, hostname: settings.host, port: settings.port }, (info) => {
     console.log(`[pay] 充值服务已启动 http://${settings.host}:${info.port}`);
     if (!alipayConfigured()) console.warn("[pay] 支付宝未配置，/api/pay/orders 会回 503");
-    if (!mysqlConfigured()) console.warn("[pay] MySQL 未配置，充值与钱包接口会回 503");
+    if (!mysqlConfigured()) console.warn("[pay] MySQL 未配置，充值接口会回 503");
+    if (!novaAdminConfigured()) console.warn("[pay] 未配置 NEW_API_ADMIN_TOKEN，充值到账后无法发放额度（会停在 failed）");
     if (!novaApiMysqlConfigured()) console.warn("[pay] nova-api 用户库未配置，/api/auth/register 会回 503");
     if (!ossConfigured()) console.warn("[pay] 对象存储未配置，/api/oss/sign 会回 503，Seedance 本地参考素材无法上传");
     if (alipayConfigured() && !settings.alipayNotifyUrl) {

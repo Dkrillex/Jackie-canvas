@@ -1,8 +1,8 @@
 /**
- * 积分钱包与支付宝充值。走同源 `/pay-api`（本地 Vite 代理、Docker 里 nginx 反代到 pay 容器）。
+ * 支付宝充值：到账后由 server 给 New API 账号加调用额度，余额直接看 New API 账号。走同源 `/pay-api`（本地 Vite 代理、Docker 里 nginx 反代到 pay 容器）。
  *
- * 这里**不出现金额** —— 下单只传档位 id，金额和到账积分都由服务端价目表决定。
- * 一旦允许前端传金额，改一个数字就能一分钱买下全部积分。页面上显示的价格来自
+ * 这里**不出现金额** —— 下单只传档位 id，金额和到账额度都由服务端价目表决定。
+ * 一旦允许前端传金额，改一个数字就能一分钱买下大量额度。页面上显示的价格来自
  * `getRechargePackages()`，也就是服务端那份，不会和结算价对不上。
  */
 import { getSessionHeaders } from "@/constant/auth";
@@ -16,17 +16,8 @@ export type RechargePackage = {
     subject: string;
 };
 
-export type WalletView = { balance: string; frozen: string; available: string };
-
-export type LedgerEntry = {
-    id: number;
-    kind: "recharge" | "consume" | "adjust";
-    amount: string;
-    balanceAfter: string;
-    refNo: string | null;
-    note: string;
-    createdAt: string;
-};
+/** 额度发放：pending / granting 发放中，done 已到账，failed / unknown 需要人工处理 */
+export type GrantStatus = "pending" | "granting" | "done" | "failed" | "unknown";
 
 export type RechargeOrder = {
     outTradeNo: string;
@@ -44,6 +35,7 @@ export type OrderStatus = {
     credits: string;
     subject: string;
     paid: boolean;
+    grantStatus: GrantStatus | null;
     createdAt: string;
     paidAt: string | null;
 };
@@ -88,12 +80,4 @@ export async function getRechargeOrder(outTradeNo: string) {
 
 export async function listRechargeOrders(limit = 20) {
     return payRequest<{ orders: RechargeRecord[] }>(`/api/pay/orders?limit=${limit}`);
-}
-
-export async function getWallet() {
-    return payRequest<WalletView>("/api/wallet");
-}
-
-export async function listWalletLedger(limit = 50) {
-    return payRequest<{ entries: LedgerEntry[] }>(`/api/wallet/ledger?limit=${limit}`);
 }

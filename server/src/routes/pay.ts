@@ -11,6 +11,7 @@ import { AlipayNotConfigured, pagePayUrl, verifyNotify } from "../alipay.js";
 import { resolveUserFrom } from "../auth.js";
 import { alipayConfigured, mysqlConfigured, settings } from "../config.js";
 import { DatabaseNotConfigured } from "../db.js";
+import { grantStatusByRef, processGrant } from "../grants.js";
 import * as orders from "../orders.js";
 import { findPackage, MAX_RECHARGE_YUAN, packages } from "../packages.js";
 import { settleFromQuery } from "../reconcile.js";
@@ -46,8 +47,8 @@ payRoutes.get("/packages", (c) => {
 /**
  * 下一笔充值单。
  *
- * 只收 packageId，**不收金额** —— 金额和到账积分都按 id 从服务端价目表查。一旦允许
- * 前端传金额，改一个数字就能一分钱买下全部积分。
+ * 只收 packageId，**不收金额** —— 金额和到账额度都按 id 从服务端价目表查。一旦允许
+ * 前端传金额，改一个数字就能一分钱买下大量额度。
  */
 payRoutes.post("/orders", async (c) => {
     if (!alipayConfigured()) return c.json({ message: "支付宝还没配置：请在服务端填 ALIPAY_APP_ID / ALIPAY_PRIVATE_KEY / ALIPAY_PUBLIC_KEY" }, 503);
@@ -102,6 +103,7 @@ payRoutes.get("/orders/:outTradeNo", async (c) => {
         if (await settleFromQuery(order)) order = (await orders.get(outTradeNo)) || order;
     }
 
+    const grantStatus = (await grantStatusByRef([order.out_trade_no])).get(order.out_trade_no) || null;
     return c.json({
         outTradeNo: order.out_trade_no,
         status: order.status,
@@ -109,6 +111,7 @@ payRoutes.get("/orders/:outTradeNo", async (c) => {
         credits: order.credits,
         subject: order.subject,
         paid: order.status === orders.STATUS_PAID,
+        grantStatus,
         createdAt: order.created_at,
         paidAt: order.paid_at,
     });
@@ -120,6 +123,7 @@ payRoutes.get("/orders", async (c) => {
     const user = await resolveUserFrom(c);
     const limit = Math.min(Number(c.req.query("limit") || 20) || 20, 100);
     const rows = await orders.listByUser(user.userId, limit);
+    const grants = await grantStatusByRef(rows.map((row) => row.out_trade_no));
     return c.json({
         orders: rows.map((row) => ({
             outTradeNo: row.out_trade_no,
@@ -127,6 +131,7 @@ payRoutes.get("/orders", async (c) => {
             amount: row.amount,
             credits: row.credits,
             status: row.status,
+            grantStatus: grants.get(row.out_trade_no) || null,
             createdAt: row.created_at,
             paidAt: row.paid_at,
         })),
@@ -169,8 +174,10 @@ payRoutes.post("/notify", async (c) => {
 
     if (form.trade_status === "TRADE_SUCCESS" || form.trade_status === "TRADE_FINISHED") {
         const { credited } = await orders.settle(order.out_trade_no, { tradeNo: String(form.trade_no || ""), payload: form });
-        // credited=false 说明之前已经入过账（支付宝重发）。照样回 success，但不再加一次钱。
-        console.log(`[pay] 订单 ${order.out_trade_no} ${credited ? `已入账 ${order.credits} 积分` : "重复通知，忽略"}`);
+        // credited=false 说明之前已经入过账（支付宝重发）。照样回 success，但不再发一次额度。
+        console.log(`[pay] 订单 ${order.out_trade_no} ${credited ? `已入账，发放 $${order.credits} 额度` : "重复通知，忽略"}`);
+        // 先回 success 给支付宝，发放在后台跑；失败的会留在发放表里
+        if (credited) void processGrant(order.out_trade_no).catch((error) => console.error(`[pay] 发放额度 ${order.out_trade_no} 出错：${(error as Error).message}`));
     }
 
     return c.text("success");

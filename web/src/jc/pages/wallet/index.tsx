@@ -1,17 +1,18 @@
-import { Alert, App, Button, Modal, Result, Spin, Table, Tabs, Tag, Typography } from "antd";
+import { Alert, App, Button, Modal, Result, Spin, Table, Tag, Typography } from "antd";
 import { CheckCircle2, QrCode, RefreshCw, Wallet } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useRequireLogin } from "@/hooks/use-require-login";
-import { listRechargeOrders, listWalletLedger, type LedgerEntry, type RechargeRecord } from "@/jc/services/wallet";
+import { listRechargeOrders, type RechargeRecord } from "@/jc/services/wallet";
+import { fetchCurrentUser, formatQuotaCurrency } from "@/services/api/user";
 import { useUserStore } from "@/stores/use-user-store";
-import { useWalletStore } from "@/jc/stores/use-wallet-store";
 import { MAX_RECHARGE_YUAN } from "@/jc/config";
 import { BusinessContactModal } from "@/jc/components/business-contact-modal";
 import { useRecharge } from "./use-recharge";
 
 const statusColor: Record<string, string> = { created: "gold", paid: "success", closed: "default" };
+const grantColor: Record<string, string> = { pending: "processing", granting: "processing", done: "success", failed: "error", unknown: "warning" };
 
 export default function WalletPage() {
     const { t } = useTranslation();
@@ -19,31 +20,36 @@ export default function WalletPage() {
     const requireLogin = useRequireLogin();
     const user = useUserStore((state) => state.user);
 
-    const { balance, frozen, available, loading, error, refresh, clear } = useWalletStore();
-    const [ledger, setLedger] = useState<LedgerEntry[]>([]);
+    const userId = user?.id;
+    const setUser = useUserStore((state) => state.setUser);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
     const [records, setRecords] = useState<RechargeRecord[]>([]);
     const [selected, setSelected] = useState("");
     const [businessOpen, setBusinessOpen] = useState(false);
 
+    // 余额就是 New API 账号的调用额度，直接问 New API；充值记录失败不该盖掉余额
     const reload = useCallback(async () => {
-        await refresh();
-        // 流水和充值记录失败不该盖掉余额：余额是主信息，列表空着也能看
+        setLoading(true);
+        setError("");
         await Promise.all([
-            listWalletLedger()
-                .then((data) => setLedger(data.entries))
-                .catch(() => undefined),
+            fetchCurrentUser()
+                .then(setUser)
+                .catch((err: unknown) => setError(err instanceof Error ? err.message : t("wallet.loadFailed"))),
             listRechargeOrders()
                 .then((data) => setRecords(data.orders))
                 .catch(() => undefined),
         ]);
-    }, [refresh]);
+        setLoading(false);
+    }, [setUser, t]);
 
+    // 只跟账号走：reload 里会 setUser，依赖整个 user 会自己触发自己
     useEffect(() => {
-        if (user) void reload();
-        else clear();
-    }, [clear, reload, user]);
+        if (userId) void reload();
+        else setRecords([]);
+    }, [reload, userId]);
 
-    const { packages, enabled, missing, loadError, order, creating, paid, pollError, start, reset } = useRecharge(reload);
+    const { packages, enabled, missing, loadError, order, creating, paid, grantStatus, pollError, start, reset } = useRecharge(reload);
     const visiblePackages = packages.filter((item) => Number(item.amount) <= MAX_RECHARGE_YUAN);
 
     useEffect(() => {
@@ -103,13 +109,11 @@ export default function WalletPage() {
                         {loadError ? <Alert type="warning" showIcon message={loadError} /> : null}
                         {!loadError && !enabled && packages.length ? <Alert type="warning" showIcon message={t(missing.length === 1 ? `wallet.unavailable_${missing[0]}` : "wallet.unavailable")} /> : null}
 
-                        {/* 三张大卡各放一个小数字，中间全是空白；收成一条，可用额仍然是最大的那个数 */}
                         <div className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-2xl border border-stone-200 bg-white/60 px-5 py-4 dark:border-stone-800 dark:bg-white/[0.02]">
                             <Wallet className="size-4 shrink-0 text-stone-400" />
                             {[
-                                { label: t("wallet.available"), value: available, strong: true },
-                                { label: t("wallet.balance"), value: balance, strong: false },
-                                { label: t("wallet.frozen"), value: frozen, strong: false },
+                                { label: t("wallet.available"), value: formatQuotaCurrency(user.quota), strong: true },
+                                { label: t("wallet.used"), value: formatQuotaCurrency(user.usedQuota), strong: false },
                             ].map((item, index) => (
                                 <div key={item.label} className={index ? "border-stone-200 pl-6 sm:border-l dark:border-stone-800" : ""}>
                                     <div className="text-[11px] text-stone-400">{item.label}</div>
@@ -162,47 +166,20 @@ export default function WalletPage() {
                             </div>
                         </div>
 
-                        <div className="rounded-2xl border border-stone-200 bg-white/60 px-5 pb-2 dark:border-stone-800 dark:bg-white/[0.02]">
-                            <Tabs
-                                items={[
-                                    {
-                                        key: "ledger",
-                                        label: t("wallet.tabLedger"),
-                                        children: (
-                                            <Table<LedgerEntry>
-                                                rowKey="id"
-                                                size="small"
-                                                dataSource={ledger}
-                                                pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                                                columns={[
-                                                    { title: t("wallet.time"), dataIndex: "createdAt", width: 180 },
-                                                    { title: t("wallet.kind"), dataIndex: "kind", width: 110, render: (kind: string) => t(`wallet.kind_${kind}`, kind) },
-                                                    { title: t("wallet.amount"), dataIndex: "amount", width: 120, align: "right", render: (amount: string) => <span className="tabular-nums">{Number(amount) > 0 ? `+${amount}` : amount}</span> },
-                                                    { title: t("wallet.balanceAfter"), dataIndex: "balanceAfter", width: 120, align: "right", render: (value: string) => <span className="tabular-nums">{value}</span> },
-                                                    { title: t("wallet.note"), dataIndex: "note" },
-                                                ]}
-                                            />
-                                        ),
-                                    },
-                                    {
-                                        key: "orders",
-                                        label: t("wallet.tabOrders"),
-                                        children: (
-                                            <Table<RechargeRecord>
-                                                rowKey="outTradeNo"
-                                                size="small"
-                                                dataSource={records}
-                                                pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                                                columns={[
-                                                    { title: t("wallet.time"), dataIndex: "createdAt", width: 180 },
-                                                    { title: t("wallet.orderNo"), dataIndex: "outTradeNo", width: 240 },
-                                                    { title: t("wallet.payAmount"), dataIndex: "amount", width: 120, align: "right", render: (amount: string) => <span className="tabular-nums">¥{amount}</span> },
-                                                    { title: t("wallet.willCredit"), dataIndex: "credits", width: 120, align: "right", render: (value: string) => <span className="tabular-nums">{value}</span> },
-                                                    { title: t("wallet.status"), dataIndex: "status", width: 110, render: (status: string) => <Tag color={statusColor[status] || "default"}>{t(`wallet.status_${status}`, status)}</Tag> },
-                                                ]}
-                                            />
-                                        ),
-                                    },
+                        <div className="space-y-2 rounded-2xl border border-stone-200 bg-white/60 px-5 py-4 dark:border-stone-800 dark:bg-white/[0.02]">
+                            <div className="text-sm font-semibold">{t("wallet.tabOrders")}</div>
+                            <Table<RechargeRecord>
+                                rowKey="outTradeNo"
+                                size="small"
+                                dataSource={records}
+                                pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                                columns={[
+                                    { title: t("wallet.time"), dataIndex: "createdAt", width: 180 },
+                                    { title: t("wallet.orderNo"), dataIndex: "outTradeNo", width: 240 },
+                                    { title: t("wallet.payAmount"), dataIndex: "amount", width: 110, align: "right", render: (amount: string) => <span className="tabular-nums">¥{amount}</span> },
+                                    { title: t("wallet.willCredit"), dataIndex: "credits", width: 110, align: "right", render: (value: string) => <span className="tabular-nums">${value}</span> },
+                                    { title: t("wallet.status"), dataIndex: "status", width: 100, render: (status: string) => <Tag color={statusColor[status] || "default"}>{t(`wallet.status_${status}`, status)}</Tag> },
+                                    { title: t("wallet.grant"), dataIndex: "grantStatus", width: 110, render: (status: string | null) => (status ? <Tag color={grantColor[status] || "default"}>{t(`wallet.grant_${status}`, status)}</Tag> : "—") },
                                 ]}
                             />
                         </div>
@@ -214,10 +191,10 @@ export default function WalletPage() {
                 <Modal open={Boolean(order)} onCancel={reset} footer={null} maskClosable={false} title={paid ? null : t("wallet.payingTitle")}>
                     {paid ? (
                         <Result
-                            status="success"
-                            icon={<CheckCircle2 className="mx-auto size-12 text-emerald-500" />}
-                            title={t("wallet.paidTitle")}
-                            subTitle={t("wallet.paidDesc", { credits: order?.credits })}
+                            status={grantStatus === "done" ? "success" : "warning"}
+                            icon={grantStatus === "done" ? <CheckCircle2 className="mx-auto size-12 text-emerald-500" /> : undefined}
+                            title={t(grantStatus === "done" ? "wallet.paidTitle" : "wallet.grantIssueTitle")}
+                            subTitle={t(grantStatus === "done" ? "wallet.paidDesc" : "wallet.grantIssueDesc", { credits: order?.credits })}
                             extra={
                                 <Button type="primary" onClick={reset}>
                                     {t("wallet.done")}
@@ -237,7 +214,7 @@ export default function WalletPage() {
                                 </div>
                                 <div className="flex justify-between gap-4">
                                     <span className="text-stone-500">{t("wallet.willCredit")}</span>
-                                    <span className="tabular-nums">{order?.credits}</span>
+                                    <span className="tabular-nums">${order?.credits}</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 rounded-lg border border-stone-200 px-3 py-3 text-sm dark:border-stone-800">

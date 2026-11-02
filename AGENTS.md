@@ -23,7 +23,7 @@
 
 - 前端使用 Vite、React、React Router、TypeScript、Ant Design、Tailwind、Zustand。
 - 编写 Ant Design 相关代码时，参考 https://ant.design/llms-full.txt 理解组件 API、示例和设计规范，并优先结合项目当前 antd 版本与既有写法。
-- 外部服务请求统一放在 `web/src/services/api/`，由浏览器前端直连，不假设存在项目后端。唯一例外是 `server/`（积分充值与注册），它必须有服务端，见「充值与钱包规范」。
+- 外部服务请求统一放在 `web/src/services/api/`，由浏览器前端直连，不假设存在项目后端。唯一例外是 `server/`（充值、注册与对象存储签名），它必须有服务端，见「充值规范」。
 - 全局或跨页面状态优先放在 `web/src/stores/`。
 - 已经放在全局 store 或全局 hook 中的状态/动作，组件需要时直接使用对应 store/hook，不要为了“纯组件”层层透传 props；避免一个组件传递过多参数。
 - 全局组件、全局常量、全局配置等全局性质的内容不要作为 props 或参数层层传递；哪里需要就在哪里直接从对应全局入口获取。
@@ -65,16 +65,18 @@
 - 二开文案写在 `web/src/jc/i18n/`，只写新增的和要覆盖上游的键；`mergeJcLocale` 对顶层键做一层浅合并，未列出的键继续沿用上游。不要再往 `src/i18n/locales/*.ts` 里加二开文案。
 - 详见 `web/src/jc/README.md`。
 
-## 充值与钱包规范
+## 充值规范
 
 - 充值服务在 `server/`（Node + TypeScript + Hono + mysql2 + alipay-sdk），Docker 里是独立的 `pay` 容器，前端走同源 `/pay-api`。不要把支付宝私钥、验签或订单状态判断挪到浏览器里。
 - **密钥和数据库账号只放 `server/.env`**（已被 `.gitignore` 和 `.dockerignore` 排除），`server/src/config.ts` 里不要写任何默认值：仓库是公开的。
-- hinnflow 注册走 `POST /pay-api/api/auth/register`，由 Node 直写 nova-api `users`（备注固定 `Hinnflow`，并插一把 `group=auto` 初始令牌），不要再调用 nova-api 的 `POST /api/user/register`。钱包库和 nova-api 用户库不是同一台，不要混用连接。`users.id` 是 BIGINT，读写都当字符串。
+- hinnflow 注册走 `POST /pay-api/api/auth/register`，由 Node 直写 nova-api `users`（备注固定 `Hinnflow`，并插一把 `group=auto` 初始令牌），不要再调用 nova-api 的 `POST /api/user/register`。订单库和 nova-api 用户库不是同一台，不要混用连接。`users.id` 是 BIGINT，读写都当字符串。
 - **金额只认服务端**：下单接口只收 `packageId`，价目表写在 `server/src/packages.ts`。任何时候都不要新增「前端传金额」的参数，那等于让用户自己定价。
 - **能把订单改成已付的只有两处**：验过签的 `/api/pay/notify`，和主动查询支付宝的结果。查状态接口只读库，不接受前端写入。
 - 通知处理必须过四道关：验签 → `app_id` 一致 → 订单存在 → 金额一致；缺一道就是可以被伪造充值的洞。
-- 入账必须幂等且和订单状态在同一个事务里：`SELECT ... FOR UPDATE` + `UPDATE ... WHERE status <> 'paid'` + 流水表 `UNIQUE KEY (kind, ref_no)`。改这段代码前先想清楚支付宝会重发通知。
-- 钱一律用 `DECIMAL` 存、字符串读，不要在 JS 里用浮点数做加减；余额的加法交给数据库 `balance = balance + ?`，不要读出来算完再写回去。
+- **没有积分**：支付宝到账后直接给 New API 账号加调用额度（管理员令牌调 `POST /api/user/manage` 的 `add_quota`，令牌只放 `NEW_API_ADMIN_TOKEN`），余额就看 New API 账号本身。档位 `credits` 字段表示到账的美元额度，$1 = `NEW_API_QUOTA_PER_UNIT`（默认 500000）。不要再加回积分钱包。
+- 入账必须幂等：`settle()` 里 `SELECT ... FOR UPDATE` + `UPDATE ... WHERE status <> 'paid'`，并在同一个事务里插一条 `quota_grants`（`ref_no` 唯一）。调 New API 放在事务外，用条件更新抢到记录（`pending → granting`）再调用。
+- 发放结果：成功 `done`；New API 明确拒绝记 `failed`；超时或 5xx 记 `unknown`（额度可能已经加上）。自动流程只处理 `pending`，`failed` / `unknown` 一律不自动重发，用 `npm run grants:retry` 人工处理，`unknown` 要先去 New API 后台核对。
+- 钱一律用 `DECIMAL` 存、字符串读，不要在 JS 里用浮点数做加减；美元额度换算 quota 按分计算。
 - 新增同源前缀（如 `/pay-api`）时，`web/vite.config.ts` 的开发代理和 `hinnflow-docker.conf` 的 location 要一起改。
 
 ## 文档规范

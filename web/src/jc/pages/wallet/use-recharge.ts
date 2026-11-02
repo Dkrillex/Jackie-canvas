@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { createRechargeOrder, getRechargePackages, getRechargeOrder, type RechargeOrder, type RechargePackage } from "@/jc/services/wallet";
+import { createRechargeOrder, getRechargePackages, getRechargeOrder, type GrantStatus, type RechargeOrder, type RechargePackage } from "@/jc/services/wallet";
 
 /** 付款在支付宝那边完成，页面只能靠轮询知道结果。2 秒一次，服务端会压住真正打给支付宝的频次。 */
 const POLL_INTERVAL_MS = 2000;
@@ -13,6 +13,7 @@ export function useRecharge(onPaid: () => void) {
     const [order, setOrder] = useState<RechargeOrder | null>(null);
     const [creating, setCreating] = useState(false);
     const [paid, setPaid] = useState(false);
+    const [grantStatus, setGrantStatus] = useState<GrantStatus | null>(null);
     const [pollError, setPollError] = useState("");
 
     useEffect(() => {
@@ -36,7 +37,9 @@ export function useRecharge(onPaid: () => void) {
             try {
                 const status = await getRechargeOrder(order.outTradeNo);
                 if (stopped) return;
-                if (status.paid) {
+                // 已付后还要等额度发放出结果：pending / granting 继续轮询
+                if (status.paid && status.grantStatus !== "pending" && status.grantStatus !== "granting") {
+                    setGrantStatus(status.grantStatus);
                     setPaid(true);
                     onPaidRef.current();
                     return;
@@ -72,8 +75,9 @@ export function useRecharge(onPaid: () => void) {
     const reset = useCallback(() => {
         setOrder(null);
         setPaid(false);
+        setGrantStatus(null);
         setPollError("");
     }, []);
 
-    return { packages, enabled, missing, loadError, order, creating, paid, pollError, start, reset };
+    return { packages, enabled, missing, loadError, order, creating, paid, grantStatus, pollError, start, reset };
 }

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { Unauthorized } from "./auth.js";
-import { alipayConfigured, mysqlConfigured, novaApiMysqlConfigured, ossConfigured, settings } from "./config.js";
+import { alipayConfigured, mysqlConfigured, novaAdminConfigured, novaApiMysqlConfigured, ossConfigured, settings } from "./config.js";
 import { DatabaseNotConfigured } from "./db.js";
 import { NovaApiDatabaseNotConfigured } from "./nova-users.js";
 import { OssNotConfigured } from "./oss.js";
@@ -10,7 +10,6 @@ import { startReconcileLoop } from "./reconcile.js";
 import { authRoutes } from "./routes/auth.js";
 import { ossRoutes } from "./routes/oss.js";
 import { payRoutes } from "./routes/pay.js";
-import { walletRoutes } from "./routes/wallet.js";
 
 export const app = new Hono();
 
@@ -33,10 +32,9 @@ app.onError((error, c) => {
     return c.json({ message: error.message || "服务异常" }, 500);
 });
 
-app.get("/health", (c) => c.json({ ok: true, alipay: alipayConfigured(), mysql: mysqlConfigured(), novaApi: novaApiMysqlConfigured(), oss: ossConfigured() }));
+app.get("/health", (c) => c.json({ ok: true, alipay: alipayConfigured(), mysql: mysqlConfigured(), novaApi: novaApiMysqlConfigured(), novaAdmin: novaAdminConfigured(), oss: ossConfigured() }));
 app.route("/api/auth", authRoutes);
 app.route("/api/pay", payRoutes);
-app.route("/api/wallet", walletRoutes);
 app.route("/api/oss", ossRoutes);
 
 let backgroundStarted = false;

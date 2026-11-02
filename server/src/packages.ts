@@ -2,10 +2,10 @@
  * 充值套餐档位。**价格表只存在于服务端。**
  *
  * 下单接口只收一个 packageId，绝不收金额 —— 一旦允许前端传金额，改一个数字就能
- * 一分钱买下全部积分，这是支付集成最常见的洞。前端拿到的档位列表只是展示，
+ * 一分钱买下大量额度，这是支付集成最常见的洞。前端拿到的档位列表只是展示，
  * 真正结算的金额从这里按 id 查回来。
  *
- * 档位里同时写死了「多少钱换多少积分」，因此运行时不需要任何汇率换算 ——
+ * 档位里同时写死了「多少钱换多少美元调用额度」，因此运行时不需要任何汇率换算 ——
  * 这张表本身就是价目表。调价直接改这里（或用 RECHARGE_PACKAGES 覆盖），
  * 已经创建的订单不受影响：订单落库时把 amount 和 credits 都抄了一份。
  *
@@ -20,17 +20,17 @@ export type RechargePackage = {
     id: string;
     /** 人民币金额，两位小数的字符串。用字符串不用 number：钱经不起二进制小数的舍入 */
     amount: string;
-    /** 到账积分。项目里 1 积分 = 1 美元 */
+    /** 到账的 New API 调用额度（美元），按 NEW_API_QUOTA_PER_UNIT 换成内部 quota。字段名沿用旧的 credits */
     credits: string;
-    /** 相对基础档多送的积分，纯展示用 */
+    /** 相对基础档多送的额度（美元），已含在 credits 里，纯展示用 */
     bonus: string;
     subject: string;
 };
 
 const DEFAULT_PACKAGES: RechargePackage[] = [
-    { id: "mini", amount: "30.00", credits: "4.00", bonus: "0.00", subject: "HINNFLOW AI 积分充值 30 元" },
-    { id: "starter", amount: "50.00", credits: "7.00", bonus: "0.00", subject: "HINNFLOW AI 积分充值 50 元" },
-    { id: "basic", amount: "200.00", credits: "29.00", bonus: "1.00", subject: "HINNFLOW AI 积分充值 200 元" },
+    { id: "mini", amount: "30.00", credits: "4.00", bonus: "0.00", subject: "HINNFLOW AI 额度充值 30 元" },
+    { id: "starter", amount: "50.00", credits: "7.00", bonus: "0.00", subject: "HINNFLOW AI 额度充值 50 元" },
+    { id: "basic", amount: "200.00", credits: "29.00", bonus: "1.00", subject: "HINNFLOW AI 额度充值 200 元" },
 ];
 
 function parsePackages(): RechargePackage[] {
@@ -39,7 +39,7 @@ function parsePackages(): RechargePackage[] {
     try {
         const parsed = JSON.parse(raw) as RechargePackage[];
         if (!Array.isArray(parsed) || !parsed.length) throw new Error("空列表");
-        // 金额和积分统一成两位小数字符串，免得覆盖配置里写成数字后一路带着浮点误差
+        // 金额和额度统一成两位小数字符串，免得覆盖配置里写成数字后一路带着浮点误差
         const normalized = parsed.map((item) => ({
             ...item,
             amount: Number(item.amount).toFixed(2),

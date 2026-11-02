@@ -35,9 +35,8 @@ jc/
   nav.ts          顶栏 / 移动端导航项，以及需要登录才显示、需要隐藏的 slug
   config.ts       前端开关与常量（如 AGENT_UI_ENABLED、LOCAL_PROXY_UI_ENABLED）
   i18n/           中英文案 + 与上游 locale 的合并函数
-  pages/          页面：wallet（积分充值）
+  pages/          页面：wallet（额度充值）
   services/       调 server/ 的 HTTP 客户端
-  stores/         zustand 全局状态
   components/     二开组件（品牌名、首页流体背景、商务联系弹窗）
   styles/         组件私有 CSS（Vite 支持组件级 import，不进 globals.css）
 ```

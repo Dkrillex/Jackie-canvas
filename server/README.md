@@ -1,6 +1,6 @@
 # hinnflow 充值服务
 
-支付宝充值 + 积分钱包 + 注册（直写 nova-api 用户表）。前端其余部分仍然是纯浏览器直连，**只有充值这条链路需要服务端** ——
+支付宝充值（到账直接加 New API 调用额度）+ 注册（直写 nova-api 用户表）+ 对象存储签名。前端其余部分仍然是纯浏览器直连，**只有充值这条链路需要服务端** ——
 支付宝私钥、通知验签和订单落库都不能放在浏览器里。
 
 不部署这个服务，前端一切照常，只有 `/wallet` 页面会提示充值不可用。
@@ -20,8 +20,9 @@
                      ▼
             orders.settle()（幂等，一笔单只入账一次）
                      ▼
-        recharge_orders 置为 paid + user_wallets 加余额 + wallet_ledger 记流水
-                        （同一个事务）
+        recharge_orders 置为 paid + quota_grants 插一条 pending（同一个事务）
+                     ▼
+        grants.processGrant()：管理员令牌调 New API add_quota 给账号加额度
 ```
 
 为什么要三条腿：异步通知会丢（回调地址被挡、隧道断掉、服务重启的那几秒），而用户的钱是
@@ -76,22 +77,46 @@ ngrok / frp 把它暴露出去；不填也能到账，只是只剩轮询和对�
 
 | 表 | 用途 |
 | --- | --- |
-| `recharge_orders` | 充值订单。`credits` 在下单时从档位抄一份，之后调价不影响旧单 |
-| `user_wallets` | 用户积分余额。`frozen` 预留给接单托管，当前只读 |
-| `wallet_ledger` | 积分流水。`UNIQUE KEY (kind, ref_no)` 兜住重复入账 |
+| `recharge_orders` | 充值订单。`credits` 是到账的美元额度，下单时从档位抄一份，之后调价不影响旧单 |
+| `quota_grants` | 额度发放记录。`ref_no` 唯一，一笔充值单只发一次 |
 
-金额和积分全部用 `DECIMAL`，读出来也保持字符串 —— 钱经不起二进制小数的舍入。
+金额和额度全部用 `DECIMAL`，读出来也保持字符串 —— 钱经不起二进制小数的舍入。
+
+旧版本的 `user_wallets` / `wallet_ledger`（积分钱包）不再使用，代码也不再建这两张表。
+
+## 额度发放
+
+到账后用 `NEW_API_ADMIN_TOKEN` 调 New API `POST /api/user/manage`（`action=add_quota`）。
+
+| 状态 | 含义 | 处理 |
+| --- | --- | --- |
+| `pending` | 已付款，还没调用 | 通知、轮询、后台对账都会自动处理 |
+| `granting` | 调用中 | 长时间停在这里说明进程中途挂了，按 `unknown` 处理 |
+| `done` | 已到账 | — |
+| `failed` | New API 明确拒绝（令牌错、用户不存在等） | 修好配置后 `npm run grants:retry` |
+| `unknown` | 超时或 5xx，额度可能已经加上 | 先到 New API 后台核对，确认没加上再 `npm run grants:retry -- --unknown` |
+
+`npm run grants:retry -- --list` 列出所有需要处理的记录。
+
+## 老积分余额迁移
+
+```bash
+npm run migrate:wallet -- --dry-run   # 先看要转哪些账号、多少
+npm run migrate:wallet                # 按 1 积分 = $1 转成 New API 额度，钱包清零
+```
+
+每个账号一个事务：发放记录 `wallet:<user_id>` 唯一，重复运行不会多发。冻结中的积分（接单托管款）一并转给该账号。
 
 ## 身份
 
 本服务不自建账号：前端带着 New API 的 `access_token` 和 `New-Api-User` 过来，这里拿去问
-nova-api `GET /api/user/self`「你是谁」，认它返回的用户 id。所以钱包天然和现有登录体系对齐，
+nova-api `GET /api/user/self`「你是谁」，认它返回的用户 id。所以订单天然和现有登录体系对齐，
 不用同步用户表。默认 `AUTH_API_BASE=https://api.novawander.cn`。
 
 ## 注册
 
 `POST /api/auth/register` 由本服务直接写 nova-api 的 `users` 表（备注固定 `Hinnflow`，并插一把 `group=auto` 的初始令牌），
-不调用 nova-api 公开的 `POST /api/user/register`。需要在 `.env` 里配 `NOVA_API_MYSQL_*`，这和钱包库不是同一台。
+不调用 nova-api 公开的 `POST /api/user/register`。需要在 `.env` 里配 `NOVA_API_MYSQL_*`，这和订单库不是同一台。
 
 ## 对象存储上传
 
