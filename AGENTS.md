@@ -128,4 +128,5 @@
 - 本地 Agent 入口暂时关闭：`AGENT_UI_ENABLED` 为 false，顶栏 Bot、画布 Agent 按钮和右侧面板都不要加回来。代码留着，单独开分支再打开。
 - 本地代理页签暂时关闭：`LOCAL_PROXY_UI_ENABLED` 为 false，配置里不要把「本地代理」加回来，请求也不要再走 canvas-proxy。代码留着，单独开分支再打开。
 - 默认渠道地址是 `https://api.novawander.cn`，模型只放 NovaWander 现网这一批：图片 `gpt-image-2` / `gpt-image-2.5-sunburst` / `gpt-image-2.5-flare` / `gemini-2.5-flash-image` / `gemini-3-pro-image` / `gemini-3.1-flash-image`；视频 `doubao-seedance-2-0-260128` / `doubao-seedance-2-0-fast-260128` / `doubao-seedance-2-0-mini-260615`；对话 `gpt-5.6-sol` / `deepseek-v4-flash`。不要加回 Veo、wan2.7、seedream、gpt-5.5、gpt-4o-mini-tts 或 MiniMax H3。打开页面时默认渠道的地址和模型列表按代码刷新，不保留旧默认值。
+- Gemini 图片模型（名字同时含 `gemini` 和 `image`）即使在 OpenAI 格式渠道下也走 `generateContent`：New API 的 `/v1/images/generations` 对 Gemini 渠道只支持 imagen。请求头在非 googleapis.com 地址时额外带 `Authorization: Bearer`，官方 Google 地址不要带。
 - 首次访问默认亮色主题：`web/index.html` 的首屏脚本和 `use-theme-store.ts` 的默认值要一起改，只改一处会闪一下深色。
