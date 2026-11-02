@@ -31,7 +31,7 @@
 | 12 | **提示词库**：Banana Prompt Quicker 默认关闭，过滤 NSFW / Unknown 条目 | `prompt-source-presets.ts`、`prompts.ts`、`jc/lib/prompt-visibility.ts` | 小 | 已移植（待测试） |
 | 13 | **画布离开页面时保活**：后台继续跑完生成 | `jc/components/persistent-canvas-host.tsx`、`router.tsx`、`user-layout.tsx`、`infinite-canvas.tsx`、`canvas-top-bar.tsx`、`pages/canvas/project.tsx` | **大**：v20 改了聚焦和视口测量，后台画布的测量要验证 | 暂缓：先跳过，`project.tsx` 冲突大；以后要做时隐藏状态下测到 0×0 尺寸要跳过更新 |
 | 14 | **画布小改进**：拦截触控板捏合；文本节点拉出图片节点时预填提示词；局部遮罩按原图尺寸生成；组装提示词 @ 菜单跟随光标、组字时隐藏占位、@ 后光标留在文本节点；配置节点打开时隐藏悬浮工具栏；组装提示词只打纯文字时不丢连着的参考 | `infinite-canvas.tsx`、`pages/canvas/project.tsx`、`canvas-node-generation.ts`、`lib/media-size.ts`、`canvas-config-composer.tsx`、`canvas-prompt-chip-input.tsx` | 中：`project.tsx` 两边都改得多 | 已移植（待测试）：捏合拦截去掉了对画布保活的依赖；纯文字时连带组内素材一起带上 |
-| 15 | **我的资产拖入本地图片批量导入** | `pages/assets/index.tsx` | 中：v20 也改了资产页 | 待确认 |
+| 15 | **我的资产拖入本地图片批量导入** | `pages/assets/index.tsx` | 中：v20 也改了资产页 | 已移植（待测试） |
 | 16 | **充值服务与钱包**：`server/`（Hono + MySQL + 支付宝），档位含 30 元、单笔上限 200 元，三路到账对账，钱包页，大额商务联系弹窗；Docker 里加 `pay` 容器和 `/pay-api` 反代、本机开发 Vite 代理 `/pay-api`。第 4 项的注册依赖它 | `server/`、`hinnflow-docker.conf`、`docker-compose.hinnflow.yml`、`web/vite.config.ts`、`jc/pages/wallet/`、`jc/services/wallet.ts`、`jc/stores/use-wallet-store.ts`、`business-contact-modal.tsx`、`web/package.json`（构建脚本和依赖） | 小：基本是新增文件 | 已移植（待测试）：`server/`（充值、钱包、注册接口）、`pay` 容器、`/pay-api` 代理、钱包页 `/wallet`（不含积分兑换，留到第 18 项）。密钥改为只读 `server/.env`；商务微信二维码仍是占位图 |
 | 17 | **兑换码充值**：配置中心账户页签 | `jc/components/redeem-code.tsx`、`app-config-modal.tsx` | 小 | 待确认 |
 | 18 | **积分兑换 API 额度** | `server/src/exchange.ts`、`routes/exchange.ts`、钱包页 | 小 | 待确认 |

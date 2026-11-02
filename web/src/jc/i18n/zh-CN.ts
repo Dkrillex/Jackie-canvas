@@ -176,6 +176,13 @@ export default {
             invalid: "{{label}} 无效，请重新上传",
         },
     },
+    assets: {
+        dropHint: "也可将本地图片拖到本页，或点「导入资产」一次选多张。",
+        dropToImport: "松开即可导入图片",
+        importingImages: "正在导入…",
+        noImagesInDrop: "没有可导入的图片或资产包",
+        importFailed: "导入失败，请选择图片或有效的资产压缩包",
+    },
     home: {
         heroTitle: "HINNFLOW AI",
         description: "在 <canvas>HINNFLOW AI</canvas> 中生成、连接和重组 <content>图片、文字与图形</content>，让创作从单次生成变成连续推演。",

@@ -176,6 +176,13 @@ export default {
             invalid: "{{label}} is invalid. Upload it again.",
         },
     },
+    assets: {
+        dropHint: "You can also drop local images here, or click Import and select multiple files.",
+        dropToImport: "Drop to import images",
+        importingImages: "Importing…",
+        noImagesInDrop: "No images or asset packages to import",
+        importFailed: "Import failed. Choose images or a valid asset package.",
+    },
     home: {
         heroTitle: "HINNFLOW AI",
         description: "Generate, connect, and reshape <content>images, text, and graphics</content> in <canvas>HINNFLOW AI</canvas>, turning one-off generations into a continuous creative process.",
