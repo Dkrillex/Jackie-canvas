@@ -3,7 +3,8 @@ import { Button, Tooltip } from "antd";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { navigationTools, type NavigationToolSlug } from "@/constant/navigation-tools";
+import { type NavigationToolSlug } from "@/constant/navigation-tools";
+import { useVisibleNavTools } from "@/jc/nav";
 import { AppConfigModal } from "@/components/layout/app-config-modal";
 import { MobileNavDrawer } from "@/components/layout/mobile-nav-drawer";
 import { UserStatusActions } from "@/components/layout/user-status-actions";
@@ -24,7 +25,8 @@ export function AppTopNav() {
     const panelOpen = useAgentStore((state) => state.panelOpen);
     const hideHeader = /^\/canvas\/[^/]+/.test(pathname);
     const slug = pathname.split("/").filter(Boolean)[0];
-    const activeToolSlug = navigationTools.some((tool) => tool.slug === slug) ? (slug as NavigationToolSlug) : undefined;
+    const visibleTools = useVisibleNavTools();
+    const activeToolSlug = visibleTools.some((tool) => tool.slug === slug) ? (slug as NavigationToolSlug) : undefined;
 
     useEffect(() => {
         if (autoConnectRef.current || agentEnabled || agentConnected || !agentToken.trim()) return;
@@ -60,7 +62,7 @@ export function AppTopNav() {
                             </button>
 
                             <nav className="hide-scrollbar ml-8 hidden h-14 min-w-0 items-center gap-7 overflow-x-auto md:flex">
-                                {navigationTools.map((tool) => {
+                                {visibleTools.map((tool) => {
                                     const Icon = tool.icon;
                                     const active = tool.slug === activeToolSlug;
                                     return (

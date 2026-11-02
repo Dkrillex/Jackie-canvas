@@ -57,6 +57,14 @@
 - 图片节点尺寸逻辑要尊重原始比例，除非功能明确要求自由变形。
 - 批量生成、多图展示、助手面板等画布交互要尽量简洁，不要占用过多画布空间。
 
+## 二次开发分区（jc/）
+
+- 本分支相对上游 `basketikun/infinite-canvas` 的自研前端功能，一律放在 `web/src/jc/`。上游不会碰这个目录，合并 upstream/main 时恒不冲突。
+- 隔离靠的是**目录**不是文件名：Git 冲突按文件按 hunk 算，只有你改、上游不改的文件永远不冲突。不要为了区分去给文件加前缀，那不减少冲突。
+- 不得不动的上游文件**只留一行注册**，且必须是上游几乎不会改的行。目前只有四处接缝：`src/router.tsx`（`...jcRoutes`）、`src/i18n/index.ts`（`mergeJcLocale`）、`src/components/layout/app-top-nav.tsx` 与 `mobile-nav-drawer.tsx`（`useVisibleNavTools`）。新增功能优先接到这四处已有的出口上，不要再去上游文件里开新口子。
+- 二开文案写在 `web/src/jc/i18n/`，只写新增的和要覆盖上游的键；`mergeJcLocale` 对顶层键做一层浅合并，未列出的键继续沿用上游。不要再往 `src/i18n/locales/*.ts` 里加二开文案。
+- 详见 `web/src/jc/README.md`。
+
 ## 文档规范
 
 - README 保持简洁，只放项目介绍、核心功能、快速开始和文档入口。

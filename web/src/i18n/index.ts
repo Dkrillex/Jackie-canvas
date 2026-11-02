@@ -3,6 +3,7 @@ import { initReactI18next } from "react-i18next";
 
 import enUS from "@/i18n/locales/en-US";
 import zhCN from "@/i18n/locales/zh-CN";
+import { jcEnUS, jcZhCN, mergeJcLocale } from "@/jc/i18n";
 
 export type AppLocale = "zh-CN" | "en-US";
 
@@ -10,8 +11,8 @@ const LOCALE_STORAGE_KEY = "infinite-canvas:locale";
 
 i18n.use(initReactI18next).init({
     resources: {
-        "zh-CN": { translation: zhCN },
-        "en-US": { translation: enUS },
+        "zh-CN": { translation: mergeJcLocale(zhCN, jcZhCN) },
+        "en-US": { translation: mergeJcLocale(enUS, jcEnUS) },
     },
     lng: (localStorage.getItem(LOCALE_STORAGE_KEY) as AppLocale) || "zh-CN",
     fallbackLng: "zh-CN",
