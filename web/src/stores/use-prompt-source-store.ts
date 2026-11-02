@@ -50,7 +50,10 @@ export const usePromptSourceStore = create<PromptSourceStore>()(
                 const persistedState = (persisted || {}) as Partial<PromptSourceStore>;
                 const savedSources = Array.isArray(persistedState.sources) ? persistedState.sources : [];
                 const enabledById = new Map(savedSources.map((source) => [source.id, source.enabled]));
-                const builtIn = DEFAULT_PROMPT_SOURCES.map((source) => ({ ...source, enabled: enabledById.get(source.id) ?? source.enabled }));
+                const builtIn = DEFAULT_PROMPT_SOURCES.map((source) => ({
+                    ...source,
+                    enabled: source.id === "banana-prompt-quicker" ? source.enabled : (enabledById.get(source.id) ?? source.enabled),
+                }));
                 const custom = savedSources.filter((source) => !source.builtIn).map((source) => createPromptSource(source));
                 return { ...current, sources: [...builtIn, ...custom], schedule: { ...defaultSchedule, ...(persistedState.schedule || {}) } };
             },

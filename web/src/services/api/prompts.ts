@@ -2,6 +2,7 @@ import localforage from "localforage";
 
 import { runPromptSource, type RawPrompt } from "./prompt-source-runtime";
 import { usePromptSourceStore } from "@/stores/use-prompt-source-store";
+import { isVisibleLibraryPrompt } from "@/jc/lib/prompt-visibility";
 import i18n from "@/i18n";
 import type { PromptSource } from "./prompt-source-presets";
 
@@ -116,11 +117,11 @@ async function getSourcePrompts(source: PromptSource): Promise<Prompt[]> {
     if (cached) {
         const stale = cached.signature !== sourceSignature(source) || Date.now() - cached.fetchedAt >= cacheTtlMs;
         if (stale) void getOrStartRefresh(source).catch(() => undefined);
-        return withSourceMeta(source, cached.items);
+        return withSourceMeta(source, cached.items).filter(isVisibleLibraryPrompt);
     }
     const result = await getOrStartRefresh(source);
     if (!result.success) throw new Error(result.lastError);
-    return (await readSourceCache(source.id))?.items || [];
+    return ((await readSourceCache(source.id))?.items || []).filter(isVisibleLibraryPrompt);
 }
 
 async function getAllPrompts(): Promise<Prompt[]> {
