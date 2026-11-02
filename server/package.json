@@ -10,7 +10,6 @@
         "start": "node dist/index.js",
         "check:db": "tsx scripts/check-db.ts",
         "check:alipay": "tsx scripts/check-alipay.ts",
-        "migrate:wallet": "tsx scripts/migrate-wallet-to-quota.ts",
         "grants:retry": "tsx scripts/retry-grants.ts"
     },
     "dependencies": {

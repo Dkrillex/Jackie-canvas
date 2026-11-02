@@ -82,7 +82,7 @@ ngrok / frp 把它暴露出去；不填也能到账，只是只剩轮询和对�
 
 金额和额度全部用 `DECIMAL`，读出来也保持字符串 —— 钱经不起二进制小数的舍入。
 
-旧版本的 `user_wallets` / `wallet_ledger`（积分钱包）不再使用，代码也不再建这两张表。
+旧版本的积分钱包 `user_wallets` / `wallet_ledger` 已废弃，代码不再读写也不再建这两张表；库里的旧表和旧余额不迁移，可自行删除。
 
 ## 额度发放
 
@@ -98,14 +98,6 @@ ngrok / frp 把它暴露出去；不填也能到账，只是只剩轮询和对�
 
 `npm run grants:retry -- --list` 列出所有需要处理的记录。
 
-## 老积分余额迁移
-
-```bash
-npm run migrate:wallet -- --dry-run   # 先看要转哪些账号、多少
-npm run migrate:wallet                # 按 1 积分 = $1 转成 New API 额度，钱包清零
-```
-
-每个账号一个事务：发放记录 `wallet:<user_id>` 唯一，重复运行不会多发。冻结中的积分（接单托管款）一并转给该账号。
 
 ## 身份
 

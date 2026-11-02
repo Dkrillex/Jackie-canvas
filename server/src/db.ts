@@ -35,10 +35,10 @@ const SCHEMA = [
 
     // 额度发放记录：充值到账后给 New API 账号加调用额度。加额度是外部 HTTP，进不了订单的事务，
     // 所以把「要发多少、发到哪一步」显式落库：settle() 在同一个事务里插入 pending，之后再去调用。
-    // ref_no 唯一：一笔充值单（或一个老钱包的迁移）只会有一条，重复触发只会撞唯一键。
+    // ref_no 唯一：一笔充值单只会有一条，重复触发只会撞唯一键。
     `CREATE TABLE IF NOT EXISTS quota_grants (
         id          BIGINT AUTO_INCREMENT PRIMARY KEY,
-        ref_no      VARCHAR(64)   NOT NULL UNIQUE  COMMENT '充值单号 out_trade_no；老钱包迁移为 wallet:<user_id>',
+        ref_no      VARCHAR(64)   NOT NULL UNIQUE  COMMENT '充值单号 out_trade_no',
         user_id     VARCHAR(64)   NOT NULL         COMMENT 'New API user id，BIGINT 当字符串存',
         usd         DECIMAL(14,2) NOT NULL         COMMENT '发放的美元额度',
         quota       BIGINT        NOT NULL         COMMENT 'New API 内部 quota = usd × NEW_API_QUOTA_PER_UNIT',
