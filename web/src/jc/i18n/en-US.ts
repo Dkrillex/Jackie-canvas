@@ -179,6 +179,14 @@ export default {
         noImagesInDrop: "No images or asset packages to import",
         importFailed: "Import failed. Choose images or a valid asset package.",
     },
+    redeem: {
+        title: "Redemption code",
+        hint: "Enter a code to add quota straight to this account's balance.",
+        placeholder: "Enter redemption code",
+        submit: "Redeem",
+        success: "Redeemed, {{amount}} added",
+        failed: "Redemption failed",
+    },
     home: {
         heroTitle: "HINNFLOW AI",
         description: "Generate, connect, and reshape <content>images, text, and graphics</content> in <canvas>HINNFLOW AI</canvas>, turning one-off generations into a continuous creative process.",

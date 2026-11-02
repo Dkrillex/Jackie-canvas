@@ -33,7 +33,7 @@
 | 14 | **画布小改进**：拦截触控板捏合；文本节点拉出图片节点时预填提示词；局部遮罩按原图尺寸生成；组装提示词 @ 菜单跟随光标、组字时隐藏占位、@ 后光标留在文本节点；配置节点打开时隐藏悬浮工具栏；组装提示词只打纯文字时不丢连着的参考 | `infinite-canvas.tsx`、`pages/canvas/project.tsx`、`canvas-node-generation.ts`、`lib/media-size.ts`、`canvas-config-composer.tsx`、`canvas-prompt-chip-input.tsx` | 中：`project.tsx` 两边都改得多 | 已移植（待测试）：捏合拦截去掉了对画布保活的依赖；纯文字时连带组内素材一起带上 |
 | 15 | **我的资产拖入本地图片批量导入** | `pages/assets/index.tsx` | 中：v20 也改了资产页 | 已移植（待测试） |
 | 16 | **充值服务与钱包**：`server/`（Hono + MySQL + 支付宝），档位含 30 元、单笔上限 200 元，三路到账对账，钱包页，大额商务联系弹窗；Docker 里加 `pay` 容器和 `/pay-api` 反代、本机开发 Vite 代理 `/pay-api`。第 4 项的注册依赖它 | `server/`、`hinnflow-docker.conf`、`docker-compose.hinnflow.yml`、`web/vite.config.ts`、`jc/pages/wallet/`、`jc/services/wallet.ts`、`jc/stores/use-wallet-store.ts`、`business-contact-modal.tsx`、`web/package.json`（构建脚本和依赖） | 小：基本是新增文件 | 已改造（待测试）：去掉积分，支付宝到账后直接给 New API 账号加调用额度（30 元→$4、50 元→$7、200 元→$29）；发放记录 `quota_grants`，失败 / 结果未知的人工重试；钱包页显示账号额度和充值记录；旧积分钱包和余额废弃，不迁移 |
-| 17 | **兑换码充值**：配置中心账户页签 | `jc/components/redeem-code.tsx`、`app-config-modal.tsx` | 小 | 待确认 |
+| 17 | **兑换码充值**：配置中心账户页签 | `jc/components/redeem-code.tsx`、`app-config-modal.tsx` | 小 | 已移植（待测试）：走 New API `/api/user/topup`，直接充入账号额度 |
 | 18 | **积分兑换 API 额度** | `server/src/exchange.ts`、`routes/exchange.ts`、钱包页 | 小 | 不需要：去掉积分后，充值直接发放额度，并入第 16 项 |
 | 19 | **接单中心**：发单、报价、交付验收、佣金结算、押金、三个有效期、平台账，Markdown 交付说明 | `server/src/jobs.ts` 等、`jc/pages/jobs/`、`jc/services/jobs.ts`、`jc/stores/use-job-store.ts` | 小：基本是新增文件 | 不需要：依赖积分钱包的冻结与结算，去掉积分后先不做 |
 | 20 | **文档与 CHANGELOG**：`pending-test`、`todo`、`features` 里的 hinnflow 条目，CHANGELOG 加 `[Jackie]` 小节 | `docs/content/docs/progress/*`、`CHANGELOG.md` | 小 | 待确认 |

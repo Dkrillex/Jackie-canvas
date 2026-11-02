@@ -179,6 +179,14 @@ export default {
         noImagesInDrop: "没有可导入的图片或资产包",
         importFailed: "导入失败，请选择图片或有效的资产压缩包",
     },
+    redeem: {
+        title: "兑换码",
+        hint: "输入兑换码，额度直接充入当前账号余额。",
+        placeholder: "请输入兑换码",
+        submit: "兑换",
+        success: "兑换成功，已到账 {{amount}}",
+        failed: "兑换失败",
+    },
     home: {
         heroTitle: "HINNFLOW AI",
         description: "在 <canvas>HINNFLOW AI</canvas> 中生成、连接和重组 <content>图片、文字与图形</content>，让创作从单次生成变成连续推演。",
