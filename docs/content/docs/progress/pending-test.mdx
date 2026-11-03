@@ -66,7 +66,7 @@ The Chinese version contains the complete item-by-item acceptance checklist.
 
 Customizations migrated onto v20 on the hinnflow-v20 branch. See `docs/hinnflow-v20-migration.md` in the repository for the item-by-item list.
 
-- Branding and home page: the browser title and top bar show hinnflow, with the nav centered on wide screens; the home hero reads HINNFLOW AI over a blue-purple flowing background; a first visit with cleared storage opens in light mode.
+- Branding and home page: the browser title and top bar show hinnflow, with the nav centered on wide screens; the home hero reads HINNFLOW AI over a blue-purple flowing background; a product film sits between the hero and the prompt library section, autoplaying muted on loop with controls for sound and fullscreen; a first visit with cleared storage opens in light mode.
 - Docker deployment: after `docker compose -f docker-compose.hinnflow.yml up -d --build` the app is reachable on local port 5000; `/pay-api/health` reports `alipay`, `mysql`, `novaApi`, `novaAdmin` and `oss` as true.
 - Sign-in and sign-up: the avatar opens sign-in when signed out; a new account can register and is signed in automatically; two-factor accounts are asked for a code; the session survives a refresh; the Account tab shows the username, balance and an `sk-` key; signing out clears the key.
 - Signed-out gating: generating on the image page, video page, and canvas (generate, retry, mask edit, angles, text-to-image) only opens sign-in and sends no request.
@@ -76,7 +76,7 @@ Customizations migrated onto v20 on the hinnflow-v20 branch. See `docs/hinnflow-
 - Object storage: the signing endpoint returns 401 when signed out; uploaded files appear under `canvas/<year-month>/<user id>/` in the bucket and are publicly readable.
 - Seedream 5.0 lite: choosing 1K raises the request to about 2560×1440 pixels; 5.0 pro / flash are not enlarged.
 - Prompt library: Banana Prompt Quicker is off by default; the library, home page and canvas side panel show no NSFW / Unknown items.
-- Canvas: pinching outside the canvas does not zoom the page; dragging an image node out of a text node pre-fills its prompt; mask edits on non-square images keep the original ratio; the composer @ menu opens at the caret and plain text keeps connected references; the floating toolbar hides while a config node is open.
+- Canvas: pinching outside the canvas does not zoom the page; dragging an image node out of a text node pre-fills its prompt; mask edits on non-square images keep the original ratio; the composer @ menu opens at the caret and plain text keeps connected references; the floating toolbar hides while a config node is open; after adding a node from the bottom toolbar or creating one from a connection, the floating toolbar sits on the new node instead of the previous one.
 - My assets: dropping several local images or an asset package imports them; Import accepts multiple images.
 - Credits top-up: the Credits nav item appears only when signed in, and the page and Account tab show credits only, never USD; generating with no balance fails with "Not enough credits (0.00 credits left)" instead of a $ amount; paying a 30 / 50 / 200 CNY package (4 / 7 / 29 credits) shows "added", available credits grow by the matching amount, and the record's Credits column reads Added; without an admin token the record shows Failed and `npm run grants:retry` re-sends it after configuration.
 - Redemption codes: entering a New API code in the Account tab reports the amount added and the balance increases.

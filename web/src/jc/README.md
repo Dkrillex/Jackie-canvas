@@ -19,7 +19,7 @@ Git 冲突是按文件按 hunk 算的：只有你改、上游不改的文件，�
 | `src/i18n/index.ts`                           | `mergeJcLocale(zhCN, jcZhCN)` —— 文案全在 `jc/i18n/` |
 | `src/components/layout/app-top-nav.tsx`       | 导航项来自 `jc/nav.ts` 的 `useVisibleNavTools()`，顶栏视觉是 `jc-top-nav` + `<BrandName />` |
 | `src/components/layout/mobile-nav-drawer.tsx` | 导航项同上                                           |
-| `src/pages/home/index.tsx`                    | 挂 `<FlowBackdrop />` + `hero-title.css` / `home-page.css`（HINNFLOW AI 大标题、胶囊按钮、玻璃展示卡） |
+| `src/pages/home/index.tsx`                    | 挂 `<FlowBackdrop />`、`<PromoVideo />`（宣传片，素材在 `public/home/`）+ `hero-title.css` / `home-page.css`（HINNFLOW AI 大标题、胶囊按钮、玻璃展示卡） |
 
 仓库根部的 `docker-compose.hinnflow.yml`、`hinnflow-docker.conf`（`/new-api` 反代）、`nginx-hinnflow.conf`（宿主机 HTTPS 示例）
 和 `web/vite.config.ts` 的 `/new-api` 开发代理也属于二开范围，都是新增文件或几行基础设施配置。

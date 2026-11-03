@@ -273,3 +273,31 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
 }
+
+/* 产品宣传片：放在 Hero 与提示词展示之间，玻璃边框与展示卡一致 */
+.jc-promo {
+    position: relative;
+    margin: 0 auto;
+    max-width: 72rem;
+    padding-top: 4.5rem;
+}
+
+.jc-promo-frame {
+    overflow: hidden;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 24px 60px -28px rgba(79, 91, 219, 0.35);
+}
+
+.jc-promo-frame video {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #eef0fb;
+}
+
+.dark .jc-promo-frame {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+}

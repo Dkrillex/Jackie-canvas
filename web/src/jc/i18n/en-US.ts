@@ -200,5 +200,8 @@ export default {
         description: "Generate, connect, and reshape <content>images, text, and graphics</content> in <canvas>HINNFLOW AI</canvas>, turning one-off generations into a continuous creative process.",
         showcaseEyebrow: "Prompt Library",
         showcaseTitle: "Keep every <serif>great result</serif>",
+        promoEyebrow: "Product Film",
+        promoTitle: "<serif>HINNFLOW AI</serif> in one minute",
+        promoDescription: "From a line of text to images and video: connect the nodes and the whole creative flow is there.",
     },
 };

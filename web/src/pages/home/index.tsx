@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 
 import { FlowBackdrop } from "@/jc/components/flow-backdrop";
+import { PromoVideo } from "@/jc/components/promo-video";
 import "@/jc/styles/hero-title.css";
 import "@/jc/styles/home-page.css";
 import { fetchPrompts, type Prompt } from "@/services/api/prompts";
@@ -61,6 +62,8 @@ export default function IndexPage() {
                     </Button>
                 </div>
             </section>
+
+            <PromoVideo />
 
             <section className="jc-showcase px-6">
                 <div className="mb-10 text-center">

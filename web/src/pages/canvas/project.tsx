@@ -734,7 +734,7 @@ function InfiniteCanvasPage() {
     // The toolbar follows a single selected node selected by click, creation, marquee, or keyboard.
     // It stays hidden for multi-selection and while isNodeDragging is true.
     const singleSelectedNodeId = selectedNodeIds.size === 1 ? Array.from(selectedNodeIds)[0] : null;
-    const toolbarNode = (toolbarNodeId ? nodeById.get(toolbarNodeId) || null : null) || (singleSelectedNodeId ? nodeById.get(singleSelectedNodeId) || null : null);
+    const toolbarNode = (toolbarNodeId && selectedNodeIds.has(toolbarNodeId) ? nodeById.get(toolbarNodeId) || null : null) ||(singleSelectedNodeId ? nodeById.get(singleSelectedNodeId) || null : null);
     const infoNode = infoNodeId ? nodeById.get(infoNodeId) || null : null;
     const cropNode = cropNodeId ? nodeById.get(cropNodeId) || null : null;
     const maskEditNode = maskEditNodeId ? nodeById.get(maskEditNodeId) || null : null;

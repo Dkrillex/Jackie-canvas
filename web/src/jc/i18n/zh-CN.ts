@@ -200,5 +200,8 @@ export default {
         description: "在 <canvas>HINNFLOW AI</canvas> 中生成、连接和重组 <content>图片、文字与图形</content>，让创作从单次生成变成连续推演。",
         showcaseEyebrow: "Prompt Library",
         showcaseTitle: "沉淀每一次 <serif>好结果</serif>",
+        promoEyebrow: "Product Film",
+        promoTitle: "一分钟看懂 <serif>HINNFLOW AI</serif>",
+        promoDescription: "从一句文字到图片与视频，节点连起来就是完整的创作流程。",
     },
 };
